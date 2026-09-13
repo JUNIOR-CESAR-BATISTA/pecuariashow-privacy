@@ -231,8 +231,8 @@ final class AnalisadorHistoricoTests: XCTestCase {
     }
 
     func testComparaProteicosQuandoHaMaisDeUm() {
-        let ciclos = [ciclo(ganhoReal: 0.780, carcaca: 232, proteico: "Farelo de soja"),
-                      ciclo(ganhoReal: 0.620, carcaca: 214, proteico: "Ureia pecuária")]
+        let ciclos = [ciclo(ganhoReal: 0.780, proteico: "Farelo de soja", carcaca: 232),
+                      ciclo(ganhoReal: 0.620, proteico: "Ureia pecuária", carcaca: 214)]
         let analise = AnalisadorHistorico.analisar(ciclos)
 
         XCTAssertTrue(titulos(analise).contains(where: { $0.contains("Farelo de soja rendeu mais") }))
