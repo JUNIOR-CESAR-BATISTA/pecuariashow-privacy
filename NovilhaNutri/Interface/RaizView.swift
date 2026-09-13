@@ -7,6 +7,7 @@ enum Aba: String, CaseIterable, Identifiable, Hashable {
     case racao
     case relatorios
     case insumos
+    case analise
 
     var id: String { rawValue }
 
@@ -15,8 +16,9 @@ enum Aba: String, CaseIterable, Identifiable, Hashable {
         case .inicio: return "Início"
         case .rebanho: return "Rebanho"
         case .racao: return "Ração"
-        case .relatorios: return "Relatórios"
+        case .relatorios: return "Abate"
         case .insumos: return "Insumos"
+        case .analise: return "Análise"
         }
     }
 
@@ -27,6 +29,7 @@ enum Aba: String, CaseIterable, Identifiable, Hashable {
         case .racao: return "chart.pie.fill"
         case .relatorios: return "doc.text.fill"
         case .insumos: return "shippingbox.fill"
+        case .analise: return "chart.bar.fill"
         }
     }
 }
@@ -51,6 +54,8 @@ struct RaizView: View {
                     NavigationStack { RelatorioView() }
                 case .insumos:
                     NavigationStack { InsumosView() }
+                case .analise:
+                    NavigationStack { AnaliseView(aba: $aba) }
                 }
             }
         }
@@ -85,7 +90,7 @@ struct BarraNavegacao: View {
         }
         .padding(.top, 10)
         .padding(.bottom, 6)
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 2)
         .background(
             Tema.superficie
                 .overlay(alignment: .top) {
@@ -103,16 +108,16 @@ struct ItemBarra: View {
 
     var body: some View {
         VStack(spacing: 5) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(ativa ? Tema.ouro : Color.clear)
-                .frame(width: 46, height: 32)
+                .frame(width: 42, height: 30)
                 .overlay(
                     Image(systemName: aba.simbolo)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(ativa ? Tema.fundo : Tema.textoSuave)
                 )
             Text(aba.titulo)
-                .font(.system(size: 11, weight: ativa ? .bold : .medium))
+                .font(.system(size: 10, weight: ativa ? .bold : .medium))
                 .foregroundStyle(ativa ? Tema.ouro : Tema.textoSuave)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)

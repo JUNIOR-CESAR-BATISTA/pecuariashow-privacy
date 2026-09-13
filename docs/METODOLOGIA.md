@@ -150,7 +150,56 @@ conversao alimentar   = MS total consumida / ganho de peso vivo total
 custo por arroba      = custo total / arrobas produzidas
 ```
 
-## 8. Conferência numérica
+## 8. Aprendizado com os ciclos encerrados
+
+Quando um lote é abatido, o plano vigente é fotografado (consumo previsto,
+teores médios da dieta, concentrado e custo planejados) e guardado junto com o
+que de fato aconteceu. Daí saem três coisas.
+
+### Fator de consumo
+
+A pergunta é: *qual consumo, no modelo, produziria o ganho que a balança
+mostrou?* Mantidos os teores informados da dieta, procura-se por bisseção o
+fator `a` tal que
+
+```
+ganho_modelo(a x CMS_previsto, NDT da dieta) = GMD observado
+```
+
+usando a mesma inversão da seção 5. O resultado é limitado à faixa de 0,70 a
+1,30 e entra nos novos lotes como ajuste de consumo.
+
+O fator não é proporcional ao desvio de ganho: como a mantença consome uma
+parte fixa da energia, o ganho é bem mais sensível que o consumo. Um lote que
+ganhou 13% menos que a meta costuma corresponder a um fator perto de 0,92, não
+de 0,87.
+
+### Rendimento e peso de acabamento
+
+Média ponderada por animais e dias dos valores realmente observados no abate.
+Substituem os padrões de tabela do grupo genético nos lotes seguintes.
+
+### Diagnóstico
+
+Regras que cruzam o previsto com o realizado:
+
+| Situação | Leitura |
+| --- | --- |
+| Ganho abaixo da meta **e** concentrado fornecido abaixo do planejado | Problema de fornecimento, não de formulação |
+| Ganho abaixo da meta **com** o concentrado entregue | A dieta rendeu menos que a tabela: rever NDT e PB dos alimentos por análise |
+| Ganho acima da meta | Sobra de dieta: elevar a meta ou reduzir concentrado |
+| Rendimento de carcaça abaixo do esperado para o grupo genético | Acabamento insuficiente |
+| Ciclo mais de 15% mais longo que o planejado | Meta irreal ou abate fora do peso combinado |
+| Custo real mais de 10% acima do previsto | Preços de insumo desatualizados no cadastro |
+
+A comparação entre fontes proteicas agrupa os ciclos pelo proteico usado e
+ordena por aderência à meta, mostrando também o custo por arroba de cada um —
+é o que responde qual proteico reforçar e qual está saindo caro demais.
+
+A confiança da base é declarada junto: 1 ciclo é indicativo, 2 a 3 é moderada,
+4 ou mais é consistente.
+
+## 9. Conferência numérica
 
 Os valores abaixo, produzidos pelo motor, foram conferidos contra uma implementação
 independente das mesmas equações e estão fixados nos testes automatizados.

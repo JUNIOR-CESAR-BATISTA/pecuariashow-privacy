@@ -5,11 +5,42 @@ struct DadosApp: Codable {
     var versao: Int
     var lotes: [Lote]
     var insumos: [Insumo]
+    /// Ciclos já abatidos, que servem de base para os próximos lotes.
+    var ciclos: [CicloEncerrado]
+    /// Se os novos lotes nascem calibrados pelo histórico.
+    var usarCalibracao: Bool
 
-    static let versaoAtual = 1
+    static let versaoAtual = 2
 
     static var inicial: DadosApp {
-        DadosApp(versao: versaoAtual, lotes: [], insumos: CatalogoInsumos.padrao)
+        DadosApp(versao: versaoAtual,
+                 lotes: [],
+                 insumos: CatalogoInsumos.padrao,
+                 ciclos: [],
+                 usarCalibracao: true)
+    }
+
+    init(versao: Int,
+         lotes: [Lote],
+         insumos: [Insumo],
+         ciclos: [CicloEncerrado] = [],
+         usarCalibracao: Bool = true) {
+        self.versao = versao
+        self.lotes = lotes
+        self.insumos = insumos
+        self.ciclos = ciclos
+        self.usarCalibracao = usarCalibracao
+    }
+
+    /// Leitura tolerante: arquivos gravados na versão 1 não têm ciclos nem a
+    /// preferência de calibração, e precisam continuar abrindo.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        versao = try container.decodeIfPresent(Int.self, forKey: .versao) ?? 1
+        lotes = try container.decodeIfPresent([Lote].self, forKey: .lotes) ?? []
+        insumos = try container.decodeIfPresent([Insumo].self, forKey: .insumos) ?? []
+        ciclos = try container.decodeIfPresent([CicloEncerrado].self, forKey: .ciclos) ?? []
+        usarCalibracao = try container.decodeIfPresent(Bool.self, forKey: .usarCalibracao) ?? true
     }
 }
 

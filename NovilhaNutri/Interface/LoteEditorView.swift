@@ -15,6 +15,13 @@ struct LoteEditorView: View {
         self.novo = novo
     }
 
+    /// Aviso de que os valores vieram do histórico de ciclos encerrados.
+    private var notaCalibracao: String? {
+        let fatores = estado.analise.fatores
+        guard estado.usarCalibracao, fatores.disponivel else { return nil }
+        return "Calibrado por \(fatores.ciclos) ciclo\(fatores.ciclos == 1 ? "" : "s") já abatido\(fatores.ciclos == 1 ? "" : "s"): consumo \(Formatadores.numero(fatores.ajusteConsumo, casas: 2))x, rendimento \(Formatadores.percentual(fatores.rendimentoCarcaca * 100)) e acabamento \(Formatadores.numero(fatores.pesoAcabamento, casas: 0)) kg. Base \(fatores.confianca.nome.lowercased())."
+    }
+
     private var previa: ExigenciaDiaria {
         MotorExigencias.calcular(perfil: lote.perfilAtual, ganhoMeta: lote.ganhoMetaDiario)
     }
@@ -129,7 +136,12 @@ struct LoteEditorView: View {
         } header: {
             Text("Metas e abate")
         } footer: {
-            Text("Ganho sugerido para a fase \(lote.fase.nome.lowercased()): \(Formatadores.numero(lote.fase.gmdSugerido, casas: 3)) kg/dia. O peso de acabamento representa o peso em que a novilha termina e ajusta a exigência de energia. O ajuste de consumo calibra a previsão de consumo ao que você observa no cocho (1,00 = previsão padrão).")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Ganho sugerido para a fase \(lote.fase.nome.lowercased()): \(Formatadores.numero(lote.fase.gmdSugerido, casas: 3)) kg/dia. O peso de acabamento representa o peso em que a novilha termina e ajusta a exigência de energia. O ajuste de consumo calibra a previsão de consumo ao que você observa no cocho (1,00 = previsão padrão).")
+                if let nota = notaCalibracao {
+                    Text(nota).foregroundStyle(Tema.ouro)
+                }
+            }
         }
         .listRowBackground(Tema.superficie)
     }

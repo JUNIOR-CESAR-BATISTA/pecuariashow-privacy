@@ -94,6 +94,32 @@ struct RelatorioPlanejamento {
         return base > 0 ? materiaSecaTotal / base : 0
     }
 
+    /// Teor médio de NDT da dieta planejada (% da matéria seca).
+    var ndtMedioDieta: Double {
+        let materiaSeca = periodos.reduce(0) {
+            $0 + $1.exigencia.consumoMateriaSeca * $1.dias * Double($1.animais)
+        }
+        guard materiaSeca > 0 else { return 0 }
+        let ndt = periodos.reduce(0) { $0 + $1.exigencia.ndtKg * $1.dias * Double($1.animais) }
+        return ndt / materiaSeca * 100
+    }
+
+    /// Teor médio de proteína bruta da dieta planejada (% da matéria seca).
+    var pbMedioDieta: Double {
+        let materiaSeca = periodos.reduce(0) {
+            $0 + $1.exigencia.consumoMateriaSeca * $1.dias * Double($1.animais)
+        }
+        guard materiaSeca > 0 else { return 0 }
+        let pb = periodos.reduce(0) { $0 + $1.exigencia.proteinaBrutaKg * $1.dias * Double($1.animais) }
+        return pb / materiaSeca * 100
+    }
+
+    /// Concentrado previsto para o ciclo, em kg de matéria natural.
+    var concentradoTotalMN: Double {
+        totais.filter { $0.insumo.categoria == .energetico || $0.insumo.categoria == .proteico }
+            .reduce(0) { $0 + $1.kgMateriaNatural }
+    }
+
     static func vazio(lote: Lote, alertas: [String]) -> RelatorioPlanejamento {
         RelatorioPlanejamento(lote: lote,
                               periodos: [],

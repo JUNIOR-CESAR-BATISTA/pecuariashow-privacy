@@ -100,6 +100,59 @@ final class BancoLocalTests: XCTestCase {
         XCTAssertEqual(voltou.precoPorKg, 1.2, accuracy: 0.0001)
     }
 
+    func testArquivoDaVersao1AbreSemCiclos() throws {
+        // Formato antigo: sem as chaves "ciclos" e "usarCalibracao".
+        let antigo = """
+        {
+          "versao": 1,
+          "lotes": [],
+          "insumos": []
+        }
+        """
+        let dados = try BancoLocal.importar(Data(antigo.utf8))
+
+        XCTAssertEqual(dados.versao, 1)
+        XCTAssertTrue(dados.ciclos.isEmpty)
+        XCTAssertTrue(dados.usarCalibracao)
+    }
+
+    func testCiclosSobrevivemAoSalvarELer() throws {
+        let ciclo = CicloEncerrado(loteID: UUID(),
+                                   nome: "Lote encerrado",
+                                   grupoGenetico: .zebuino,
+                                   sistema: .semiconfinamento,
+                                   dataInicio: Date(timeIntervalSince1970: 0),
+                                   pesoInicial: 260,
+                                   ganhoMeta: 0.750,
+                                   pesoAlvo: 430,
+                                   animaisIniciais: 40,
+                                   pesoAcabamentoPlanejado: 430,
+                                   consumoPrevistoDiario: 7.9,
+                                   ndtDietaMedia: 67,
+                                   pbDietaMedia: 11,
+                                   concentradoPrevisto: 40_000,
+                                   custoPrevisto: 50_000,
+                                   volumosoNome: "Pasto",
+                                   energeticoNome: "Milho",
+                                   proteicoNome: "Farelo de soja",
+                                   dataAbate: Date(timeIntervalSince1970: 226 * 86_400),
+                                   pesoFinalReal: 429,
+                                   animaisAbatidos: 39,
+                                   pesoCarcacaReal: 228)
+        try banco.salvar(DadosApp(versao: DadosApp.versaoAtual,
+                                  lotes: [],
+                                  insumos: [],
+                                  ciclos: [ciclo],
+                                  usarCalibracao: false))
+
+        let lido = try XCTUnwrap(try banco.carregar())
+        XCTAssertEqual(lido.ciclos.count, 1)
+        XCTAssertEqual(lido.ciclos.first?.id, ciclo.id)
+        XCTAssertEqual(lido.ciclos.first?.proteicoNome, "Farelo de soja")
+        XCTAssertEqual(lido.ciclos.first?.pesoCarcacaReal, 228)
+        XCTAssertFalse(lido.usarCalibracao)
+    }
+
     func testDadosIniciaisTrazemOCatalogoPadrao() {
         let iniciais = DadosApp.inicial
         XCTAssertTrue(iniciais.lotes.isEmpty)

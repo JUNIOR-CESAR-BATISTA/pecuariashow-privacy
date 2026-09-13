@@ -25,7 +25,7 @@ Os testes ficam em `NovilhaNutriTests` e rodam com Cmd+U.
 
 ## Telas
 
-Cinco abas na barra inferior, com a aba ativa marcada em dourado.
+Seis abas na barra inferior, com a aba ativa marcada em dourado.
 
 | Aba | O que faz |
 | --- | --- |
@@ -34,6 +34,7 @@ Cinco abas na barra inferior, com a aba ativa marcada em dourado.
 | **Ração** | Exigências diárias por animal (PB em gramas e % da MS, NDT em kg e % da MS, consumo de matéria seca), composição da ração diária alimento por alimento, quantidade a fornecer para o lote inteiro em kg e sacas por dia, balanço da dieta e ganho esperado. |
 | **Relatórios** | Planejamento do abate: dias e data prevista, evolução do peso, arrobas produzidas, conversão alimentar, custo por arroba, total de insumos do ciclo em kg e sacas, e o detalhamento período a período. Exporta o relatório em texto. |
 | **Insumos** | Cadastro dos alimentos com MS, PB, NDT, forma de aquisição (saca de 60/50/40/30/25/20 kg, granel ou pastejo) e preço. Inclui um conversor livre de quilos para sacas. |
+| **Análise** | O histórico da fazenda. Cada lote abatido vira um ciclo encerrado: o aplicativo compara previsto com realizado, calibra os próximos lotes, ranqueia os proteicos e energéticos já usados e aponta o que corrigir. |
 
 A tela de **Dados** (onde os dados ficam, backup manual em JSON, exclusão de tudo e a
 metodologia dos cálculos) fica no botão de cadeado, no cabeçalho do início.
@@ -73,6 +74,17 @@ refeita, então o consumo cresce ao longo do ciclo como acontece na prática. O
 relatório traz data de abate, peso e arrobas de carcaça, arrobas produzidas,
 conversão alimentar, custo total, custo por animal por dia e custo por arroba.
 
+**O ciclo encerrado vira base de cálculo.** Depois do abate, o lote é encerrado
+com os dados reais (peso vivo, carcaça, concentrado usado, custo, preço da
+arroba) e sai do rebanho para o histórico. A partir daí o aplicativo aprende:
+descobre por bisseção qual consumo explicaria o ganho que a balança mostrou e
+passa esse ajuste para os lotes novos, junto com o rendimento de carcaça e o
+peso de acabamento realmente observados. O diagnóstico cruza os números para
+dizer onde está o problema - se faltou concentrado no cocho ou se a dieta
+rendeu menos do que a tabela prometia - e compara as fontes proteicas já
+usadas por ganho e por custo da arroba. Quanto mais ciclos, mais firme a base:
+o aplicativo declara se ela é indicativa, moderada ou consistente.
+
 ## Privacidade
 
 Não há servidor, conta de usuário, analytics nem sincronização. Os dados são gravados
@@ -85,17 +97,18 @@ JSON que o próprio usuário gera e compartilha.
 ```
 NovilhaNutri/
   Core/
-    Modelos/       Classificacoes, Insumo, Lote
+    Modelos/       Classificacoes, Insumo, Lote, CicloEncerrado
     Calculo/       MotorExigencias, FormuladorRacao, ConversorSacas,
-                   PlanejadorAbate, RelatorioTexto
+                   PlanejadorAbate, RelatorioTexto, AnalisadorHistorico
     Dados/         CatalogoInsumos (tabela inicial de alimentos)
     Formatadores   Numeros, moeda e datas em pt-BR
   Persistencia/    BancoLocal (JSON local), AppEstado (estado observável)
   Interface/       Tema (cores e peças visuais), Componentes,
                    RaizView (abas), InicioView, RebanhoView, ResumoView,
-                   InsumosView, RelatorioView, DadosView
-NovilhaNutriTests/ Testes das exigencias, formulacao, conversao,
-                   projecao e persistencia
+                   InsumosView, RelatorioView, AnaliseView,
+                   EncerrarCicloView, DadosView
+NovilhaNutriTests/ Testes das exigências, formulação, conversão,
+                   projeção, histórico e persistência
 docs/METODOLOGIA.md
 ```
 

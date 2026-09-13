@@ -161,6 +161,7 @@ struct InicioView: View {
                     }
                     Chip(texto: "Cadastrar insumo", simbolo: "shippingbox") { aba = .insumos }
                     Chip(texto: "Planejar abate", simbolo: "flag.checkered") { aba = .relatorios }
+                    Chip(texto: "Análise do histórico", simbolo: "chart.bar") { aba = .analise }
                 }
                 .padding(.horizontal, 2)
                 .padding(.vertical, 2)

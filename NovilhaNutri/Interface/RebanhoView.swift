@@ -1,16 +1,24 @@
 import SwiftUI
 
-/// Lote aberto em folha de edição.
-struct FolhaLote: Identifiable {
-    let id = UUID()
-    let lote: Lote
-    let novo: Bool
+/// Telas apresentadas em folha a partir do rebanho.
+enum FolhaRebanho: Identifiable {
+    case editar(Lote)
+    case novo(Lote)
+    case encerrar(Lote)
+
+    var id: String {
+        switch self {
+        case .editar(let lote): return "editar-" + lote.id.uuidString
+        case .novo: return "novo"
+        case .encerrar(let lote): return "encerrar-" + lote.id.uuidString
+        }
+    }
 }
 
 /// Lista dos lotes cadastrados.
 struct RebanhoView: View {
     @EnvironmentObject private var estado: AppEstado
-    @State private var folha: FolhaLote?
+    @State private var folha: FolhaRebanho?
 
     var body: some View {
         Group {
@@ -35,7 +43,7 @@ struct RebanhoView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    folha = FolhaLote(lote: estado.novoLote(), novo: true)
+                    folha = .novo(estado.novoLote())
                 } label: {
                     Image(systemName: "plus")
                         .foregroundStyle(Tema.ouro)
@@ -44,13 +52,20 @@ struct RebanhoView: View {
         }
         .overlay(alignment: .bottomTrailing) {
             if !estado.lotes.isEmpty {
-                BotaoFlutuante(titulo: "Novo lote") { folha = FolhaLote(lote: estado.novoLote(), novo: true) }
+                BotaoFlutuante(titulo: "Novo lote") { folha = .novo(estado.novoLote()) }
                     .padding(.trailing, 18)
                     .padding(.bottom, 12)
             }
         }
-        .sheet(item: $folha) { item in
-            LoteEditorView(lote: item.lote, novo: item.novo)
+        .sheet(item: $folha) { qual in
+            switch qual {
+            case .editar(let lote):
+                LoteEditorView(lote: lote, novo: false)
+            case .novo(let lote):
+                LoteEditorView(lote: lote, novo: true)
+            case .encerrar(let lote):
+                EncerrarCicloView(lote: lote)
+            }
         }
     }
 
@@ -60,7 +75,7 @@ struct RebanhoView: View {
                 ForEach(estado.lotes) { lote in
                     Button {
                         estado.loteSelecionadoID = lote.id
-                        folha = FolhaLote(lote: lote, novo: false)
+                        folha = .editar(lote)
                     } label: {
                         CartaoLote(lote: lote,
                                    selecionado: lote.id == estado.loteSelecionado?.id)
@@ -72,6 +87,14 @@ struct RebanhoView: View {
                         } label: {
                             Label("Excluir", systemImage: "trash")
                         }
+                    }
+                    .swipeActions(edge: .leading) {
+                        Button {
+                            folha = .encerrar(lote)
+                        } label: {
+                            Label("Encerrar", systemImage: "flag.checkered")
+                        }
+                        .tint(Tema.verde)
                     }
                 }
                 .listRowBackground(Color.clear)
@@ -104,7 +127,7 @@ struct RebanhoView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Tema.textoSuave)
             } footer: {
-                Text("Toque em um lote para editar. Deslize para a esquerda para excluir.")
+                Text("Toque em um lote para editar. Deslize para a direita para encerrar o ciclo depois do abate, ou para a esquerda para excluir.")
                     .font(.caption2)
                     .foregroundStyle(Tema.textoTenue)
                     .padding(.bottom, 90)
