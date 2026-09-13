@@ -1,57 +1,41 @@
 import SwiftUI
 
-/// Cores do aplicativo.
-enum Paleta {
-    static let verde = Color(red: 0.20, green: 0.52, blue: 0.28)
-    static let verdeClaro = Color(red: 0.60, green: 0.78, blue: 0.48)
-    static let terra = Color(red: 0.62, green: 0.44, blue: 0.24)
-    static let energia = Color(red: 0.92, green: 0.64, blue: 0.18)
-    static let proteina = Color(red: 0.36, green: 0.50, blue: 0.82)
-    static let mineral = Color(red: 0.55, green: 0.55, blue: 0.60)
-    static let alerta = Color(red: 0.85, green: 0.42, blue: 0.20)
-
-    static func cor(de categoria: CategoriaInsumo) -> Color {
-        switch categoria {
-        case .volumoso: return verde
-        case .energetico: return energia
-        case .proteico: return proteina
-        case .mineral: return mineral
-        }
-    }
-}
-
 /// Cartão com um número em destaque.
 struct CartaoIndicador: View {
     let titulo: String
     let valor: String
     var detalhe: String? = nil
     var simbolo: String = "chart.bar.fill"
-    var cor: Color = Paleta.verde
+    var cor: Color = Tema.ouro
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
                 Image(systemName: simbolo)
                     .font(.caption)
                     .foregroundStyle(cor)
+                    .frame(width: 26, height: 26)
+                    .background(cor.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
                 Text(titulo)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
+                    .lineLimit(1)
             }
             Text(valor)
-                .font(.title3.weight(.semibold))
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Tema.texto)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             if let detalhe {
                 Text(detalhe)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoTenue)
                     .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .cartao(espacamento: 14, raio: Tema.raioPequeno)
     }
 }
 
@@ -65,12 +49,12 @@ struct LinhaDado: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(rotulo)
-                .foregroundStyle(destaque ? .primary : .secondary)
-                .font(destaque ? .body.weight(.medium) : .body)
+                .font(destaque ? .subheadline.weight(.semibold) : .subheadline)
+                .foregroundStyle(destaque ? Tema.texto : Tema.textoSuave)
             Spacer(minLength: 12)
             Text(valor)
-                .font(.body.weight(destaque ? .semibold : .regular))
-                .foregroundStyle(cor ?? .primary)
+                .font(.subheadline.weight(destaque ? .bold : .semibold))
+                .foregroundStyle(cor ?? Tema.texto)
                 .multilineTextAlignment(.trailing)
         }
     }
@@ -86,15 +70,18 @@ struct CampoNumerico: View {
     var body: some View {
         HStack {
             Text(titulo)
+                .foregroundStyle(Tema.texto)
             Spacer(minLength: 8)
             TextField(titulo, value: $valor,
                       format: .number.precision(.fractionLength(0...casas)))
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
+                .foregroundStyle(Tema.ouro)
+                .font(.body.weight(.semibold))
                 .frame(maxWidth: 110)
             if !sufixo.isEmpty {
                 Text(sufixo)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
                     .frame(minWidth: 34, alignment: .leading)
             }
         }
@@ -110,14 +97,17 @@ struct CampoInteiro: View {
     var body: some View {
         HStack {
             Text(titulo)
+                .foregroundStyle(Tema.texto)
             Spacer(minLength: 8)
             TextField(titulo, value: $valor, format: .number)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
+                .foregroundStyle(Tema.ouro)
+                .font(.body.weight(.semibold))
                 .frame(maxWidth: 110)
             if !sufixo.isEmpty {
                 Text(sufixo)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
                     .frame(minWidth: 34, alignment: .leading)
             }
         }
@@ -128,7 +118,7 @@ struct CampoInteiro: View {
 struct Aviso: View {
     let texto: String
     var simbolo: String = "exclamationmark.triangle.fill"
-    var cor: Color = Paleta.alerta
+    var cor: Color = Tema.laranja
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -137,6 +127,7 @@ struct Aviso: View {
                 .font(.footnote)
             Text(texto)
                 .font(.footnote)
+                .foregroundStyle(Tema.textoSuave)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -160,9 +151,9 @@ struct BarraComposicao: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             GeometryReader { geo in
-                HStack(spacing: 1) {
+                HStack(spacing: 2) {
                     ForEach(partes) { parte in
                         Rectangle()
                             .fill(parte.cor)
@@ -170,8 +161,8 @@ struct BarraComposicao: View {
                     }
                 }
             }
-            .frame(height: 16)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .frame(height: 14)
+            .clipShape(Capsule())
 
             LegendaComposicao(partes: partes, total: total)
         }
@@ -184,19 +175,20 @@ struct LegendaComposicao: View {
     let total: Double
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(partes) { parte in
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Circle()
                         .fill(parte.cor)
                         .frame(width: 8, height: 8)
                     Text(parte.nome)
                         .font(.caption)
+                        .foregroundStyle(Tema.textoSuave)
                         .lineLimit(1)
                     Spacer(minLength: 4)
                     Text(Formatadores.percentual(parte.valor / total * 100))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .font(.caption.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(Tema.texto)
                 }
             }
         }
@@ -212,7 +204,7 @@ struct PontoGrafico: Hashable {
 /// Gráfico simples de evolução de peso ao longo dos períodos.
 struct GraficoEvolucao: View {
     let pontos: [PontoGrafico]
-    var cor: Color = Paleta.verde
+    var cor: Color = Tema.ouro
 
     private func posicoes(em tamanho: CGSize) -> [CGPoint] {
         guard !pontos.isEmpty else { return [] }
@@ -241,7 +233,7 @@ struct GraficoEvolucao: View {
                         caminho.addLine(to: CGPoint(x: geo.size.width, y: y))
                     }
                 }
-                .stroke(Color.secondary.opacity(0.18), lineWidth: 0.5)
+                .stroke(Tema.borda, lineWidth: 1)
 
                 if posicoes.count > 1 {
                     Path { caminho in
@@ -250,19 +242,21 @@ struct GraficoEvolucao: View {
                         caminho.addLine(to: CGPoint(x: geo.size.width, y: geo.size.height))
                         caminho.closeSubpath()
                     }
-                    .fill(cor.opacity(0.15))
+                    .fill(LinearGradient(colors: [cor.opacity(0.28), cor.opacity(0.02)],
+                                         startPoint: .top, endPoint: .bottom))
 
                     Path { caminho in
                         caminho.move(to: posicoes[0])
                         for posicao in posicoes.dropFirst() { caminho.addLine(to: posicao) }
                     }
-                    .stroke(cor, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                    .stroke(cor, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                 }
 
                 ForEach(Array(posicoes.enumerated()), id: \.offset) { _, posicao in
                     Circle()
-                        .fill(cor)
-                        .frame(width: 5, height: 5)
+                        .fill(Tema.fundo)
+                        .overlay(Circle().stroke(cor, lineWidth: 2))
+                        .frame(width: 7, height: 7)
                         .position(posicao)
                 }
             }
@@ -273,14 +267,15 @@ struct GraficoEvolucao: View {
 /// Rótulo colorido pequeno.
 struct Etiqueta: View {
     let texto: String
-    var cor: Color = Paleta.verde
+    var cor: Color = Tema.ouro
 
     var body: some View {
         Text(texto)
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(cor.opacity(0.16), in: Capsule())
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(cor.opacity(0.14), in: Capsule())
+            .overlay(Capsule().stroke(cor.opacity(0.35), lineWidth: 1))
             .foregroundStyle(cor)
     }
 }
@@ -294,21 +289,36 @@ struct EstadoVazio: View {
     var acao: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: simbolo)
-                .font(.system(size: 42))
-                .foregroundStyle(Paleta.verde.opacity(0.7))
+        VStack(spacing: 14) {
+            Circle()
+                .fill(Tema.ouro.opacity(0.10))
+                .overlay(Circle().stroke(Tema.ouro.opacity(0.45), lineWidth: 1))
+                .frame(width: 74, height: 74)
+                .overlay(
+                    Image(systemName: simbolo)
+                        .font(.system(size: 28, weight: .regular))
+                        .foregroundStyle(Tema.ouro)
+                )
             Text(titulo)
-                .font(.headline)
+                .font(.headline.bold())
+                .foregroundStyle(Tema.texto)
+                .multilineTextAlignment(.center)
             Text(mensagem)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             if let textoBotao, let acao {
-                Button(textoBotao, action: acao)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Paleta.verde)
-                    .padding(.top, 4)
+                Button(action: acao) {
+                    Text(textoBotao)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Tema.fundo)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 12)
+                        .background(Tema.ouro, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
             }
         }
         .padding(28)

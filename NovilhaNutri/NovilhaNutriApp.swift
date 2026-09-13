@@ -9,7 +9,8 @@ struct NovilhaNutriApp: App {
         WindowGroup {
             RaizView()
                 .environmentObject(estado)
-                .tint(Paleta.verde)
+                .tint(Tema.ouro)
+                .preferredColorScheme(.dark)
         }
         .onChange(of: faseDaCena) { _, nova in
             if nova != .active {

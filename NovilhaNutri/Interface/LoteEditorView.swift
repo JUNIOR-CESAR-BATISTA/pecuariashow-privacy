@@ -41,10 +41,13 @@ struct LoteEditorView: View {
                             Label("Excluir lote", systemImage: "trash")
                         }
                     }
+                    .listRowBackground(Tema.superficie)
                 }
             }
             .navigationTitle(novo ? "Novo lote" : "Editar lote")
             .navigationBarTitleDisplayMode(.inline)
+            .listaEscura()
+            .barraEscura()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { fechar() }
@@ -80,6 +83,7 @@ struct LoteEditorView: View {
             CampoInteiro(titulo: "Número de animais", valor: $lote.quantidadeAnimais, sufixo: "cab")
             DatePicker("Entrada no lote", selection: $lote.dataEntrada, displayedComponents: .date)
         }
+        .listRowBackground(Tema.superficie)
     }
 
     private var animais: some View {
@@ -106,6 +110,7 @@ struct LoteEditorView: View {
         } footer: {
             Text("\(lote.fase.descricao). \(lote.sistema.descricao).")
         }
+        .listRowBackground(Tema.superficie)
     }
 
     private var metas: some View {
@@ -126,6 +131,7 @@ struct LoteEditorView: View {
         } footer: {
             Text("Ganho sugerido para a fase \(lote.fase.nome.lowercased()): \(Formatadores.numero(lote.fase.gmdSugerido, casas: 3)) kg/dia. O peso de acabamento representa o peso em que a novilha termina e ajusta a exigência de energia. O ajuste de consumo calibra a previsão de consumo ao que você observa no cocho (1,00 = previsão padrão).")
         }
+        .listRowBackground(Tema.superficie)
     }
 
     private var racao: some View {
@@ -149,7 +155,7 @@ struct LoteEditorView: View {
                         Text("Volumoso na matéria seca")
                         Spacer()
                         Text(Formatadores.percentual(fixo * 100, casas: 0))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Tema.textoSuave)
                     }
                     Slider(value: Binding(get: { fixo },
                                           set: { lote.restricoes.volumosoFixo = $0 }),
@@ -162,7 +168,7 @@ struct LoteEditorView: View {
                         Text("Volumoso mínimo")
                         Spacer()
                         Text(Formatadores.percentual(lote.restricoes.volumosoMinimo * 100, casas: 0))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Tema.textoSuave)
                     }
                     Slider(value: $lote.restricoes.volumosoMinimo, in: 0.1...0.9, step: 0.05)
                         .tint(Paleta.verde)
@@ -175,6 +181,7 @@ struct LoteEditorView: View {
                  ? "No modo automático o aplicativo calcula a proporção dos três alimentos que atende exatamente PB e NDT, respeitando o mínimo de volumoso."
                  : "Com a participação do volumoso fixada, o concentrado é ajustado pela proteína e o saldo de energia é mostrado no resumo.")
         }
+        .listRowBackground(Tema.superficie)
     }
 
     private var pesagens: some View {
@@ -182,14 +189,14 @@ struct LoteEditorView: View {
             if lote.pesagens.isEmpty {
                 Text("Nenhuma pesagem registrada. O peso de entrada está sendo usado como peso atual.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             } else {
                 ForEach(lote.pesagensOrdenadas) { pesagem in
                     HStack {
                         Text(Formatadores.data(pesagem.data))
                         Spacer()
                         Text(Formatadores.kg(pesagem.pesoMedio))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Tema.textoSuave)
                     }
                 }
                 .onDelete { indices in
@@ -212,6 +219,7 @@ struct LoteEditorView: View {
                 Text("Registre pesagens para acompanhar o ganho real do lote.")
             }
         }
+        .listRowBackground(Tema.superficie)
     }
 
     private var previaSection: some View {
@@ -226,6 +234,7 @@ struct LoteEditorView: View {
                 Aviso(texto: "Meta acima do ganho possível neste peso. Considere \(Formatadores.numero(previa.ganhoDiario, casas: 3)) kg/dia.")
             }
         }
+        .listRowBackground(Tema.superficie)
     }
 
     // MARK: - Ações
@@ -287,12 +296,17 @@ struct NovaPesagemView: View {
     var body: some View {
         NavigationStack {
             Form {
-                DatePicker("Data", selection: $data, displayedComponents: .date)
-                CampoNumerico(titulo: "Peso médio", valor: $peso, casas: 1, sufixo: "kg")
-                TextField("Observação", text: $observacao)
+                Section {
+                    DatePicker("Data", selection: $data, displayedComponents: .date)
+                    CampoNumerico(titulo: "Peso médio", valor: $peso, casas: 1, sufixo: "kg")
+                    TextField("Observação", text: $observacao)
+                }
+                .listRowBackground(Tema.superficie)
             }
             .navigationTitle("Nova pesagem")
             .navigationBarTitleDisplayMode(.inline)
+            .listaEscura()
+            .barraEscura()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { fechar() }

@@ -16,6 +16,7 @@ struct ResumoView: View {
             }
         }
         .navigationTitle("Resumo diário")
+        .barraEscura()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SeletorLoteBotao() }
         }
@@ -38,8 +39,9 @@ struct ResumoView: View {
                 avisos(exigencia: exigencia, composicao: composicao)
             }
             .padding(16)
+            .padding(.bottom, 20)
         }
-        .background(Color(.systemGroupedBackground))
+        .fundoTela()
     }
 
     // MARK: - Blocos
@@ -48,6 +50,7 @@ struct ResumoView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(lote.nome)
                 .font(.title2.weight(.bold))
+                .foregroundStyle(Tema.texto)
             HStack(spacing: 8) {
                 Etiqueta(texto: lote.fase.nome)
                 Etiqueta(texto: lote.sistema.nome, cor: Paleta.terra)
@@ -55,15 +58,14 @@ struct ResumoView: View {
             }
             Text("Peso médio atual \(Formatadores.kg(lote.pesoAtual)) - meta de ganho \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func indicadores(lote: Lote, exigencia: ExigenciaDiaria) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Exigências por animal por dia")
-                .font(.headline)
+            TituloSecao(texto: "Exigências por animal por dia")
             LazyVGrid(columns: colunas, spacing: 10) {
                 CartaoIndicador(titulo: "Proteína bruta",
                                 valor: Formatadores.gramas(exigencia.proteinaBrutaGramas),
@@ -88,15 +90,14 @@ struct ResumoView: View {
             }
             Text("Total do lote: \(Formatadores.kg(exigencia.proteinaBrutaKg * Double(lote.quantidadeAnimais))) de PB e \(Formatadores.kg(exigencia.ndtKg * Double(lote.quantidadeAnimais))) de NDT por dia.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
         }
     }
 
     private func racaoDiaria(lote: Lote, composicao: ComposicaoRacao) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Composição da ração diária")
-                    .font(.headline)
+                TituloSecao(texto: "Composição da ração diária")
                 Spacer()
                 Etiqueta(texto: composicao.status.nome,
                          cor: composicao.status == .balanceada ? Paleta.verde : Paleta.alerta)
@@ -105,7 +106,7 @@ struct ResumoView: View {
             if composicao.itens.isEmpty {
                 Text("Selecione os insumos da ração na edição do lote.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             } else {
                 BarraComposicao(partes: composicao.itens.map {
                     ParteComposicao(id: $0.insumo.id,
@@ -133,21 +134,18 @@ struct ResumoView: View {
                     }
                     .padding(.top, 8)
                 }
-                .padding(12)
-                .background(Color(.secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 12))
+                .cartao(espacamento: 14)
 
                 Text("Volumoso \(Formatadores.percentual(composicao.percentualVolumoso, casas: 0)) e concentrado \(Formatadores.percentual(composicao.percentualConcentrado, casas: 0)) da matéria seca.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             }
         }
     }
 
     private func racaoDoLote(lote: Lote, composicao: ComposicaoRacao) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Quantidade a fornecer por dia (\(lote.quantidadeAnimais) animais)")
-                .font(.headline)
+            TituloSecao(texto: "Quantidade a fornecer por dia (\(lote.quantidadeAnimais) animais)")
 
             VStack(spacing: 10) {
                 ForEach(composicao.itens) { item in
@@ -164,11 +162,11 @@ struct ResumoView: View {
                             if let conversao {
                                 Text(conversao.descricao)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Tema.textoSuave)
                             } else {
                                 Text("Fornecido no pastejo")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Tema.textoSuave)
                             }
                         }
                         Spacer()
@@ -185,16 +183,13 @@ struct ResumoView: View {
                               valor: Formatadores.moeda(composicao.custoDiario))
                 }
             }
-            .padding(12)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 12))
+            .cartao(espacamento: 14)
         }
     }
 
     private func balanco(composicao: ComposicaoRacao, ganho: GanhoEsperado, lote: Lote) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Balanço da dieta")
-                .font(.headline)
+            TituloSecao(texto: "Balanço da dieta")
             VStack(spacing: 8) {
                 LinhaDado(rotulo: "PB fornecida",
                           valor: "\(Formatadores.gramas(composicao.proteinaFornecidaKg * 1000)) (\(Formatadores.percentual(composicao.proteinaPercentual)))")
@@ -217,9 +212,7 @@ struct ResumoView: View {
                           destaque: true)
                 LinhaDado(rotulo: "Nutriente limitante", valor: ganho.nutrienteLimitante)
             }
-            .padding(12)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 12))
+            .cartao(espacamento: 14)
         }
     }
 
@@ -245,12 +238,9 @@ struct ResumoView: View {
             }
             .padding(.top, 8)
         } label: {
-            Text("Detalhamento técnico")
-                .font(.headline)
+            TituloSecao(texto: "Detalhamento técnico")
         }
-        .padding(12)
-        .background(Color(.secondarySystemGroupedBackground),
-                    in: RoundedRectangle(cornerRadius: 12))
+        .cartao(espacamento: 14)
     }
 
     @ViewBuilder
@@ -258,15 +248,12 @@ struct ResumoView: View {
         let todos = exigencia.alertas + composicao.alertas
         if !todos.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Observações")
-                    .font(.headline)
+                TituloSecao(texto: "Observações")
                 ForEach(Array(todos.enumerated()), id: \.offset) { _, texto in
                     Aviso(texto: texto)
                 }
             }
-            .padding(12)
-            .background(Paleta.alerta.opacity(0.08),
-                        in: RoundedRectangle(cornerRadius: 12))
+            .cartao(cor: Tema.laranja.opacity(0.10), espacamento: 14)
         }
     }
 }
@@ -277,15 +264,15 @@ struct CabecalhoTabelaRacao: View {
         HStack {
             Text("Alimento")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
             Spacer()
             Text("kg natural")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
                 .frame(width: 84, alignment: .trailing)
             Text("kg MS")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
                 .frame(width: 74, alignment: .trailing)
         }
         .padding(.bottom, 6)
@@ -305,7 +292,7 @@ struct LinhaRacao: View {
                     .lineLimit(2)
                 Text("\(Formatadores.percentual(participacao, casas: 0)) da MS - \(item.insumo.resumoBromatologico)")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             }
             Spacer(minLength: 4)
             Text(Formatadores.numero(item.kgMateriaNatural, casas: 2))
@@ -313,7 +300,7 @@ struct LinhaRacao: View {
                 .frame(width: 84, alignment: .trailing)
             Text(Formatadores.numero(item.kgMateriaSeca, casas: 2))
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
                 .frame(width: 74, alignment: .trailing)
         }
         .padding(.vertical, 6)

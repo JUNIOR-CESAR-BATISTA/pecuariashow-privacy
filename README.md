@@ -25,13 +25,25 @@ Os testes ficam em `NovilhaNutriTests` e rodam com Cmd+U.
 
 ## Telas
 
+Cinco abas na barra inferior, com a aba ativa marcada em dourado.
+
 | Aba | O que faz |
 | --- | --- |
-| **Rebanho** | Cadastro dos lotes: número de animais, peso de entrada, meta de ganho, fase, grupo genético, sistema de criação, peso alvo de abate, rendimento de carcaça e histórico de pesagens. |
-| **Resumo** | Exigências diárias por animal (PB em gramas e % da MS, NDT em kg e % da MS, consumo de matéria seca), composição da ração diária alimento por alimento, quantidade a fornecer para o lote inteiro em kg e sacas por dia, balanço da dieta e ganho esperado. |
-| **Insumos** | Cadastro dos alimentos com MS, PB, NDT, forma de aquisição (saca de 60/50/40/30/25/20 kg, granel ou pastejo) e preço. Inclui um conversor livre de quilos para sacas. |
+| **Início** | Painel de entrada: saudação, faixa com a situação do lote ativo, atalhos por categoria, ações rápidas e o botão flutuante de novo lote. Dá acesso à tela de dados e privacidade. |
+| **Rebanho** | Cadastro dos lotes: número de animais, peso de entrada, meta de ganho, fase, grupo genético, sistema de criação, peso alvo de abate, rendimento de carcaça e histórico de pesagens. Cada lote aparece como cartão com barra de progresso até o peso de abate. |
+| **Ração** | Exigências diárias por animal (PB em gramas e % da MS, NDT em kg e % da MS, consumo de matéria seca), composição da ração diária alimento por alimento, quantidade a fornecer para o lote inteiro em kg e sacas por dia, balanço da dieta e ganho esperado. |
 | **Relatórios** | Planejamento do abate: dias e data prevista, evolução do peso, arrobas produzidas, conversão alimentar, custo por arroba, total de insumos do ciclo em kg e sacas, e o detalhamento período a período. Exporta o relatório em texto. |
-| **Dados** | Onde os dados ficam, backup manual em JSON, exclusão de tudo e a metodologia dos cálculos. |
+| **Insumos** | Cadastro dos alimentos com MS, PB, NDT, forma de aquisição (saca de 60/50/40/30/25/20 kg, granel ou pastejo) e preço. Inclui um conversor livre de quilos para sacas. |
+
+A tela de **Dados** (onde os dados ficam, backup manual em JSON, exclusão de tudo e a
+metodologia dos cálculos) fica no botão de cadeado, no cabeçalho do início.
+
+## Aparência
+
+Tema escuro em verde profundo com dourado de destaque: cartões arredondados com borda
+discreta, títulos de seção com barra dourada, pílulas de ação, botão flutuante verde e
+barra inferior própria, em que a aba ativa vira um bloco dourado. Cores, medidas e peças
+reutilizáveis ficam reunidas em `NovilhaNutri/Interface/Tema.swift`.
 
 ## Funcionalidades principais
 
@@ -78,8 +90,10 @@ NovilhaNutri/
                    PlanejadorAbate, RelatorioTexto
     Dados/         CatalogoInsumos (tabela inicial de alimentos)
     Formatadores   Numeros, moeda e datas em pt-BR
-  Persistencia/    BancoLocal (JSON local), AppEstado (estado observavel)
-  Interface/       Telas SwiftUI e componentes
+  Persistencia/    BancoLocal (JSON local), AppEstado (estado observável)
+  Interface/       Tema (cores e peças visuais), Componentes,
+                   RaizView (abas), InicioView, RebanhoView, ResumoView,
+                   InsumosView, RelatorioView, DadosView
 NovilhaNutriTests/ Testes das exigencias, formulacao, conversao,
                    projecao e persistencia
 docs/METODOLOGIA.md

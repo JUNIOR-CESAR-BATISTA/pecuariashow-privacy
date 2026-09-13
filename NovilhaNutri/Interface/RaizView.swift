@@ -1,24 +1,61 @@
 import SwiftUI
 
+/// Abas principais do aplicativo.
+enum Aba: String, CaseIterable, Identifiable, Hashable {
+    case inicio
+    case rebanho
+    case racao
+    case relatorios
+    case insumos
+
+    var id: String { rawValue }
+
+    var titulo: String {
+        switch self {
+        case .inicio: return "Início"
+        case .rebanho: return "Rebanho"
+        case .racao: return "Ração"
+        case .relatorios: return "Relatórios"
+        case .insumos: return "Insumos"
+        }
+    }
+
+    var simbolo: String {
+        switch self {
+        case .inicio: return "house.fill"
+        case .rebanho: return "list.bullet.rectangle.fill"
+        case .racao: return "chart.pie.fill"
+        case .relatorios: return "doc.text.fill"
+        case .insumos: return "shippingbox.fill"
+        }
+    }
+}
+
 struct RaizView: View {
     @EnvironmentObject private var estado: AppEstado
+    @State private var aba: Aba = .inicio
 
     var body: some View {
-        TabView {
-            NavigationStack { RebanhoView() }
-                .tabItem { Label("Rebanho", systemImage: "list.bullet.rectangle") }
+        ZStack {
+            Tema.fundo.ignoresSafeArea()
 
-            NavigationStack { ResumoView() }
-                .tabItem { Label("Resumo", systemImage: "chart.pie.fill") }
-
-            NavigationStack { InsumosView() }
-                .tabItem { Label("Insumos", systemImage: "shippingbox.fill") }
-
-            NavigationStack { RelatorioView() }
-                .tabItem { Label("Relatórios", systemImage: "doc.text.fill") }
-
-            NavigationStack { DadosView() }
-                .tabItem { Label("Dados", systemImage: "lock.shield.fill") }
+            Group {
+                switch aba {
+                case .inicio:
+                    NavigationStack { InicioView(aba: $aba) }
+                case .rebanho:
+                    NavigationStack { RebanhoView() }
+                case .racao:
+                    NavigationStack { ResumoView() }
+                case .relatorios:
+                    NavigationStack { RelatorioView() }
+                case .insumos:
+                    NavigationStack { InsumosView() }
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            BarraNavegacao(selecionada: $aba)
         }
         .alert("Aviso",
                isPresented: Binding(get: { estado.mensagemErro != nil },
@@ -27,6 +64,80 @@ struct RaizView: View {
         } message: {
             Text(estado.mensagemErro ?? "")
         }
+    }
+}
+
+/// Barra inferior com a aba ativa em destaque dourado.
+struct BarraNavegacao: View {
+    @Binding var selecionada: Aba
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Aba.allCases) { aba in
+                Button {
+                    selecionada = aba
+                } label: {
+                    ItemBarra(aba: aba, ativa: aba == selecionada)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .padding(.horizontal, 6)
+        .background(
+            Tema.superficie
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Tema.borda).frame(height: 1)
+                }
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+}
+
+/// Um item da barra inferior.
+struct ItemBarra: View {
+    let aba: Aba
+    let ativa: Bool
+
+    var body: some View {
+        VStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(ativa ? Tema.ouro : Color.clear)
+                .frame(width: 46, height: 32)
+                .overlay(
+                    Image(systemName: aba.simbolo)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(ativa ? Tema.fundo : Tema.textoSuave)
+                )
+            Text(aba.titulo)
+                .font(.system(size: 11, weight: ativa ? .bold : .medium))
+                .foregroundStyle(ativa ? Tema.ouro : Tema.textoSuave)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Mensagem padrão quando ainda não existe lote cadastrado.
+struct SemLoteView: View {
+    @EnvironmentObject private var estado: AppEstado
+
+    var body: some View {
+        ScrollView {
+            EstadoVazio(simbolo: "tray",
+                        titulo: "Nenhum lote por aqui ainda",
+                        mensagem: "Cadastre um lote de novilhas na aba Rebanho para ver as exigências e os relatórios.",
+                        textoBotao: "Criar lote de exemplo") {
+                estado.criarLoteExemplo()
+            }
+            .cartao()
+            .padding(16)
+        }
+        .fundoTela()
     }
 }
 
@@ -49,22 +160,9 @@ struct SeletorLoteBotao: View {
                     }
                 }
             } label: {
-                Label("Trocar lote", systemImage: "arrow.left.arrow.right.circle")
+                Image(systemName: "arrow.left.arrow.right.circle")
+                    .foregroundStyle(Tema.ouro)
             }
-        }
-    }
-}
-
-/// Mensagem padrão quando ainda não existe lote cadastrado.
-struct SemLoteView: View {
-    @EnvironmentObject private var estado: AppEstado
-
-    var body: some View {
-        EstadoVazio(simbolo: "hare",
-                    titulo: "Nenhum lote cadastrado",
-                    mensagem: "Cadastre um lote de novilhas na aba Rebanho para ver as exigências e os relatórios.",
-                    textoBotao: "Criar lote de exemplo") {
-            estado.criarLoteExemplo()
         }
     }
 }

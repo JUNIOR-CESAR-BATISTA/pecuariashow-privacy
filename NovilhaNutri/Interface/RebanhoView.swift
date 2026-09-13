@@ -1,10 +1,16 @@
 import SwiftUI
 
+/// Lote aberto em folha de edição.
+struct FolhaLote: Identifiable {
+    let id = UUID()
+    let lote: Lote
+    let novo: Bool
+}
+
 /// Lista dos lotes cadastrados.
 struct RebanhoView: View {
     @EnvironmentObject private var estado: AppEstado
-    @State private var loteEmEdicao: Lote?
-    @State private var criandoLote = false
+    @State private var folha: FolhaLote?
 
     var body: some View {
         Group {
@@ -16,61 +22,95 @@ struct RebanhoView: View {
                                 textoBotao: "Criar lote de exemplo") {
                         estado.criarLoteExemplo()
                     }
+                    .cartao()
+                    .padding(16)
                 }
+                .fundoTela()
             } else {
-                List {
-                    Section {
-                        ForEach(estado.lotes) { lote in
-                            Button {
-                                estado.loteSelecionadoID = lote.id
-                                loteEmEdicao = lote
-                            } label: {
-                                LinhaLote(lote: lote,
-                                          selecionado: lote.id == estado.loteSelecionado?.id)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .onDelete { estado.removerLotes(em: $0) }
-                    } header: {
-                        Text("\(estado.lotes.count) lote\(estado.lotes.count == 1 ? "" : "s")")
-                    } footer: {
-                        Text("Toque em um lote para editar. Deslize para a esquerda para excluir.")
-                    }
-
-                    Section("Rebanho total") {
-                        LinhaDado(rotulo: "Animais",
-                                  valor: "\(estado.lotes.reduce(0) { $0 + $1.quantidadeAnimais })")
-                        LinhaDado(rotulo: "Peso vivo total",
-                                  valor: Formatadores.kg(estado.lotes.reduce(0) { $0 + $1.pesoTotalLote }))
-                        LinhaDado(rotulo: "Arrobas no peso atual",
-                                  valor: Formatadores.arroba(estado.lotes.reduce(0) {
-                                      $0 + $1.arrobasAtuais * Double($1.quantidadeAnimais)
-                                  }))
-                    }
-                }
+                lista
             }
         }
         .navigationTitle("Rebanho")
+        .barraEscura()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    criandoLote = true
+                    folha = FolhaLote(lote: estado.novoLote(), novo: true)
                 } label: {
-                    Label("Novo lote", systemImage: "plus")
+                    Image(systemName: "plus")
+                        .foregroundStyle(Tema.ouro)
                 }
             }
         }
-        .sheet(item: $loteEmEdicao) { lote in
-            LoteEditorView(lote: lote, novo: false)
+        .overlay(alignment: .bottomTrailing) {
+            if !estado.lotes.isEmpty {
+                BotaoFlutuante(titulo: "Novo lote") { folha = FolhaLote(lote: estado.novoLote(), novo: true) }
+                    .padding(.trailing, 18)
+                    .padding(.bottom, 12)
+            }
         }
-        .sheet(isPresented: $criandoLote) {
-            LoteEditorView(lote: estado.novoLote(), novo: true)
+        .sheet(item: $folha) { item in
+            LoteEditorView(lote: item.lote, novo: item.novo)
         }
+    }
+
+    private var lista: some View {
+        List {
+            Section {
+                ForEach(estado.lotes) { lote in
+                    Button {
+                        estado.loteSelecionadoID = lote.id
+                        folha = FolhaLote(lote: lote, novo: false)
+                    } label: {
+                        CartaoLote(lote: lote,
+                                   selecionado: lote.id == estado.loteSelecionado?.id)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .onDelete { estado.removerLotes(em: $0) }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+            } header: {
+                Text("\(estado.lotes.count) lote\(estado.lotes.count == 1 ? "" : "s")")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Tema.textoSuave)
+            }
+
+            Section {
+                VStack(spacing: 10) {
+                    LinhaDado(rotulo: "Animais",
+                              valor: "\(estado.lotes.reduce(0) { $0 + $1.quantidadeAnimais })")
+                    LinhaDado(rotulo: "Peso vivo total",
+                              valor: Formatadores.kg(estado.lotes.reduce(0) { $0 + $1.pesoTotalLote }))
+                    LinhaDado(rotulo: "Arrobas no peso atual",
+                              valor: Formatadores.arroba(estado.lotes.reduce(0) {
+                                  $0 + $1.arrobasAtuais * Double($1.quantidadeAnimais)
+                              }),
+                              destaque: true)
+                }
+                .cartao()
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+            } header: {
+                Text("Rebanho total")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Tema.textoSuave)
+            } footer: {
+                Text("Toque em um lote para editar. Deslize para a esquerda para excluir.")
+                    .font(.caption2)
+                    .foregroundStyle(Tema.textoTenue)
+                    .padding(.bottom, 90)
+            }
+        }
+        .listStyle(.plain)
+        .listaEscura()
     }
 }
 
-/// Linha da lista de lotes.
-struct LinhaLote: View {
+/// Cartão de um lote na lista do rebanho.
+struct CartaoLote: View {
     let lote: Lote
     var selecionado: Bool
 
@@ -81,43 +121,54 @@ struct LinhaLote: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
                 Text(lote.nome.isEmpty ? "Lote sem nome" : lote.nome)
-                    .font(.headline)
+                    .font(.headline.bold())
+                    .foregroundStyle(Tema.texto)
+                    .lineLimit(1)
                 if selecionado {
                     Image(systemName: "star.fill")
                         .font(.caption2)
-                        .foregroundStyle(Paleta.energia)
+                        .foregroundStyle(Tema.ouro)
                 }
-                Spacer()
+                Spacer(minLength: 6)
                 if lote.estaPronto {
-                    Etiqueta(texto: "Pronto para abate", cor: Paleta.terra)
+                    Etiqueta(texto: "Pronto para abate", cor: Tema.laranja)
                 } else {
-                    Etiqueta(texto: lote.fase.nome, cor: Paleta.verde)
+                    Etiqueta(texto: lote.fase.nome, cor: Tema.verdeClaro)
                 }
             }
 
-            HStack(spacing: 14) {
+            HStack(spacing: 16) {
                 Label("\(lote.quantidadeAnimais)", systemImage: "hare.fill")
                 Label(Formatadores.kg(lote.pesoAtual), systemImage: "scalemass.fill")
-                Label("\(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia",
+                Label("\(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/d",
                       systemImage: "arrow.up.right")
             }
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Tema.textoSuave)
 
-            ProgressView(value: progresso)
-                .tint(Paleta.verde)
-            HStack {
-                Text("\(Formatadores.numero(lote.pesoMedioInicial, casas: 0)) kg")
-                Spacer()
-                Text("meta \(Formatadores.numero(lote.pesoAlvoAbate, casas: 0)) kg")
+            VStack(alignment: .leading, spacing: 6) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Tema.superficieAlta)
+                        Capsule()
+                            .fill(lote.estaPronto ? Tema.laranja : Tema.verdeClaro)
+                            .frame(width: max(6, geo.size.width * progresso))
+                    }
+                }
+                .frame(height: 8)
+                HStack {
+                    Text("\(Formatadores.numero(lote.pesoMedioInicial, casas: 0)) kg")
+                    Spacer()
+                    Text("meta \(Formatadores.numero(lote.pesoAlvoAbate, casas: 0)) kg")
+                }
+                .font(.caption2)
+                .foregroundStyle(Tema.textoTenue)
             }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .cartao()
         .contentShape(Rectangle())
     }
 }

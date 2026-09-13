@@ -1,11 +1,24 @@
 import SwiftUI
 
+/// Telas apresentadas em folha a partir do cadastro de insumos.
+enum FolhaInsumo: Identifiable {
+    case editar(Insumo)
+    case novo
+    case conversor
+
+    var id: String {
+        switch self {
+        case .editar(let insumo): return "editar-" + insumo.id.uuidString
+        case .novo: return "novo"
+        case .conversor: return "conversor"
+        }
+    }
+}
+
 /// Cadastro de alimentos e utilitário de conversão para sacas.
 struct InsumosView: View {
     @EnvironmentObject private var estado: AppEstado
-    @State private var insumoEmEdicao: Insumo?
-    @State private var criandoInsumo = false
-    @State private var mostrarConversor = false
+    @State private var folha: FolhaInsumo?
 
     var body: some View {
         List {
@@ -15,7 +28,7 @@ struct InsumosView: View {
                     Section {
                         ForEach(lista) { insumo in
                             Button {
-                                insumoEmEdicao = insumo
+                                folha = .editar(insumo)
                             } label: {
                                 LinhaInsumo(insumo: insumo,
                                             emUso: estado.lotesQueUsam(insumoID: insumo.id))
@@ -30,12 +43,13 @@ struct InsumosView: View {
                     } header: {
                         Label(categoria.nome, systemImage: categoria.simbolo)
                     }
+                    .listRowBackground(Tema.superficie)
                 }
             }
 
             Section {
                 Button {
-                    mostrarConversor = true
+                    folha = .conversor
                 } label: {
                     Label("Conversor de quilos e sacas", systemImage: "arrow.left.arrow.right")
                 }
@@ -47,27 +61,31 @@ struct InsumosView: View {
             } footer: {
                 Text("Os teores de MS, PB e NDT são valores de referência. Ajuste conforme a análise do alimento da sua propriedade.")
             }
+            .listRowBackground(Tema.superficie)
         }
         .navigationTitle("Insumos")
+.listaEscura()
+.barraEscura()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    criandoInsumo = true
+                    folha = .novo
                 } label: {
                     Label("Novo insumo", systemImage: "plus")
                 }
             }
         }
-        .sheet(item: $insumoEmEdicao) { insumo in
-            InsumoEditorView(insumo: insumo, novo: false)
-        }
-        .sheet(isPresented: $criandoInsumo) {
-            InsumoEditorView(insumo: Insumo(nome: "", categoria: .energetico,
-                                            materiaSeca: 88, proteinaBruta: 9, ndt: 80),
-                             novo: true)
-        }
-        .sheet(isPresented: $mostrarConversor) {
-            ConversorView()
+        .sheet(item: $folha) { qual in
+            switch qual {
+            case .editar(let insumo):
+                InsumoEditorView(insumo: insumo, novo: false)
+            case .novo:
+                InsumoEditorView(insumo: Insumo(nome: "", categoria: .energetico,
+                                                materiaSeca: 88, proteinaBruta: 9, ndt: 80),
+                                 novo: true)
+            case .conversor:
+                ConversorView()
+            }
         }
     }
 }
@@ -89,7 +107,7 @@ struct LinhaInsumo: View {
             }
             Text(insumo.resumoBromatologico)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
             HStack(spacing: 10) {
                 Label(insumo.embalagem.descricao, systemImage: "shippingbox")
                 if insumo.precoUnitario > 0 {
@@ -97,7 +115,7 @@ struct LinhaInsumo: View {
                 }
             }
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Tema.textoSuave)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
@@ -129,6 +147,7 @@ struct InsumoEditorView: View {
                         }
                     }
                 }
+                .listRowBackground(Tema.superficie)
 
                 Section {
                     CampoNumerico(titulo: "Matéria seca", valor: $insumo.materiaSeca, casas: 1, sufixo: "%")
@@ -139,6 +158,7 @@ struct InsumoEditorView: View {
                 } footer: {
                     Text("PB e NDT sempre em percentual da matéria seca. Em 1 kg natural deste alimento há \(Formatadores.numero(insumo.fracaoMateriaSeca, casas: 3)) kg de matéria seca, \(Formatadores.gramas(insumo.fracaoMateriaSeca * insumo.proteinaBruta * 10)) de PB e \(Formatadores.gramas(insumo.fracaoMateriaSeca * insumo.ndt * 10)) de NDT.")
                 }
+                .listRowBackground(Tema.superficie)
 
                 Section {
                     Picker("Forma de aquisição", selection: $insumo.embalagem.tipo) {
@@ -185,11 +205,13 @@ struct InsumoEditorView: View {
                         Text("Informe o preço para que os relatórios calculem o custo do ciclo.")
                     }
                 }
+                .listRowBackground(Tema.superficie)
 
                 Section("Observação") {
                     TextField("Anotações", text: $insumo.observacao, axis: .vertical)
                         .lineLimit(1...4)
                 }
+                .listRowBackground(Tema.superficie)
 
                 if !novo {
                     Section {
@@ -205,10 +227,13 @@ struct InsumoEditorView: View {
                             Text("Este alimento é usado por \(usos) lote\(usos == 1 ? "" : "s"). Ao excluir, os lotes passam a usar o primeiro alimento disponível da categoria.")
                         }
                     }
+                    .listRowBackground(Tema.superficie)
                 }
             }
             .navigationTitle(novo ? "Novo insumo" : "Editar insumo")
             .navigationBarTitleDisplayMode(.inline)
+            .listaEscura()
+            .barraEscura()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { fechar() }
@@ -254,6 +279,7 @@ struct ConversorView: View {
                     LinhaDado(rotulo: "Em toneladas",
                               valor: "\(Formatadores.numero(quilos / 1000, casas: 3)) t")
                 }
+                .listRowBackground(Tema.superficie)
                 Section {
                     ForEach(ConversorSacas.equivalencias(kg: max(0, quilos)), id: \.kgPorUnidade) { conversao in
                         VStack(alignment: .leading, spacing: 2) {
@@ -261,7 +287,7 @@ struct ConversorView: View {
                                       valor: "\(Formatadores.numero(conversao.unidadesExatas, casas: 2)) sacas")
                             Text("\(conversao.descricao) - comprar \(conversao.descricaoCompra)")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Tema.textoSuave)
                         }
                         .padding(.vertical, 2)
                     }
@@ -270,9 +296,12 @@ struct ConversorView: View {
                 } footer: {
                     Text("A linha de compra arredonda sempre para cima, porque não se compra fração de saca.")
                 }
+                .listRowBackground(Tema.superficie)
             }
             .navigationTitle("Conversor")
             .navigationBarTitleDisplayMode(.inline)
+            .listaEscura()
+            .barraEscura()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Fechar") { fechar() }

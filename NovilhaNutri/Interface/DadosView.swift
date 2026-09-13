@@ -13,19 +13,20 @@ struct DadosView: View {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "iphone.and.arrow.forward.inward")
                         .font(.title3)
-                        .foregroundStyle(Paleta.verde)
+                        .foregroundStyle(Tema.ouro)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Tudo fica no seu aparelho")
                             .font(.subheadline.weight(.semibold))
                         Text("O aplicativo não tem servidor, conta de usuário nem sincronização. Lotes, insumos e pesagens são gravados em um arquivo dentro da área privada do próprio aplicativo e só saem dali se você exportar.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Tema.textoSuave)
                     }
                 }
                 .padding(.vertical, 4)
             } header: {
                 Text("Privacidade dos dados")
             }
+            .listRowBackground(Tema.superficie)
 
             Section("Armazenamento") {
                 LinhaDado(rotulo: "Lotes", valor: "\(estado.lotes.count)")
@@ -38,6 +39,7 @@ struct DadosView: View {
                     Label("Salvar agora", systemImage: "square.and.arrow.down")
                 }
             }
+            .listRowBackground(Tema.superficie)
 
             Section {
                 Button {
@@ -58,6 +60,7 @@ struct DadosView: View {
             } footer: {
                 Text("Gera um arquivo JSON com todos os dados. Guarde onde preferir. A exportação é sempre uma ação sua: nada é enviado automaticamente.")
             }
+            .listRowBackground(Tema.superficie)
 
             Section {
                 NavigationLink {
@@ -68,6 +71,7 @@ struct DadosView: View {
             } header: {
                 Text("Metodologia")
             }
+            .listRowBackground(Tema.superficie)
 
             Section {
                 Button(role: .destructive) {
@@ -78,17 +82,21 @@ struct DadosView: View {
             } footer: {
                 Text("Remove lotes, pesagens e insumos personalizados deste aparelho. A lista de alimentos volta ao padrão.")
             }
+            .listRowBackground(Tema.superficie)
 
             Section {
                 LinhaDado(rotulo: "Versão dos dados", valor: "\(DadosApp.versaoAtual)")
                 Text("NovilhaNutri - controle nutricional de novilhas em semiconfinamento. Os resultados são referências técnicas de planejamento e não substituem a avaliação de um zootecnista ou veterinário.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             } header: {
                 Text("Sobre")
             }
+            .listRowBackground(Tema.superficie)
         }
         .navigationTitle("Dados")
+.listaEscura()
+.barraEscura()
         .confirmationDialog("Apagar todos os dados?",
                             isPresented: $confirmandoApagar,
                             titleVisibility: .visible) {
@@ -124,6 +132,7 @@ struct MetodologiaView: View {
                 Text("As exigências são calculadas pelo sistema de energia líquida e proteína metabolizável do NRC para gado de corte, com ajustes de grupo genético e de atividade usuais em condições brasileiras. Tudo parte de três informações: peso vivo, meta de ganho e o peso em que a novilha termina.")
                     .font(.footnote)
             }
+            .listRowBackground(Tema.superficie)
 
             Section("Energia") {
                 TextoMetodo(titulo: "Mantença",
@@ -135,6 +144,7 @@ struct MetodologiaView: View {
                 TextoMetodo(titulo: "NDT",
                             corpo: "A densidade da dieta é encontrada procurando o teor de NDT em que o consumo necessário iguala o consumo previsto. O NDT diário é o consumo de matéria seca multiplicado por esse teor.")
             }
+            .listRowBackground(Tema.superficie)
 
             Section("Proteína") {
                 TextoMetodo(titulo: "Mantença",
@@ -146,6 +156,7 @@ struct MetodologiaView: View {
                 TextoMetodo(titulo: "Piso prático",
                             corpo: "Quando a conta resulta em menos proteína que o mínimo da fase (13% na desmama, 12% na recria inicial e 11% depois), o aplicativo usa o piso para não comprometer o ambiente ruminal.")
             }
+            .listRowBackground(Tema.superficie)
 
             Section("Ração e conversões") {
                 TextoMetodo(titulo: "Balanceamento",
@@ -157,15 +168,19 @@ struct MetodologiaView: View {
                 TextoMetodo(titulo: "Períodos",
                             corpo: "O ciclo é dividido em períodos. Em cada um as exigências são recalculadas no peso médio do intervalo e a ração é refeita, por isso o consumo cresce ao longo do ciclo.")
             }
+            .listRowBackground(Tema.superficie)
 
             Section {
                 Text("Os coeficientes são médias de população. Acompanhe pesagens reais e use o ajuste de consumo do lote para aproximar a previsão do que acontece no cocho.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             }
+            .listRowBackground(Tema.superficie)
         }
         .navigationTitle("Metodologia")
         .navigationBarTitleDisplayMode(.inline)
+        .listaEscura()
+        .barraEscura()
     }
 }
 
@@ -179,7 +194,7 @@ struct TextoMetodo: View {
                 .font(.subheadline.weight(.semibold))
             Text(corpo)
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
         }
         .padding(.vertical, 2)
     }

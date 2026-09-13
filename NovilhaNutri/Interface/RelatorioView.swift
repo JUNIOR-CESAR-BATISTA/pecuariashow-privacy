@@ -15,6 +15,7 @@ struct RelatorioView: View {
             }
         }
         .navigationTitle("Relatórios")
+        .barraEscura()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SeletorLoteBotao() }
         }
@@ -45,8 +46,9 @@ struct RelatorioView: View {
                 }
             }
             .padding(16)
+            .padding(.bottom, 20)
         }
-        .background(Color(.systemGroupedBackground))
+        .fundoTela()
     }
 
     // MARK: - Blocos
@@ -55,9 +57,10 @@ struct RelatorioView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(relatorio.lote.nome)
                 .font(.title2.weight(.bold))
+                .foregroundStyle(Tema.texto)
             Text("De \(Formatadores.kg(relatorio.pesoInicial)) até \(Formatadores.kg(relatorio.pesoAlvo)) com \(Formatadores.numero(relatorio.lote.ganhoMetaDiario, casas: 3)) kg/dia")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -89,8 +92,7 @@ struct RelatorioView: View {
 
     private func grafico(relatorio: RelatorioPlanejamento) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Evolução do peso")
-                .font(.headline)
+            TituloSecao(texto: "Evolução do peso")
             let pontos = pontosDoGrafico(relatorio)
             GraficoEvolucao(pontos: pontos)
                 .frame(height: 140)
@@ -100,11 +102,9 @@ struct RelatorioView: View {
                 Text(Formatadores.data(relatorio.dataAbate))
             }
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Tema.textoSuave)
         }
-        .padding(12)
-        .background(Color(.secondarySystemGroupedBackground),
-                    in: RoundedRectangle(cornerRadius: 12))
+        .cartao(espacamento: 14)
     }
 
     private func pontosDoGrafico(_ relatorio: RelatorioPlanejamento) -> [PontoGrafico] {
@@ -119,8 +119,7 @@ struct RelatorioView: View {
 
     private func abate(relatorio: RelatorioPlanejamento) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Planejamento do abate")
-                .font(.headline)
+            TituloSecao(texto: "Planejamento do abate")
             VStack(spacing: 8) {
                 LinhaDado(rotulo: "Peso vivo no abate", valor: Formatadores.kg(relatorio.pesoAlvo))
                 LinhaDado(rotulo: "Rendimento de carcaça",
@@ -136,19 +135,16 @@ struct RelatorioView: View {
                           valor: Formatadores.arroba(relatorio.arrobasProduzidasLote),
                           destaque: true)
             }
-            .padding(12)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 12))
+            .cartao(espacamento: 14)
         }
     }
 
     private func insumosDoCiclo(relatorio: RelatorioPlanejamento) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Insumos do ciclo completo")
-                .font(.headline)
+            TituloSecao(texto: "Insumos do ciclo completo")
             Text("Quantidade total para \(relatorio.animais) animais durante \(Formatadores.numero(relatorio.diasTotais, casas: 0)) dias.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
 
             VStack(spacing: 12) {
                 ForEach(relatorio.totais) { total in
@@ -162,16 +158,13 @@ struct RelatorioView: View {
                 LinhaDado(rotulo: "Consumo médio por animal por dia",
                           valor: Formatadores.kg(relatorio.consumoMedioMateriaSeca))
             }
-            .padding(12)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 12))
+            .cartao(espacamento: 14)
         }
     }
 
     private func custos(relatorio: RelatorioPlanejamento) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Custos do ciclo")
-                .font(.headline)
+            TituloSecao(texto: "Custos do ciclo")
             VStack(spacing: 8) {
                 LinhaDado(rotulo: "Custo total", valor: Formatadores.moeda(relatorio.custoTotal), destaque: true)
                 LinhaDado(rotulo: "Por animal", valor: Formatadores.moeda(relatorio.custoPorAnimal))
@@ -181,19 +174,16 @@ struct RelatorioView: View {
                           valor: Formatadores.moeda(relatorio.custoPorArroba),
                           destaque: true)
             }
-            .padding(12)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 12))
+            .cartao(espacamento: 14)
             Text("Considera apenas os alimentos com preço cadastrado. Pastejo não entra no custo.")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Tema.textoSuave)
         }
     }
 
     private func periodos(relatorio: RelatorioPlanejamento) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Períodos de \(relatorio.lote.diasPorPeriodo) dias")
-                .font(.headline)
+            TituloSecao(texto: "Períodos de \(relatorio.lote.diasPorPeriodo) dias")
             VStack(spacing: 0) {
                 ForEach(relatorio.periodos) { periodo in
                     NavigationLink {
@@ -205,9 +195,7 @@ struct RelatorioView: View {
                     if periodo.id != relatorio.periodos.last?.id { Divider() }
                 }
             }
-            .padding(12)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 12))
+            .cartao(espacamento: 14)
         }
     }
 
@@ -224,14 +212,12 @@ struct RelatorioView: View {
 
     private func avisos(_ alertas: [String]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Observações")
-                .font(.headline)
+            TituloSecao(texto: "Observações")
             ForEach(Array(alertas.enumerated()), id: \.offset) { _, texto in
                 Aviso(texto: texto)
             }
         }
-        .padding(12)
-        .background(Paleta.alerta.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .cartao(cor: Tema.laranja.opacity(0.10), espacamento: 14)
     }
 }
 
@@ -255,7 +241,7 @@ struct CartaoConsumo: View {
                 HStack(spacing: 6) {
                     Image(systemName: "shippingbox.fill")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Tema.textoSuave)
                     Text(conversao.descricao)
                         .font(.caption)
                     Spacer()
@@ -263,16 +249,16 @@ struct CartaoConsumo: View {
                 }
                 Text("\(Formatadores.numero(conversao.unidadesExatas, casas: 2)) \(conversao.nomeUnidadePlural) - \(Formatadores.numero(consumo.toneladas, casas: 2)) t")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             } else {
                 Text("Fornecido no pastejo - \(Formatadores.numero(consumo.toneladas, casas: 2)) t de matéria natural")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             }
             if consumo.custo > 0 {
                 Text("Custo \(Formatadores.moeda(consumo.custo))")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             }
         }
     }
@@ -289,15 +275,15 @@ struct LinhaPeriodo: View {
                     .font(.subheadline.weight(.medium))
                 Text("\(Formatadores.numero(periodo.pesoInicial, casas: 0)) a \(Formatadores.numero(periodo.pesoFinal, casas: 0)) kg - \(Formatadores.data(periodo.dataInicio))")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
                 Text("MS \(Formatadores.kg(periodo.exigencia.consumoMateriaSeca))/dia - PB \(Formatadores.gramas(periodo.exigencia.proteinaBrutaGramas))/dia")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Tema.textoSuave)
             }
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Tema.textoTenue)
         }
         .padding(.vertical, 8)
         .contentShape(Rectangle())
@@ -319,6 +305,7 @@ struct PeriodoDetalheView: View {
                 LinhaDado(rotulo: "Ganho no período", valor: Formatadores.kg(periodo.ganhoNoPeriodo))
                 LinhaDado(rotulo: "Animais", valor: "\(periodo.animais)")
             }
+            .listRowBackground(Tema.superficie)
 
             Section("Exigência diária por animal") {
                 LinhaDado(rotulo: "Matéria seca", valor: Formatadores.kg(periodo.exigencia.consumoMateriaSeca))
@@ -327,6 +314,7 @@ struct PeriodoDetalheView: View {
                 LinhaDado(rotulo: "NDT",
                           valor: "\(Formatadores.kg(periodo.exigencia.ndtKg)) (\(Formatadores.percentual(periodo.exigencia.ndtPercentualDieta)))")
             }
+            .listRowBackground(Tema.superficie)
 
             Section("Ração diária por animal") {
                 ForEach(periodo.composicao.itens) { item in
@@ -334,6 +322,7 @@ struct PeriodoDetalheView: View {
                               valor: "\(Formatadores.kg(item.kgMateriaNatural)) natural")
                 }
             }
+            .listRowBackground(Tema.superficie)
 
             Section {
                 ForEach(periodo.consumos) { consumo in
@@ -344,11 +333,11 @@ struct PeriodoDetalheView: View {
                         if let conversao = consumo.conversao {
                             Text("\(conversao.descricao) - comprar \(conversao.descricaoCompra)")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Tema.textoSuave)
                         } else {
                             Text("Fornecido no pastejo")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Tema.textoSuave)
                         }
                     }
                     .padding(.vertical, 2)
@@ -360,8 +349,11 @@ struct PeriodoDetalheView: View {
                     Text("Custo do período: \(Formatadores.moeda(periodo.custo)) - \(Formatadores.moeda(periodo.custoPorAnimalDia)) por animal por dia.")
                 }
             }
+            .listRowBackground(Tema.superficie)
         }
         .navigationTitle(periodo.titulo)
         .navigationBarTitleDisplayMode(.inline)
+        .listaEscura()
+        .barraEscura()
     }
 }
