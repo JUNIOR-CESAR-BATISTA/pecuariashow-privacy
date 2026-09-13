@@ -1,0 +1,3 @@
+/* Nome do aplicativo na tela de início e nos ajustes do aparelho. */
+"CFBundleDisplayName" = "NovilhaNutri";
+"CFBundleName" = "NovilhaNutri";

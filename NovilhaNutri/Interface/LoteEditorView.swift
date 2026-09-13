@@ -198,11 +198,13 @@ struct LoteEditorView: View {
                         Text(Formatadores.kg(pesagem.pesoMedio))
                             .foregroundStyle(Tema.textoSuave)
                     }
-                }
-                .onDelete { indices in
-                    let ordenadas = lote.pesagensOrdenadas
-                    let alvos = indices.map { ordenadas[$0].id }
-                    lote.pesagens.removeAll { alvos.contains($0.id) }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            lote.pesagens.removeAll { $0.id == pesagem.id }
+                        } label: {
+                            Label("Excluir", systemImage: "trash")
+                        }
+                    }
                 }
             }
             Button {

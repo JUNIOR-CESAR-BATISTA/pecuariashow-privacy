@@ -11,6 +11,7 @@ struct NovilhaNutriApp: App {
                 .environmentObject(estado)
                 .tint(Tema.ouro)
                 .preferredColorScheme(.dark)
+                .environment(\.locale, Formatadores.localeBR)
         }
         .onChange(of: faseDaCena) { _, nova in
             if nova != .active {

@@ -34,10 +34,12 @@ struct InsumosView: View {
                                             emUso: estado.lotesQueUsam(insumoID: insumo.id))
                             }
                             .buttonStyle(.plain)
-                        }
-                        .onDelete { indices in
-                            for indice in indices {
-                                estado.remover(insumoID: lista[indice].id)
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    estado.remover(insumoID: insumo.id)
+                                } label: {
+                                    Label("Excluir", systemImage: "trash")
+                                }
                             }
                         }
                     } header: {

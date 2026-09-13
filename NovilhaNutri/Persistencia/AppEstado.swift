@@ -118,11 +118,6 @@ final class AppEstado: ObservableObject {
         }
     }
 
-    func removerLotes(em indices: IndexSet) {
-        let alvos = indices.map { lotes[$0].id }
-        for alvo in alvos { remover(loteID: alvo) }
-    }
-
     /// Lote novo já apontando para os insumos disponíveis.
     func novoLote() -> Lote {
         var lote = Lote()

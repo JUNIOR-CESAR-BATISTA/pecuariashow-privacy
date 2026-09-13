@@ -66,8 +66,14 @@ struct RebanhoView: View {
                                    selecionado: lote.id == estado.loteSelecionado?.id)
                     }
                     .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            estado.remover(loteID: lote.id)
+                        } label: {
+                            Label("Excluir", systemImage: "trash")
+                        }
+                    }
                 }
-                .onDelete { estado.removerLotes(em: $0) }
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
