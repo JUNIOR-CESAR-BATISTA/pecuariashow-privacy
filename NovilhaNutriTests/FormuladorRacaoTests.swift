@@ -12,7 +12,7 @@ final class FormuladorRacaoTests: XCTestCase {
     private let soja = Insumo(nome: "Farelo de soja", categoria: .proteico,
                               materiaSeca: 89, proteinaBruta: 48.0, ndt: 82,
                               embalagem: .saca50, precoUnitario: 150)
-    private let mineral = Insumo(nome: "Nucleo", categoria: .mineral,
+    private let mineral = Insumo(nome: "Núcleo", categoria: .mineral,
                                  materiaSeca: 99, proteinaBruta: 0, ndt: 0,
                                  embalagem: .saca25, precoUnitario: 100)
 
@@ -45,14 +45,14 @@ final class FormuladorRacaoTests: XCTestCase {
         guard let volumoso = racao.itens.first(where: { $0.insumo.nome == "Pasto" }),
               let energetico = racao.itens.first(where: { $0.insumo.nome == "Milho" }),
               let proteico = racao.itens.first(where: { $0.insumo.nome == "Farelo de soja" }) else {
-            return XCTFail("Racao sem os alimentos esperados")
+            return XCTFail("Ração sem os alimentos esperados")
         }
 
         XCTAssertEqual(volumoso.kgMateriaSeca, 4.179, accuracy: 0.02)
         XCTAssertEqual(energetico.kgMateriaSeca, 2.232, accuracy: 0.02)
         XCTAssertEqual(proteico.kgMateriaSeca, 0.376, accuracy: 0.02)
 
-        // Materia natural = materia seca dividida pelo teor de MS.
+        // Matéria natural = matéria seca dividida pelo teor de MS.
         XCTAssertEqual(volumoso.kgMateriaNatural, 14.93, accuracy: 0.1)
         XCTAssertEqual(energetico.kgMateriaNatural, 2.536, accuracy: 0.02)
         XCTAssertEqual(proteico.kgMateriaNatural, 0.422, accuracy: 0.02)
@@ -78,7 +78,7 @@ final class FormuladorRacaoTests: XCTestCase {
                                              restricoes: restricoes)
 
         XCTAssertEqual(racao.status, .restrita)
-        // A proteina continua atendida.
+        // A proteína continua atendida.
         XCTAssertEqual(racao.proteinaFornecidaKg, alvo.proteinaBrutaKg, accuracy: 0.005)
         // A energia fica abaixo do exigido.
         XCTAssertLessThan(racao.balancoNDT, -0.1)
@@ -119,7 +119,7 @@ final class FormuladorRacaoTests: XCTestCase {
         }
 
         XCTAssertEqual(racao.custoDiario, esperado, accuracy: 0.0001)
-        // O pasto nao tem preco, entao nao entra no custo.
+        // O pasto não tem preço, então não entra no custo.
         XCTAssertGreaterThan(racao.custoDiario, 0)
     }
 
@@ -148,7 +148,7 @@ final class FormuladorRacaoTests: XCTestCase {
     }
 
     func testSistemaLinearSemSolucaoNaoQuebra() {
-        // Tres alimentos identicos deixam o sistema indeterminado.
+        // Três alimentos idênticos deixam o sistema indeterminado.
         let iguais = SelecaoInsumos(volumoso: pasto, energetico: pasto, proteico: pasto, mineral: nil)
         let racao = FormuladorRacao.formular(exigencia: exigencia, selecao: iguais)
 
@@ -162,7 +162,7 @@ final class FormuladorRacaoTests: XCTestCase {
         let solucao = FormuladorRacao.gaussJordan([[1, 1, 1, 6],
                                                    [0, 2, 5, -4],
                                                    [2, 5, -1, 27]])
-        guard let solucao else { return XCTFail("Sistema deveria ter solucao") }
+        guard let solucao else { return XCTFail("Sistema deveria ter solução") }
         XCTAssertEqual(solucao[0], 5, accuracy: 0.0001)
         XCTAssertEqual(solucao[1], 3, accuracy: 0.0001)
         XCTAssertEqual(solucao[2], -2, accuracy: 0.0001)

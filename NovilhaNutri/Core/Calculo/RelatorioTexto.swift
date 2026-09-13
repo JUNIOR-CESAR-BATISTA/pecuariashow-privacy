@@ -1,6 +1,6 @@
 import Foundation
 
-/// Gera a versao em texto do planejamento, para compartilhar ou imprimir.
+/// Gera a versão em texto do planejamento, para compartilhar ou imprimir.
 enum RelatorioTexto {
 
     static func gerar(_ relatorio: RelatorioPlanejamento) -> String {
@@ -10,13 +10,13 @@ enum RelatorioTexto {
         linhas.append("PLANEJAMENTO NUTRICIONAL E DE ABATE")
         linhas.append(String(repeating: "=", count: 42))
         linhas.append("Lote: \(lote.nome)")
-        linhas.append("Animais: \(relatorio.animais) cabecas")
+        linhas.append("Animais: \(relatorio.animais) cabeças")
         linhas.append("Categoria: novilhas - \(lote.fase.nome) - \(lote.grupoGenetico.nomeCurto)")
         linhas.append("Sistema: \(lote.sistema.nome)")
         linhas.append("")
 
         guard relatorio.viavel else {
-            linhas.append("Sem projecao disponivel.")
+            linhas.append("Sem projeção disponível.")
             linhas.append(contentsOf: relatorio.alertas.map { "- " + $0 })
             return linhas.joined(separator: "\n")
         }
@@ -24,21 +24,21 @@ enum RelatorioTexto {
         linhas.append("METAS")
         linhas.append("Peso atual: \(Formatadores.kg(relatorio.pesoInicial))")
         linhas.append("Peso alvo de abate: \(Formatadores.kg(relatorio.pesoAlvo))")
-        linhas.append("Ganho medio diario: \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia")
-        linhas.append("Periodo: \(Formatadores.duracao(dias: relatorio.diasTotais)) (\(Formatadores.numero(relatorio.diasTotais, casas: 0)) dias)")
-        linhas.append("Inicio: \(Formatadores.data(relatorio.dataInicio))")
+        linhas.append("Ganho médio diário: \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia")
+        linhas.append("Período: \(Formatadores.duracao(dias: relatorio.diasTotais)) (\(Formatadores.numero(relatorio.diasTotais, casas: 0)) dias)")
+        linhas.append("Início: \(Formatadores.data(relatorio.dataInicio))")
         linhas.append("Abate previsto: \(Formatadores.data(relatorio.dataAbate))")
         linhas.append("")
 
-        linhas.append("PRODUCAO PREVISTA")
+        linhas.append("PRODUÇÃO PREVISTA")
         linhas.append("Ganho por animal: \(Formatadores.kg(relatorio.ganhoPorAnimal))")
         linhas.append("Ganho do lote: \(Formatadores.kg(relatorio.ganhoTotalLote))")
-        linhas.append("Rendimento de carcaca: \(Formatadores.percentual(lote.rendimentoCarcaca * 100))")
-        linhas.append("Carcaca por animal: \(Formatadores.kg(relatorio.pesoCarcacaFinal)) (\(Formatadores.arroba(relatorio.arrobasFinais)))")
+        linhas.append("Rendimento de carcaça: \(Formatadores.percentual(lote.rendimentoCarcaca * 100))")
+        linhas.append("Carcaça por animal: \(Formatadores.kg(relatorio.pesoCarcacaFinal)) (\(Formatadores.arroba(relatorio.arrobasFinais)))")
         linhas.append("Arrobas produzidas por animal: \(Formatadores.arroba(relatorio.arrobasProduzidasPorAnimal))")
         linhas.append("Arrobas produzidas no lote: \(Formatadores.arroba(relatorio.arrobasProduzidasLote))")
         linhas.append("Arrobas totais no abate: \(Formatadores.arroba(relatorio.arrobasTotaisLote))")
-        linhas.append("Conversao alimentar: \(Formatadores.numero(relatorio.conversaoAlimentar)) kg MS por kg de ganho")
+        linhas.append("Conversão alimentar: \(Formatadores.numero(relatorio.conversaoAlimentar)) kg MS por kg de ganho")
         linhas.append("")
 
         linhas.append("INSUMOS DO CICLO COMPLETO")
@@ -66,12 +66,12 @@ enum RelatorioTexto {
             linhas.append("")
         }
 
-        linhas.append("PERIODOS")
+        linhas.append("PERÍODOS")
         for periodo in relatorio.periodos {
             linhas.append("\(periodo.titulo): \(Formatadores.data(periodo.dataInicio)) a \(Formatadores.data(periodo.dataFim)) (\(Formatadores.numero(periodo.dias, casas: 0)) dias)")
             linhas.append("  Peso \(Formatadores.numero(periodo.pesoInicial, casas: 0)) a \(Formatadores.numero(periodo.pesoFinal, casas: 0)) kg")
-            linhas.append("  Exigencia diaria por animal: MS \(Formatadores.kg(periodo.exigencia.consumoMateriaSeca)), PB \(Formatadores.gramas(periodo.exigencia.proteinaBrutaGramas)), NDT \(Formatadores.kg(periodo.exigencia.ndtKg))")
-            linhas.append("  Dieta: \(Formatadores.percentual(periodo.exigencia.proteinaBrutaPercentualDieta)) PB e \(Formatadores.percentual(periodo.exigencia.ndtPercentualDieta)) NDT na materia seca")
+            linhas.append("  Exigência diária por animal: MS \(Formatadores.kg(periodo.exigencia.consumoMateriaSeca)), PB \(Formatadores.gramas(periodo.exigencia.proteinaBrutaGramas)), NDT \(Formatadores.kg(periodo.exigencia.ndtKg))")
+            linhas.append("  Dieta: \(Formatadores.percentual(periodo.exigencia.proteinaBrutaPercentualDieta)) PB e \(Formatadores.percentual(periodo.exigencia.ndtPercentualDieta)) NDT na matéria seca")
             for consumo in periodo.consumos {
                 var texto = "  - \(consumo.insumo.nome): \(Formatadores.numero(consumo.kgMateriaNatural, casas: 0)) kg"
                 if let conversao = consumo.conversao {
@@ -80,18 +80,18 @@ enum RelatorioTexto {
                 linhas.append(texto)
             }
             if periodo.custo > 0 {
-                linhas.append("  Custo do periodo: \(Formatadores.moeda(periodo.custo))")
+                linhas.append("  Custo do período: \(Formatadores.moeda(periodo.custo))")
             }
         }
 
         if !relatorio.alertas.isEmpty {
             linhas.append("")
-            linhas.append("OBSERVACOES")
+            linhas.append("OBSERVAÇÕES")
             linhas.append(contentsOf: relatorio.alertas.map { "- " + $0 })
         }
 
         linhas.append("")
-        linhas.append("Gerado pelo NovilhaNutri. Calculos de referencia; ajuste conforme o desempenho observado e a orientacao do responsavel tecnico.")
+        linhas.append("Gerado pelo NovilhaNutri. Cálculos de referência; ajuste conforme o desempenho observado e a orientação do responsável técnico.")
         return linhas.joined(separator: "\n")
     }
 }

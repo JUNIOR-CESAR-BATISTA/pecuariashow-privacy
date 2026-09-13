@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Resumo diario do lote: exigencias, racao e balanco.
+/// Resumo diário do lote: exigências, ração e balanço.
 struct ResumoView: View {
     @EnvironmentObject private var estado: AppEstado
     @State private var mostrarDetalhes = false
@@ -15,7 +15,7 @@ struct ResumoView: View {
                 SemLoteView()
             }
         }
-        .navigationTitle("Resumo diario")
+        .navigationTitle("Resumo diário")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SeletorLoteBotao() }
         }
@@ -53,7 +53,7 @@ struct ResumoView: View {
                 Etiqueta(texto: lote.sistema.nome, cor: Paleta.terra)
                 Etiqueta(texto: "\(lote.quantidadeAnimais) cab", cor: Paleta.proteina)
             }
-            Text("Peso medio atual \(Formatadores.kg(lote.pesoAtual)) - meta de ganho \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia")
+            Text("Peso médio atual \(Formatadores.kg(lote.pesoAtual)) - meta de ganho \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -62,27 +62,27 @@ struct ResumoView: View {
 
     private func indicadores(lote: Lote, exigencia: ExigenciaDiaria) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Exigencias por animal por dia")
+            Text("Exigências por animal por dia")
                 .font(.headline)
             LazyVGrid(columns: colunas, spacing: 10) {
-                CartaoIndicador(titulo: "Proteina bruta",
+                CartaoIndicador(titulo: "Proteína bruta",
                                 valor: Formatadores.gramas(exigencia.proteinaBrutaGramas),
-                                detalhe: "\(Formatadores.percentual(exigencia.proteinaBrutaPercentualDieta)) da materia seca",
+                                detalhe: "\(Formatadores.percentual(exigencia.proteinaBrutaPercentualDieta)) da matéria seca",
                                 simbolo: "bolt.fill",
                                 cor: Paleta.proteina)
                 CartaoIndicador(titulo: "NDT",
                                 valor: Formatadores.kg(exigencia.ndtKg),
-                                detalhe: "\(Formatadores.percentual(exigencia.ndtPercentualDieta)) da materia seca",
+                                detalhe: "\(Formatadores.percentual(exigencia.ndtPercentualDieta)) da matéria seca",
                                 simbolo: "flame.fill",
                                 cor: Paleta.energia)
-                CartaoIndicador(titulo: "Materia seca",
+                CartaoIndicador(titulo: "Matéria seca",
                                 valor: Formatadores.kg(exigencia.consumoMateriaSeca),
                                 detalhe: "\(Formatadores.percentual(exigencia.consumoPercentualPeso)) do peso vivo",
                                 simbolo: "leaf.fill",
                                 cor: Paleta.verde)
                 CartaoIndicador(titulo: "Ganho considerado",
                                 valor: "\(Formatadores.numero(exigencia.ganhoDiario, casas: 3)) kg/d",
-                                detalhe: exigencia.metaAtingivel ? "Meta viavel neste peso" : "Meta reduzida ao maximo possivel",
+                                detalhe: exigencia.metaAtingivel ? "Meta viável neste peso" : "Meta reduzida ao máximo possível",
                                 simbolo: "arrow.up.right",
                                 cor: exigencia.metaAtingivel ? Paleta.verde : Paleta.alerta)
             }
@@ -95,7 +95,7 @@ struct ResumoView: View {
     private func racaoDiaria(lote: Lote, composicao: ComposicaoRacao) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Composicao da racao diaria")
+                Text("Composição da ração diária")
                     .font(.headline)
                 Spacer()
                 Etiqueta(texto: composicao.status.nome,
@@ -103,7 +103,7 @@ struct ResumoView: View {
             }
 
             if composicao.itens.isEmpty {
-                Text("Selecione os insumos da racao na edicao do lote.")
+                Text("Selecione os insumos da ração na edição do lote.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
@@ -137,7 +137,7 @@ struct ResumoView: View {
                 .background(Color(.secondarySystemGroupedBackground),
                             in: RoundedRectangle(cornerRadius: 12))
 
-                Text("Volumoso \(Formatadores.percentual(composicao.percentualVolumoso, casas: 0)) e concentrado \(Formatadores.percentual(composicao.percentualConcentrado, casas: 0)) da materia seca.")
+                Text("Volumoso \(Formatadores.percentual(composicao.percentualVolumoso, casas: 0)) e concentrado \(Formatadores.percentual(composicao.percentualConcentrado, casas: 0)) da matéria seca.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -178,7 +178,7 @@ struct ResumoView: View {
                 }
                 if composicao.custoDiario > 0 {
                     Divider()
-                    LinhaDado(rotulo: "Custo diario do lote",
+                    LinhaDado(rotulo: "Custo diário do lote",
                               valor: Formatadores.moeda(composicao.custoDiario * Double(lote.quantidadeAnimais)),
                               destaque: true)
                     LinhaDado(rotulo: "Custo por animal por dia",
@@ -193,7 +193,7 @@ struct ResumoView: View {
 
     private func balanco(composicao: ComposicaoRacao, ganho: GanhoEsperado, lote: Lote) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Balanco da dieta")
+            Text("Balanço da dieta")
                 .font(.headline)
             VStack(spacing: 8) {
                 LinhaDado(rotulo: "PB fornecida",
@@ -212,7 +212,7 @@ struct ResumoView: View {
                           valor: Formatadores.kg(composicao.balancoNDT),
                           cor: composicao.balancoNDT < -0.02 ? Paleta.alerta : Paleta.verde)
                 Divider()
-                LinhaDado(rotulo: "Ganho esperado com esta racao",
+                LinhaDado(rotulo: "Ganho esperado com esta ração",
                           valor: "\(Formatadores.numero(ganho.ganho, casas: 3)) kg/dia",
                           destaque: true)
                 LinhaDado(rotulo: "Nutriente limitante", valor: ganho.nutrienteLimitante)
@@ -226,13 +226,13 @@ struct ResumoView: View {
     private func detalhamento(exigencia: ExigenciaDiaria, lote: Lote) -> some View {
         DisclosureGroup(isExpanded: $mostrarDetalhes) {
             VStack(spacing: 8) {
-                LinhaDado(rotulo: "Energia liquida de mantenca",
+                LinhaDado(rotulo: "Energia líquida de mantença",
                           valor: "\(Formatadores.numero(exigencia.energiaLiquidaMantenca)) Mcal/d")
                 LinhaDado(rotulo: "Energia retida no ganho",
                           valor: "\(Formatadores.numero(exigencia.energiaLiquidaGanho)) Mcal/d")
-                LinhaDado(rotulo: "Energia metabolizavel",
+                LinhaDado(rotulo: "Energia metabolizável",
                           valor: "\(Formatadores.numero(exigencia.energiaMetabolizavel)) Mcal/d")
-                LinhaDado(rotulo: "PM de mantenca",
+                LinhaDado(rotulo: "PM de mantença",
                           valor: Formatadores.gramas(exigencia.proteinaMetabolizavelMantenca))
                 LinhaDado(rotulo: "PM para ganho",
                           valor: Formatadores.gramas(exigencia.proteinaMetabolizavelGanho))
@@ -240,12 +240,12 @@ struct ResumoView: View {
                           valor: Formatadores.gramas(exigencia.proteinaMetabolizavelTotal))
                 LinhaDado(rotulo: "Peso equivalente",
                           valor: Formatadores.kg(MotorExigencias.pesoEquivalente(lote.perfilAtual)))
-                LinhaDado(rotulo: "Ganho maximo neste peso",
+                LinhaDado(rotulo: "Ganho máximo neste peso",
                           valor: "\(Formatadores.numero(MotorExigencias.ganhoMaximo(lote.perfilAtual), casas: 3)) kg/d")
             }
             .padding(.top, 8)
         } label: {
-            Text("Detalhamento tecnico")
+            Text("Detalhamento técnico")
                 .font(.headline)
         }
         .padding(12)
@@ -258,7 +258,7 @@ struct ResumoView: View {
         let todos = exigencia.alertas + composicao.alertas
         if !todos.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Observacoes")
+                Text("Observações")
                     .font(.headline)
                 ForEach(Array(todos.enumerated()), id: \.offset) { _, texto in
                     Aviso(texto: texto)
@@ -271,7 +271,7 @@ struct ResumoView: View {
     }
 }
 
-/// Cabecalho da tabela de racao.
+/// Cabeçalho da tabela de ração.
 struct CabecalhoTabelaRacao: View {
     var body: some View {
         HStack {
@@ -292,7 +292,7 @@ struct CabecalhoTabelaRacao: View {
     }
 }
 
-/// Linha de um alimento na racao diaria.
+/// Linha de um alimento na ração diária.
 struct LinhaRacao: View {
     let item: ItemRacao
     let participacao: Double

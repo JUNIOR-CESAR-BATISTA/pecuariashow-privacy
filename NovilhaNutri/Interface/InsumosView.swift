@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Cadastro de alimentos e utilitario de conversao para sacas.
+/// Cadastro de alimentos e utilitário de conversão para sacas.
 struct InsumosView: View {
     @EnvironmentObject private var estado: AppEstado
     @State private var insumoEmEdicao: Insumo?
@@ -42,10 +42,10 @@ struct InsumosView: View {
                 Button {
                     estado.restaurarCatalogoPadrao()
                 } label: {
-                    Label("Restaurar alimentos padrao", systemImage: "arrow.counterclockwise")
+                    Label("Restaurar alimentos padrão", systemImage: "arrow.counterclockwise")
                 }
             } footer: {
-                Text("Os teores de MS, PB e NDT sao valores de referencia. Ajuste conforme a analise do alimento da sua propriedade.")
+                Text("Os teores de MS, PB e NDT são valores de referência. Ajuste conforme a análise do alimento da sua propriedade.")
             }
         }
         .navigationTitle("Insumos")
@@ -104,7 +104,7 @@ struct LinhaInsumo: View {
     }
 }
 
-/// Formulario de um alimento.
+/// Formulário de um alimento.
 struct InsumoEditorView: View {
     @EnvironmentObject private var estado: AppEstado
     @Environment(\.dismiss) private var fechar
@@ -121,7 +121,7 @@ struct InsumoEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Identificacao") {
+                Section("Identificação") {
                     TextField("Nome", text: $insumo.nome)
                     Picker("Categoria", selection: $insumo.categoria) {
                         ForEach(CategoriaInsumo.allCases) { categoria in
@@ -131,17 +131,17 @@ struct InsumoEditorView: View {
                 }
 
                 Section {
-                    CampoNumerico(titulo: "Materia seca", valor: $insumo.materiaSeca, casas: 1, sufixo: "%")
-                    CampoNumerico(titulo: "Proteina bruta", valor: $insumo.proteinaBruta, casas: 1, sufixo: "%")
+                    CampoNumerico(titulo: "Matéria seca", valor: $insumo.materiaSeca, casas: 1, sufixo: "%")
+                    CampoNumerico(titulo: "Proteína bruta", valor: $insumo.proteinaBruta, casas: 1, sufixo: "%")
                     CampoNumerico(titulo: "NDT", valor: $insumo.ndt, casas: 1, sufixo: "%")
                 } header: {
-                    Text("Composicao")
+                    Text("Composição")
                 } footer: {
-                    Text("PB e NDT sempre em percentual da materia seca. Em 1 kg natural deste alimento ha \(Formatadores.numero(insumo.fracaoMateriaSeca, casas: 3)) kg de materia seca, \(Formatadores.gramas(insumo.fracaoMateriaSeca * insumo.proteinaBruta * 10)) de PB e \(Formatadores.gramas(insumo.fracaoMateriaSeca * insumo.ndt * 10)) de NDT.")
+                    Text("PB e NDT sempre em percentual da matéria seca. Em 1 kg natural deste alimento há \(Formatadores.numero(insumo.fracaoMateriaSeca, casas: 3)) kg de matéria seca, \(Formatadores.gramas(insumo.fracaoMateriaSeca * insumo.proteinaBruta * 10)) de PB e \(Formatadores.gramas(insumo.fracaoMateriaSeca * insumo.ndt * 10)) de NDT.")
                 }
 
                 Section {
-                    Picker("Forma de aquisicao", selection: $insumo.embalagem.tipo) {
+                    Picker("Forma de aquisição", selection: $insumo.embalagem.tipo) {
                         ForEach(Embalagem.Tipo.allCases) { tipo in
                             Text(tipo.nome).tag(tipo)
                         }
@@ -178,16 +178,16 @@ struct InsumoEditorView: View {
                     Text("Compra")
                 } footer: {
                     if insumo.embalagem.tipo != .pastejo && insumo.precoUnitario > 0 {
-                        Text("Equivale a \(Formatadores.moeda(insumo.precoPorKg)) por quilo natural e \(Formatadores.moeda(insumo.precoPorKgMateriaSeca)) por quilo de materia seca.")
+                        Text("Equivale a \(Formatadores.moeda(insumo.precoPorKg)) por quilo natural e \(Formatadores.moeda(insumo.precoPorKgMateriaSeca)) por quilo de matéria seca.")
                     } else if insumo.embalagem.tipo == .pastejo {
-                        Text("Alimentos de pastejo nao entram na lista de compras nem no custo da racao.")
+                        Text("Alimentos de pastejo não entram na lista de compras nem no custo da ração.")
                     } else {
-                        Text("Informe o preco para que os relatorios calculem o custo do ciclo.")
+                        Text("Informe o preço para que os relatórios calculem o custo do ciclo.")
                     }
                 }
 
-                Section("Observacao") {
-                    TextField("Anotacoes", text: $insumo.observacao, axis: .vertical)
+                Section("Observação") {
+                    TextField("Anotações", text: $insumo.observacao, axis: .vertical)
                         .lineLimit(1...4)
                 }
 
@@ -202,7 +202,7 @@ struct InsumoEditorView: View {
                     } footer: {
                         let usos = estado.lotesQueUsam(insumoID: insumo.id)
                         if usos > 0 {
-                            Text("Este alimento e usado por \(usos) lote\(usos == 1 ? "" : "s"). Ao excluir, os lotes passam a usar o primeiro alimento disponivel da categoria.")
+                            Text("Este alimento é usado por \(usos) lote\(usos == 1 ? "" : "s"). Ao excluir, os lotes passam a usar o primeiro alimento disponível da categoria.")
                         }
                     }
                 }
@@ -221,7 +221,7 @@ struct InsumoEditorView: View {
     }
 
     private var precoTitulo: String {
-        insumo.embalagem.tipo == .granel ? "Preco por tonelada" : "Preco por saca"
+        insumo.embalagem.tipo == .granel ? "Preço por tonelada" : "Preço por saca"
     }
 
     private func salvar() {
@@ -266,9 +266,9 @@ struct ConversorView: View {
                         .padding(.vertical, 2)
                     }
                 } header: {
-                    Text("Equivalencia nos tamanhos de mercado")
+                    Text("Equivalência nos tamanhos de mercado")
                 } footer: {
-                    Text("A linha de compra arredonda sempre para cima, porque nao se compra fracao de saca.")
+                    Text("A linha de compra arredonda sempre para cima, porque não se compra fração de saca.")
                 }
             }
             .navigationTitle("Conversor")

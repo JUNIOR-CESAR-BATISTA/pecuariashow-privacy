@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Relatorios de planejamento do abate e de compra de insumos.
+/// Relatórios de planejamento do abate e de compra de insumos.
 struct RelatorioView: View {
     @EnvironmentObject private var estado: AppEstado
 
@@ -14,7 +14,7 @@ struct RelatorioView: View {
                 SemLoteView()
             }
         }
-        .navigationTitle("Relatorios")
+        .navigationTitle("Relatórios")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SeletorLoteBotao() }
         }
@@ -37,7 +37,7 @@ struct RelatorioView: View {
                     compartilhar(relatorio: relatorio)
                 } else {
                     EstadoVazio(simbolo: "doc.text.magnifyingglass",
-                                titulo: "Sem projecao",
+                                titulo: "Sem projeção",
                                 mensagem: relatorio.alertas.first ?? "Ajuste os dados do lote para gerar o planejamento.")
                 }
                 if !relatorio.alertas.isEmpty && relatorio.viavel {
@@ -55,7 +55,7 @@ struct RelatorioView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(relatorio.lote.nome)
                 .font(.title2.weight(.bold))
-            Text("De \(Formatadores.kg(relatorio.pesoInicial)) ate \(Formatadores.kg(relatorio.pesoAlvo)) com \(Formatadores.numero(relatorio.lote.ganhoMetaDiario, casas: 3)) kg/dia")
+            Text("De \(Formatadores.kg(relatorio.pesoInicial)) até \(Formatadores.kg(relatorio.pesoAlvo)) com \(Formatadores.numero(relatorio.lote.ganhoMetaDiario, casas: 3)) kg/dia")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -64,14 +64,14 @@ struct RelatorioView: View {
 
     private func indicadores(relatorio: RelatorioPlanejamento) -> some View {
         LazyVGrid(columns: colunas, spacing: 10) {
-            CartaoIndicador(titulo: "Dias ate o abate",
+            CartaoIndicador(titulo: "Dias até o abate",
                             valor: Formatadores.numero(relatorio.diasTotais, casas: 0),
                             detalhe: Formatadores.duracao(dias: relatorio.diasTotais),
                             simbolo: "calendar",
                             cor: Paleta.terra)
             CartaoIndicador(titulo: "Data prevista",
                             valor: Formatadores.data(relatorio.dataAbate),
-                            detalhe: "Inicio em \(Formatadores.data(relatorio.dataInicio))",
+                            detalhe: "Início em \(Formatadores.data(relatorio.dataInicio))",
                             simbolo: "flag.checkered",
                             cor: Paleta.verde)
             CartaoIndicador(titulo: "Arrobas produzidas",
@@ -79,7 +79,7 @@ struct RelatorioView: View {
                             detalhe: "\(Formatadores.arroba(relatorio.arrobasProduzidasPorAnimal)) por animal",
                             simbolo: "scalemass",
                             cor: Paleta.proteina)
-            CartaoIndicador(titulo: "Conversao alimentar",
+            CartaoIndicador(titulo: "Conversão alimentar",
                             valor: Formatadores.numero(relatorio.conversaoAlimentar),
                             detalhe: "kg de MS por kg de ganho",
                             simbolo: "arrow.triangle.2.circlepath",
@@ -89,7 +89,7 @@ struct RelatorioView: View {
 
     private func grafico(relatorio: RelatorioPlanejamento) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Evolucao do peso")
+            Text("Evolução do peso")
                 .font(.headline)
             let pontos = pontosDoGrafico(relatorio)
             GraficoEvolucao(pontos: pontos)
@@ -123,11 +123,11 @@ struct RelatorioView: View {
                 .font(.headline)
             VStack(spacing: 8) {
                 LinhaDado(rotulo: "Peso vivo no abate", valor: Formatadores.kg(relatorio.pesoAlvo))
-                LinhaDado(rotulo: "Rendimento de carcaca",
+                LinhaDado(rotulo: "Rendimento de carcaça",
                           valor: Formatadores.percentual(relatorio.lote.rendimentoCarcaca * 100))
-                LinhaDado(rotulo: "Carcaca por animal",
+                LinhaDado(rotulo: "Carcaça por animal",
                           valor: "\(Formatadores.kg(relatorio.pesoCarcacaFinal)) - \(Formatadores.arroba(relatorio.arrobasFinais))")
-                LinhaDado(rotulo: "Carcaca do lote",
+                LinhaDado(rotulo: "Carcaça do lote",
                           valor: "\(Formatadores.kg(relatorio.pesoCarcacaFinal * Double(relatorio.animais))) - \(Formatadores.arroba(relatorio.arrobasTotaisLote))")
                 Divider()
                 LinhaDado(rotulo: "Ganho por animal", valor: Formatadores.kg(relatorio.ganhoPorAnimal))
@@ -156,10 +156,10 @@ struct RelatorioView: View {
                     if total.id != relatorio.totais.last?.id { Divider() }
                 }
                 Divider()
-                LinhaDado(rotulo: "Materia seca total do lote",
+                LinhaDado(rotulo: "Matéria seca total do lote",
                           valor: Formatadores.kg(relatorio.materiaSecaTotal),
                           destaque: true)
-                LinhaDado(rotulo: "Consumo medio por animal por dia",
+                LinhaDado(rotulo: "Consumo médio por animal por dia",
                           valor: Formatadores.kg(relatorio.consumoMedioMateriaSeca))
             }
             .padding(12)
@@ -184,7 +184,7 @@ struct RelatorioView: View {
             .padding(12)
             .background(Color(.secondarySystemGroupedBackground),
                         in: RoundedRectangle(cornerRadius: 12))
-            Text("Considera apenas os alimentos com preco cadastrado. Pastejo nao entra no custo.")
+            Text("Considera apenas os alimentos com preço cadastrado. Pastejo não entra no custo.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -192,7 +192,7 @@ struct RelatorioView: View {
 
     private func periodos(relatorio: RelatorioPlanejamento) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Periodos de \(relatorio.lote.diasPorPeriodo) dias")
+            Text("Períodos de \(relatorio.lote.diasPorPeriodo) dias")
                 .font(.headline)
             VStack(spacing: 0) {
                 ForEach(relatorio.periodos) { periodo in
@@ -214,7 +214,7 @@ struct RelatorioView: View {
     private func compartilhar(relatorio: RelatorioPlanejamento) -> some View {
         ShareLink(item: RelatorioTexto.gerar(relatorio),
                   preview: SharePreview("Planejamento - \(relatorio.lote.nome)")) {
-            Label("Compartilhar relatorio completo", systemImage: "square.and.arrow.up")
+            Label("Compartilhar relatório completo", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(Paleta.verde, in: RoundedRectangle(cornerRadius: 12))
@@ -224,7 +224,7 @@ struct RelatorioView: View {
 
     private func avisos(_ alertas: [String]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Observacoes")
+            Text("Observações")
                 .font(.headline)
             ForEach(Array(alertas.enumerated()), id: \.offset) { _, texto in
                 Aviso(texto: texto)
@@ -235,7 +235,7 @@ struct RelatorioView: View {
     }
 }
 
-/// Cartao com o total de um insumo em quilos e sacas.
+/// Cartão com o total de um insumo em quilos e sacas.
 struct CartaoConsumo: View {
     let consumo: ConsumoInsumo
 
@@ -265,7 +265,7 @@ struct CartaoConsumo: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Fornecido no pastejo - \(Formatadores.numero(consumo.toneladas, casas: 2)) t de materia natural")
+                Text("Fornecido no pastejo - \(Formatadores.numero(consumo.toneladas, casas: 2)) t de matéria natural")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -278,7 +278,7 @@ struct CartaoConsumo: View {
     }
 }
 
-/// Linha resumida de um periodo.
+/// Linha resumida de um período.
 struct LinhaPeriodo: View {
     let periodo: PeriodoPlano
 
@@ -304,31 +304,31 @@ struct LinhaPeriodo: View {
     }
 }
 
-/// Detalhe de um periodo do planejamento.
+/// Detalhe de um período do planejamento.
 struct PeriodoDetalheView: View {
     let periodo: PeriodoPlano
     let lote: Lote
 
     var body: some View {
         List {
-            Section("Periodo") {
-                LinhaDado(rotulo: "Inicio", valor: Formatadores.data(periodo.dataInicio))
+            Section("Período") {
+                LinhaDado(rotulo: "Início", valor: Formatadores.data(periodo.dataInicio))
                 LinhaDado(rotulo: "Fim", valor: Formatadores.data(periodo.dataFim))
-                LinhaDado(rotulo: "Duracao", valor: "\(Formatadores.numero(periodo.dias, casas: 0)) dias")
-                LinhaDado(rotulo: "Peso medio", valor: Formatadores.kg(periodo.pesoMedio))
-                LinhaDado(rotulo: "Ganho no periodo", valor: Formatadores.kg(periodo.ganhoNoPeriodo))
+                LinhaDado(rotulo: "Duração", valor: "\(Formatadores.numero(periodo.dias, casas: 0)) dias")
+                LinhaDado(rotulo: "Peso médio", valor: Formatadores.kg(periodo.pesoMedio))
+                LinhaDado(rotulo: "Ganho no período", valor: Formatadores.kg(periodo.ganhoNoPeriodo))
                 LinhaDado(rotulo: "Animais", valor: "\(periodo.animais)")
             }
 
-            Section("Exigencia diaria por animal") {
-                LinhaDado(rotulo: "Materia seca", valor: Formatadores.kg(periodo.exigencia.consumoMateriaSeca))
-                LinhaDado(rotulo: "Proteina bruta",
+            Section("Exigência diária por animal") {
+                LinhaDado(rotulo: "Matéria seca", valor: Formatadores.kg(periodo.exigencia.consumoMateriaSeca))
+                LinhaDado(rotulo: "Proteína bruta",
                           valor: "\(Formatadores.gramas(periodo.exigencia.proteinaBrutaGramas)) (\(Formatadores.percentual(periodo.exigencia.proteinaBrutaPercentualDieta)))")
                 LinhaDado(rotulo: "NDT",
                           valor: "\(Formatadores.kg(periodo.exigencia.ndtKg)) (\(Formatadores.percentual(periodo.exigencia.ndtPercentualDieta)))")
             }
 
-            Section("Racao diaria por animal") {
+            Section("Ração diária por animal") {
                 ForEach(periodo.composicao.itens) { item in
                     LinhaDado(rotulo: item.insumo.nome,
                               valor: "\(Formatadores.kg(item.kgMateriaNatural)) natural")
@@ -354,10 +354,10 @@ struct PeriodoDetalheView: View {
                     .padding(.vertical, 2)
                 }
             } header: {
-                Text("Total do periodo para o lote")
+                Text("Total do período para o lote")
             } footer: {
                 if periodo.custo > 0 {
-                    Text("Custo do periodo: \(Formatadores.moeda(periodo.custo)) - \(Formatadores.moeda(periodo.custoPorAnimalDia)) por animal por dia.")
+                    Text("Custo do período: \(Formatadores.moeda(periodo.custo)) - \(Formatadores.moeda(periodo.custoPorAnimalDia)) por animal por dia.")
                 }
             }
         }

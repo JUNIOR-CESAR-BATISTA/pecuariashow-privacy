@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Informacoes sobre o armazenamento local, backup manual e metodologia.
+/// Informações sobre o armazenamento local, backup manual e metodologia.
 struct DadosView: View {
     @EnvironmentObject private var estado: AppEstado
     @State private var arquivoBackup: URL?
@@ -17,7 +17,7 @@ struct DadosView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Tudo fica no seu aparelho")
                             .font(.subheadline.weight(.semibold))
-                        Text("O aplicativo nao tem servidor, conta de usuario nem sincronizacao. Lotes, insumos e pesagens sao gravados em um arquivo dentro da area privada do proprio aplicativo e so saem dali se voce exportar.")
+                        Text("O aplicativo não tem servidor, conta de usuário nem sincronização. Lotes, insumos e pesagens são gravados em um arquivo dentro da área privada do próprio aplicativo e só saem dali se você exportar.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -56,14 +56,14 @@ struct DadosView: View {
             } header: {
                 Text("Backup manual")
             } footer: {
-                Text("Gera um arquivo JSON com todos os dados. Guarde onde preferir. A exportacao e sempre uma acao sua: nada e enviado automaticamente.")
+                Text("Gera um arquivo JSON com todos os dados. Guarde onde preferir. A exportação é sempre uma ação sua: nada é enviado automaticamente.")
             }
 
             Section {
                 NavigationLink {
                     MetodologiaView()
                 } label: {
-                    Label("Como os calculos sao feitos", systemImage: "function")
+                    Label("Como os cálculos são feitos", systemImage: "function")
                 }
             } header: {
                 Text("Metodologia")
@@ -76,12 +76,12 @@ struct DadosView: View {
                     Label("Apagar todos os dados", systemImage: "trash")
                 }
             } footer: {
-                Text("Remove lotes, pesagens e insumos personalizados deste aparelho. A lista de alimentos volta ao padrao.")
+                Text("Remove lotes, pesagens e insumos personalizados deste aparelho. A lista de alimentos volta ao padrão.")
             }
 
             Section {
-                LinhaDado(rotulo: "Versao dos dados", valor: "\(DadosApp.versaoAtual)")
-                Text("NovilhaNutri - controle nutricional de novilhas em semiconfinamento. Os resultados sao referencias tecnicas de planejamento e nao substituem a avaliacao de um zootecnista ou veterinario.")
+                LinhaDado(rotulo: "Versão dos dados", valor: "\(DadosApp.versaoAtual)")
+                Text("NovilhaNutri - controle nutricional de novilhas em semiconfinamento. Os resultados são referências técnicas de planejamento e não substituem a avaliação de um zootecnista ou veterinário.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } header: {
@@ -98,7 +98,7 @@ struct DadosView: View {
             }
             Button("Cancelar", role: .cancel) { }
         } message: {
-            Text("Esta acao nao pode ser desfeita. Gere um backup antes se quiser guardar os dados.")
+            Text("Esta ação não pode ser desfeita. Gere um backup antes se quiser guardar os dados.")
         }
     }
 
@@ -111,55 +111,55 @@ struct DadosView: View {
             try dados.write(to: destino, options: .atomic)
             arquivoBackup = destino
         } catch {
-            erroBackup = "Nao foi possivel gerar o backup: \(error.localizedDescription)"
+            erroBackup = "Não foi possível gerar o backup: \(error.localizedDescription)"
         }
     }
 }
 
-/// Explicacao das equacoes usadas.
+/// Explicação das equações usadas.
 struct MetodologiaView: View {
     var body: some View {
         List {
             Section("Ponto de partida") {
-                Text("As exigencias sao calculadas pelo sistema de energia liquida e proteina metabolizavel do NRC para gado de corte, com ajustes de grupo genetico e de atividade usuais em condicoes brasileiras. Tudo parte de tres informacoes: peso vivo, meta de ganho e o peso em que a novilha termina.")
+                Text("As exigências são calculadas pelo sistema de energia líquida e proteína metabolizável do NRC para gado de corte, com ajustes de grupo genético e de atividade usuais em condições brasileiras. Tudo parte de três informações: peso vivo, meta de ganho e o peso em que a novilha termina.")
                     .font(.footnote)
             }
 
             Section("Energia") {
-                TextoMetodo(titulo: "Mantenca",
-                            corpo: "ELm = 0,077 x fator do grupo genetico x fator de atividade x PCJ elevado a 0,75. PCJ e o peso vivo de jejum (96% do peso vivo).")
+                TextoMetodo(titulo: "Mantença",
+                            corpo: "ELm = 0,077 x fator do grupo genético x fator de atividade x PCJ elevado a 0,75. PCJ é o peso vivo de jejum (96% do peso vivo).")
                 TextoMetodo(titulo: "Ganho",
-                            corpo: "ER = 0,0783 x PCVZ equivalente elevado a 0,75 x ganho de corpo vazio elevado a 1,119. Sao os coeficientes de femeas em crescimento, que depositam mais gordura por quilo ganho que os machos.")
+                            corpo: "ER = 0,0783 x PCVZ equivalente elevado a 0,75 x ganho de corpo vazio elevado a 1,119. São os coeficientes de fêmeas em crescimento, que depositam mais gordura por quilo ganho que os machos.")
                 TextoMetodo(titulo: "Peso equivalente",
-                            corpo: "O peso e corrigido pelo grau de maturidade: peso de jejum x 462 / peso de acabamento em jejum. Novilhas mais precoces exigem mais energia por quilo de ganho no mesmo peso.")
+                            corpo: "O peso é corrigido pelo grau de maturidade: peso de jejum x 462 / peso de acabamento em jejum. Novilhas mais precoces exigem mais energia por quilo de ganho no mesmo peso.")
                 TextoMetodo(titulo: "NDT",
-                            corpo: "A densidade da dieta e encontrada procurando o teor de NDT em que o consumo necessario iguala o consumo previsto. O NDT diario e o consumo de materia seca multiplicado por esse teor.")
+                            corpo: "A densidade da dieta é encontrada procurando o teor de NDT em que o consumo necessário iguala o consumo previsto. O NDT diário é o consumo de matéria seca multiplicado por esse teor.")
             }
 
-            Section("Proteina") {
-                TextoMetodo(titulo: "Mantenca",
-                            corpo: "PM de mantenca = 3,8 g por PCJ elevado a 0,75.")
+            Section("Proteína") {
+                TextoMetodo(titulo: "Mantença",
+                            corpo: "PM de mantença = 3,8 g por PCJ elevado a 0,75.")
                 TextoMetodo(titulo: "Ganho",
-                            corpo: "A proteina liquida por quilo de ganho cai conforme a energia retida sobe: 268 menos 29,4 vezes a energia retida por quilo de ganho. A eficiencia de uso da proteina metabolizavel vai de 0,834 menos 0,00114 vezes o peso equivalente, com piso de 0,492.")
+                            corpo: "A proteína líquida por quilo de ganho cai conforme a energia retida sobe: 268 menos 29,4 vezes a energia retida por quilo de ganho. A eficiência de uso da proteína metabolizável vai de 0,834 menos 0,00114 vezes o peso equivalente, com piso de 0,492.")
                 TextoMetodo(titulo: "Da PM para a PB",
-                            corpo: "Considera 130 g de proteina microbiana por quilo de NDT, aproveitada em 64%. O que faltar vem de proteina nao degradavel no rumen, aproveitada em 80%. A soma das duas fracoes e a proteina bruta da dieta.")
-                TextoMetodo(titulo: "Piso pratico",
-                            corpo: "Quando a conta resulta em menos proteina que o minimo da fase (13% na desmama, 12% na recria inicial e 11% depois), o aplicativo usa o piso para nao comprometer o ambiente ruminal.")
+                            corpo: "Considera 130 g de proteína microbiana por quilo de NDT, aproveitada em 64%. O que faltar vem de proteína não degradável no rúmen, aproveitada em 80%. A soma das duas frações é a proteína bruta da dieta.")
+                TextoMetodo(titulo: "Piso prático",
+                            corpo: "Quando a conta resulta em menos proteína que o mínimo da fase (13% na desmama, 12% na recria inicial e 11% depois), o aplicativo usa o piso para não comprometer o ambiente ruminal.")
             }
 
-            Section("Racao e conversoes") {
+            Section("Ração e conversões") {
                 TextoMetodo(titulo: "Balanceamento",
-                            corpo: "Com volumoso, energetico e proteico o aplicativo resolve um sistema de tres equacoes: materia seca total, proteina bruta e NDT. Quando a solucao fica fora dos limites de volumoso, o volumoso e fixado no limite e o concentrado atende a proteina, mostrando o saldo de energia.")
-                TextoMetodo(titulo: "Materia natural",
-                            corpo: "A quantidade a fornecer no cocho e a materia seca dividida pelo teor de materia seca do alimento.")
+                            corpo: "Com volumoso, energético e proteico o aplicativo resolve um sistema de três equações: matéria seca total, proteína bruta e NDT. Quando a solução fica fora dos limites de volumoso, o volumoso é fixado no limite e o concentrado atende a proteína, mostrando o saldo de energia.")
+                TextoMetodo(titulo: "Matéria natural",
+                            corpo: "A quantidade a fornecer no cocho é a matéria seca dividida pelo teor de matéria seca do alimento.")
                 TextoMetodo(titulo: "Sacas",
-                            corpo: "O total em quilos e dividido pelo peso da embalagem cadastrada. Tamanhos de mercado disponiveis: 60, 50, 40, 30, 25 e 20 kg, alem de granel em toneladas. A linha de compra arredonda para cima.")
-                TextoMetodo(titulo: "Periodos",
-                            corpo: "O ciclo e dividido em periodos. Em cada um as exigencias sao recalculadas no peso medio do intervalo e a racao e refeita, por isso o consumo cresce ao longo do ciclo.")
+                            corpo: "O total em quilos é dividido pelo peso da embalagem cadastrada. Tamanhos de mercado disponíveis: 60, 50, 40, 30, 25 e 20 kg, além de granel em toneladas. A linha de compra arredonda para cima.")
+                TextoMetodo(titulo: "Períodos",
+                            corpo: "O ciclo é dividido em períodos. Em cada um as exigências são recalculadas no peso médio do intervalo e a ração é refeita, por isso o consumo cresce ao longo do ciclo.")
             }
 
             Section {
-                Text("Os coeficientes sao medias de populacao. Acompanhe pesagens reais e use o ajuste de consumo do lote para aproximar a previsao do que acontece no cocho.")
+                Text("Os coeficientes são médias de população. Acompanhe pesagens reais e use o ajuste de consumo do lote para aproximar a previsão do que acontece no cocho.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

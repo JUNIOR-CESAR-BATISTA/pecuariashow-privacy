@@ -12,7 +12,7 @@ struct RebanhoView: View {
                 ScrollView {
                     EstadoVazio(simbolo: "hare",
                                 titulo: "Comece pelo rebanho",
-                                mensagem: "Cadastre o lote de novilhas com peso de entrada, meta de ganho e fase. O aplicativo calcula as exigencias de PB e NDT e monta a racao.",
+                                mensagem: "Cadastre o lote de novilhas com peso de entrada, meta de ganho e fase. O aplicativo calcula as exigências de PB e NDT e monta a ração.",
                                 textoBotao: "Criar lote de exemplo") {
                         estado.criarLoteExemplo()
                     }

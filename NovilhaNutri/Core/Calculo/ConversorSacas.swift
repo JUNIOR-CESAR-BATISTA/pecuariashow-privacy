@@ -1,17 +1,17 @@
 import Foundation
 
-/// Resultado da conversao de uma quantidade em quilos para unidades de compra.
+/// Resultado da conversão de uma quantidade em quilos para unidades de compra.
 struct ConversaoSacas: Hashable {
     var totalKg: Double
     var kgPorUnidade: Double
     var nomeUnidade: String
     var nomeUnidadePlural: String
 
-    /// Numero fracionario de unidades (ex.: 12,4 sacas).
+    /// Número fracionário de unidades (ex.: 12,4 sacas).
     var unidadesExatas: Double
     /// Unidades completas.
     var unidadesInteiras: Int
-    /// Sobra em quilos alem das unidades completas.
+    /// Sobra em quilos além das unidades completas.
     var sobraKg: Double
     /// Unidades a comprar, sempre arredondando para cima.
     var unidadesParaCompra: Int
@@ -58,7 +58,7 @@ enum ConversorSacas {
     }
 
     /// Converte usando a embalagem cadastrada no insumo.
-    /// Retorna `nil` para insumos que nao sao adquiridos (pastejo).
+    /// Retorna `nil` para insumos que não são adquiridos (pastejo).
     static func converter(kg: Double, embalagem: Embalagem) -> ConversaoSacas? {
         guard let kgPorUnidade = embalagem.kgPorUnidade else { return nil }
         return converter(kg: kg,

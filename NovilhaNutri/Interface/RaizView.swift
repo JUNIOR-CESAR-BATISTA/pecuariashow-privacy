@@ -15,7 +15,7 @@ struct RaizView: View {
                 .tabItem { Label("Insumos", systemImage: "shippingbox.fill") }
 
             NavigationStack { RelatorioView() }
-                .tabItem { Label("Relatorios", systemImage: "doc.text.fill") }
+                .tabItem { Label("Relatórios", systemImage: "doc.text.fill") }
 
             NavigationStack { DadosView() }
                 .tabItem { Label("Dados", systemImage: "lock.shield.fill") }
@@ -30,7 +30,7 @@ struct RaizView: View {
     }
 }
 
-/// Botao de troca de lote usado nas telas que dependem de um lote ativo.
+/// Botão de troca de lote usado nas telas que dependem de um lote ativo.
 struct SeletorLoteBotao: View {
     @EnvironmentObject private var estado: AppEstado
 
@@ -55,14 +55,14 @@ struct SeletorLoteBotao: View {
     }
 }
 
-/// Mensagem padrao quando ainda nao existe lote cadastrado.
+/// Mensagem padrão quando ainda não existe lote cadastrado.
 struct SemLoteView: View {
     @EnvironmentObject private var estado: AppEstado
 
     var body: some View {
         EstadoVazio(simbolo: "hare",
                     titulo: "Nenhum lote cadastrado",
-                    mensagem: "Cadastre um lote de novilhas na aba Rebanho para ver as exigencias e os relatorios.",
+                    mensagem: "Cadastre um lote de novilhas na aba Rebanho para ver as exigências e os relatórios.",
                     textoBotao: "Criar lote de exemplo") {
             estado.criarLoteExemplo()
         }

@@ -5,7 +5,7 @@ final class ConversorSacasTests: XCTestCase {
 
     func testSacaDe50KgComSobra() {
         guard let conversao = ConversorSacas.converter(kg: 3775, kgPorUnidade: 50) else {
-            return XCTFail("Conversao deveria existir")
+            return XCTFail("Conversão deveria existir")
         }
         XCTAssertEqual(conversao.unidadesExatas, 75.5, accuracy: 0.0001)
         XCTAssertEqual(conversao.unidadesInteiras, 75)
@@ -16,7 +16,7 @@ final class ConversorSacasTests: XCTestCase {
 
     func testQuantidadeExataNaoArredondaParaCima() {
         guard let conversao = ConversorSacas.converter(kg: 3000, kgPorUnidade: 60) else {
-            return XCTFail("Conversao deveria existir")
+            return XCTFail("Conversão deveria existir")
         }
         XCTAssertEqual(conversao.unidadesInteiras, 50)
         XCTAssertEqual(conversao.sobraKg, 0, accuracy: 0.0001)
@@ -25,7 +25,7 @@ final class ConversorSacasTests: XCTestCase {
 
     func testQuantidadeMenorQueUmaSaca() {
         guard let conversao = ConversorSacas.converter(kg: 12, kgPorUnidade: 40) else {
-            return XCTFail("Conversao deveria existir")
+            return XCTFail("Conversão deveria existir")
         }
         XCTAssertEqual(conversao.unidadesInteiras, 0)
         XCTAssertEqual(conversao.unidadesParaCompra, 1)
@@ -34,7 +34,7 @@ final class ConversorSacasTests: XCTestCase {
 
     func testGranelUsaTonelada() {
         guard let conversao = ConversorSacas.converter(kg: 2500, embalagem: .granel) else {
-            return XCTFail("Conversao deveria existir")
+            return XCTFail("Conversão deveria existir")
         }
         XCTAssertEqual(conversao.kgPorUnidade, 1000, accuracy: 0.0001)
         XCTAssertEqual(conversao.unidadesInteiras, 2)
@@ -61,7 +61,7 @@ final class ConversorSacasTests: XCTestCase {
 
     func testDescricaoTrazSacasESobra() {
         guard let conversao = ConversorSacas.converter(kg: 128, kgPorUnidade: 25) else {
-            return XCTFail("Conversao deveria existir")
+            return XCTFail("Conversão deveria existir")
         }
         XCTAssertTrue(conversao.descricao.contains("5"))
         XCTAssertEqual(conversao.descricaoCompra, "6 sacas")

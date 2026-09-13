@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Formulario de cadastro e edicao de um lote.
+/// Formulário de cadastro e edição de um lote.
 struct LoteEditorView: View {
     @EnvironmentObject private var estado: AppEstado
     @Environment(\.dismiss) private var fechar
@@ -67,31 +67,31 @@ struct LoteEditorView: View {
                 }
                 Button("Cancelar", role: .cancel) { }
             } message: {
-                Text("Os dados deste lote serao apagados do aparelho.")
+                Text("Os dados deste lote serão apagados do aparelho.")
             }
         }
     }
 
-    // MARK: - Secoes
+    // MARK: - Seções
 
     private var identificacao: some View {
-        Section("Identificacao") {
+        Section("Identificação") {
             TextField("Nome do lote", text: $lote.nome)
-            CampoInteiro(titulo: "Numero de animais", valor: $lote.quantidadeAnimais, sufixo: "cab")
+            CampoInteiro(titulo: "Número de animais", valor: $lote.quantidadeAnimais, sufixo: "cab")
             DatePicker("Entrada no lote", selection: $lote.dataEntrada, displayedComponents: .date)
         }
     }
 
     private var animais: some View {
         Section {
-            CampoNumerico(titulo: "Peso medio de entrada", valor: $lote.pesoMedioInicial,
+            CampoNumerico(titulo: "Peso médio de entrada", valor: $lote.pesoMedioInicial,
                           casas: 1, sufixo: "kg")
             Picker("Fase", selection: $lote.fase) {
                 ForEach(FaseAnimal.allCases) { fase in
                     Text(fase.nome).tag(fase)
                 }
             }
-            Picker("Grupo genetico", selection: $lote.grupoGenetico) {
+            Picker("Grupo genético", selection: $lote.grupoGenetico) {
                 ForEach(GrupoGenetico.allCases) { grupo in
                     Text(grupo.nomeCurto).tag(grupo)
                 }
@@ -110,34 +110,34 @@ struct LoteEditorView: View {
 
     private var metas: some View {
         Section {
-            CampoNumerico(titulo: "Meta de ganho diario", valor: $lote.ganhoMetaDiario,
+            CampoNumerico(titulo: "Meta de ganho diário", valor: $lote.ganhoMetaDiario,
                           casas: 3, sufixo: "kg/d")
             CampoNumerico(titulo: "Peso alvo de abate", valor: $lote.pesoAlvoAbate,
                           casas: 0, sufixo: "kg")
-            CampoNumerico(titulo: "Rendimento de carcaca", valor: rendimentoPercentual,
+            CampoNumerico(titulo: "Rendimento de carcaça", valor: rendimentoPercentual,
                           casas: 1, sufixo: "%")
             CampoNumerico(titulo: "Peso de acabamento", valor: $lote.pesoFinalMaturidade,
                           casas: 0, sufixo: "kg")
-            CampoInteiro(titulo: "Dias por periodo", valor: $lote.diasPorPeriodo, sufixo: "dias")
+            CampoInteiro(titulo: "Dias por período", valor: $lote.diasPorPeriodo, sufixo: "dias")
             CampoNumerico(titulo: "Ajuste de consumo", valor: $lote.ajusteConsumo,
                           casas: 2, sufixo: "x")
         } header: {
             Text("Metas e abate")
         } footer: {
-            Text("Ganho sugerido para a fase \(lote.fase.nome.lowercased()): \(Formatadores.numero(lote.fase.gmdSugerido, casas: 3)) kg/dia. O peso de acabamento representa o peso em que a novilha termina e ajusta a exigencia de energia. O ajuste de consumo calibra a previsao de consumo ao que voce observa no cocho (1,00 = previsao padrao).")
+            Text("Ganho sugerido para a fase \(lote.fase.nome.lowercased()): \(Formatadores.numero(lote.fase.gmdSugerido, casas: 3)) kg/dia. O peso de acabamento representa o peso em que a novilha termina e ajusta a exigência de energia. O ajuste de consumo calibra a previsão de consumo ao que você observa no cocho (1,00 = previsão padrão).")
         }
     }
 
     private var racao: some View {
         Section {
             SeletorInsumo(titulo: "Volumoso", categoria: .volumoso, selecao: $lote.volumosoID)
-            SeletorInsumo(titulo: "Energetico", categoria: .energetico, selecao: $lote.energeticoID)
+            SeletorInsumo(titulo: "Energético", categoria: .energetico, selecao: $lote.energeticoID)
             SeletorInsumo(titulo: "Proteico", categoria: .proteico, selecao: $lote.proteicoID)
             SeletorInsumo(titulo: "Mineral", categoria: .mineral, selecao: $lote.mineralID, permiteNenhum: true)
             CampoNumerico(titulo: "Mineral por animal", valor: $lote.restricoes.mineralGramasDia,
                           casas: 0, sufixo: "g/d")
 
-            Toggle("Fixar participacao do volumoso", isOn: Binding(
+            Toggle("Fixar participação do volumoso", isOn: Binding(
                 get: { lote.restricoes.volumosoFixo != nil },
                 set: { ligado in
                     lote.restricoes.volumosoFixo = ligado ? lote.fase.volumosoSugerido : nil
@@ -146,7 +146,7 @@ struct LoteEditorView: View {
             if let fixo = lote.restricoes.volumosoFixo {
                 VStack(alignment: .leading) {
                     HStack {
-                        Text("Volumoso na materia seca")
+                        Text("Volumoso na matéria seca")
                         Spacer()
                         Text(Formatadores.percentual(fixo * 100, casas: 0))
                             .foregroundStyle(.secondary)
@@ -159,7 +159,7 @@ struct LoteEditorView: View {
             } else {
                 VStack(alignment: .leading) {
                     HStack {
-                        Text("Volumoso minimo")
+                        Text("Volumoso mínimo")
                         Spacer()
                         Text(Formatadores.percentual(lote.restricoes.volumosoMinimo * 100, casas: 0))
                             .foregroundStyle(.secondary)
@@ -169,18 +169,18 @@ struct LoteEditorView: View {
                 }
             }
         } header: {
-            Text("Racao")
+            Text("Ração")
         } footer: {
             Text(lote.restricoes.volumosoFixo == nil
-                 ? "No modo automatico o aplicativo calcula a proporcao dos tres alimentos que atende exatamente PB e NDT, respeitando o minimo de volumoso."
-                 : "Com a participacao do volumoso fixada, o concentrado e ajustado pela proteina e o saldo de energia e mostrado no resumo.")
+                 ? "No modo automático o aplicativo calcula a proporção dos três alimentos que atende exatamente PB e NDT, respeitando o mínimo de volumoso."
+                 : "Com a participação do volumoso fixada, o concentrado é ajustado pela proteína e o saldo de energia é mostrado no resumo.")
         }
     }
 
     private var pesagens: some View {
         Section {
             if lote.pesagens.isEmpty {
-                Text("Nenhuma pesagem registrada. O peso de entrada esta sendo usado como peso atual.")
+                Text("Nenhuma pesagem registrada. O peso de entrada está sendo usado como peso atual.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
@@ -207,7 +207,7 @@ struct LoteEditorView: View {
             Text("Pesagens")
         } footer: {
             if let real = lote.ganhoRealDiario {
-                Text("Ganho medio observado: \(Formatadores.numero(real, casas: 3)) kg/dia contra a meta de \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia.")
+                Text("Ganho médio observado: \(Formatadores.numero(real, casas: 3)) kg/dia contra a meta de \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia.")
             } else {
                 Text("Registre pesagens para acompanhar o ganho real do lote.")
             }
@@ -215,20 +215,20 @@ struct LoteEditorView: View {
     }
 
     private var previaSection: some View {
-        Section("Previa das exigencias diarias") {
-            LinhaDado(rotulo: "Consumo de materia seca",
+        Section("Prévia das exigências diárias") {
+            LinhaDado(rotulo: "Consumo de matéria seca",
                       valor: Formatadores.kg(previa.consumoMateriaSeca))
-            LinhaDado(rotulo: "Proteina bruta",
+            LinhaDado(rotulo: "Proteína bruta",
                       valor: "\(Formatadores.gramas(previa.proteinaBrutaGramas)) (\(Formatadores.percentual(previa.proteinaBrutaPercentualDieta)))")
             LinhaDado(rotulo: "NDT",
                       valor: "\(Formatadores.kg(previa.ndtKg)) (\(Formatadores.percentual(previa.ndtPercentualDieta)))")
             if !previa.metaAtingivel {
-                Aviso(texto: "Meta acima do ganho possivel neste peso. Considere \(Formatadores.numero(previa.ganhoDiario, casas: 3)) kg/dia.")
+                Aviso(texto: "Meta acima do ganho possível neste peso. Considere \(Formatadores.numero(previa.ganhoDiario, casas: 3)) kg/dia.")
             }
         }
     }
 
-    // MARK: - Acoes
+    // MARK: - Ações
 
     private func salvar() {
         var ajustado = lote
@@ -288,8 +288,8 @@ struct NovaPesagemView: View {
         NavigationStack {
             Form {
                 DatePicker("Data", selection: $data, displayedComponents: .date)
-                CampoNumerico(titulo: "Peso medio", valor: $peso, casas: 1, sufixo: "kg")
-                TextField("Observacao", text: $observacao)
+                CampoNumerico(titulo: "Peso médio", valor: $peso, casas: 1, sufixo: "kg")
+                TextField("Observação", text: $observacao)
             }
             .navigationTitle("Nova pesagem")
             .navigationBarTitleDisplayMode(.inline)

@@ -27,7 +27,7 @@ final class BancoLocalTests: XCTestCase {
     func testSalvaERecuperaOsDados() throws {
         var lote = Lote.exemplo()
         lote.pesagens = [Pesagem(data: Date(timeIntervalSince1970: 86_400), pesoMedio: 275)]
-        lote.observacoes = "Lote de teste com acentuacao: nutricao, proteina"
+        lote.observacoes = "Lote de teste com acentuação: nutrição, proteína"
         let dados = DadosApp(versao: DadosApp.versaoAtual,
                              lotes: [lote],
                              insumos: CatalogoInsumos.padrao)
@@ -82,7 +82,7 @@ final class BancoLocalTests: XCTestCase {
     func testArquivoCorrompidoGeraErro() throws {
         try FileManager.default.createDirectory(at: pasta, withIntermediateDirectories: true)
         let arquivo = try XCTUnwrap(banco.arquivo)
-        try Data("isto nao e json".utf8).write(to: arquivo)
+        try Data("isto não é json".utf8).write(to: arquivo)
 
         XCTAssertThrowsError(try banco.carregar())
     }

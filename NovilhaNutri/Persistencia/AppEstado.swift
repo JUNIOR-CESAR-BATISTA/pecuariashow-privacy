@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// Estado compartilhado do aplicativo, com gravacao automatica em disco.
+/// Estado compartilhado do aplicativo, com gravação automática em disco.
 @MainActor
 final class AppEstado: ObservableObject {
 
@@ -45,7 +45,7 @@ final class AppEstado: ObservableObject {
         DadosApp(versao: DadosApp.versaoAtual, lotes: lotes, insumos: insumos)
     }
 
-    /// Agrupa alteracoes seguidas em uma unica gravacao.
+    /// Agrupa alterações seguidas em uma única gravação.
     private func agendarSalvamento() {
         guard !carregando else { return }
         salvamentoPendente?.cancel()
@@ -123,7 +123,7 @@ final class AppEstado: ObservableObject {
         for alvo in alvos { remover(loteID: alvo) }
     }
 
-    /// Lote novo ja apontando para os insumos disponiveis.
+    /// Lote novo já apontando para os insumos disponíveis.
     func novoLote() -> Lote {
         var lote = Lote()
         lote.nome = "Lote \(lotes.count + 1)"
@@ -167,7 +167,7 @@ final class AppEstado: ObservableObject {
         }
     }
 
-    /// Remove o insumo e limpa as referencias nos lotes que o usavam.
+    /// Remove o insumo e limpa as referências nos lotes que o usavam.
     func remover(insumoID: UUID) {
         insumos.removeAll { $0.id == insumoID }
         for indice in lotes.indices {
@@ -186,7 +186,7 @@ final class AppEstado: ObservableObject {
         }.count
     }
 
-    // MARK: - Calculos derivados
+    // MARK: - Cálculos derivados
 
     func selecao(para lote: Lote) -> SelecaoInsumos? {
         guard let volumoso = insumo(id: lote.volumosoID) ?? primeiro(.volumoso),
@@ -211,7 +211,7 @@ final class AppEstado: ObservableObject {
 
     func relatorio(para lote: Lote) -> RelatorioPlanejamento {
         guard let selecao = selecao(para: lote) else {
-            return .vazio(lote: lote, alertas: ["Cadastre ao menos um volumoso, um energetico e um proteico."])
+            return .vazio(lote: lote, alertas: ["Cadastre ao menos um volumoso, um energético e um proteico."])
         }
         return PlanejadorAbate.projetar(lote: lote, selecao: selecao)
     }

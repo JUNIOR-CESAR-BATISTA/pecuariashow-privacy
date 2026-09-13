@@ -1,6 +1,6 @@
 import Foundation
 
-/// Insumos escolhidos para compor a racao do lote.
+/// Insumos escolhidos para compor a ração do lote.
 struct SelecaoInsumos: Hashable {
     var volumoso: Insumo
     var energetico: Insumo
@@ -8,15 +8,15 @@ struct SelecaoInsumos: Hashable {
     var mineral: Insumo?
 }
 
-/// Limites de manejo aplicados a formulacao.
+/// Limites de manejo aplicados a formulação.
 struct RestricoesFormulacao: Codable, Hashable {
-    /// Participacao minima de volumoso na materia seca (fracao de 0 a 1).
+    /// Participação mínima de volumoso na matéria seca (fração de 0 a 1).
     var volumosoMinimo: Double
-    /// Participacao maxima de volumoso na materia seca (fracao de 0 a 1).
+    /// Participação máxima de volumoso na matéria seca (fração de 0 a 1).
     var volumosoMaximo: Double
-    /// Consumo diario de mineral por animal, em gramas de materia natural.
+    /// Consumo diário de mineral por animal, em gramas de matéria natural.
     var mineralGramasDia: Double
-    /// Quando definido, fixa a participacao do volumoso em vez de calcula-la.
+    /// Quando definido, fixa a participação do volumoso em vez de calculá-la.
     var volumosoFixo: Double?
 
     init(volumosoMinimo: Double = 0.30,
@@ -32,7 +32,7 @@ struct RestricoesFormulacao: Codable, Hashable {
     static let padrao = RestricoesFormulacao()
 }
 
-/// Um alimento dentro da racao diaria, por animal.
+/// Um alimento dentro da ração diária, por animal.
 struct ItemRacao: Identifiable, Hashable {
     var insumo: Insumo
     var kgMateriaSeca: Double
@@ -44,7 +44,7 @@ struct ItemRacao: Identifiable, Hashable {
     var custoDiario: Double { kgMateriaNatural * insumo.precoPorKg }
 }
 
-/// Como a formulacao foi resolvida.
+/// Como a formulação foi resolvida.
 enum StatusFormulacao: String, Hashable {
     case balanceada
     case restrita
@@ -54,18 +54,18 @@ enum StatusFormulacao: String, Hashable {
         switch self {
         case .balanceada: return "Balanceada"
         case .restrita: return "Ajustada aos limites"
-        case .invalida: return "Nao foi possivel formular"
+        case .invalida: return "Não foi possível formular"
         }
     }
 }
 
-/// Racao diaria calculada para um animal do lote.
+/// Ração diária calculada para um animal do lote.
 struct ComposicaoRacao: Hashable {
     var itens: [ItemRacao]
     var status: StatusFormulacao
     var alertas: [String]
 
-    /// Exigencias que serviram de alvo.
+    /// Exigências que serviram de alvo.
     var proteinaExigidaKg: Double
     var ndtExigidoKg: Double
 
@@ -99,25 +99,25 @@ struct ComposicaoRacao: Hashable {
         consumoMateriaSeca > 0 ? massaConcentrado / consumoMateriaSeca * 100 : 0
     }
 
-    /// Participacao de cada item na materia seca total (%).
+    /// Participação de cada item na matéria seca total (%).
     func participacaoMS(_ item: ItemRacao) -> Double {
         consumoMateriaSeca > 0 ? item.kgMateriaSeca / consumoMateriaSeca * 100 : 0
     }
 
     static let vazia = ComposicaoRacao(itens: [],
                                        status: .invalida,
-                                       alertas: ["Selecione os insumos da racao."],
+                                       alertas: ["Selecione os insumos da ração."],
                                        proteinaExigidaKg: 0,
                                        ndtExigidoKg: 0)
 }
 
-/// Calcula quanto de cada alimento entra na racao diaria.
+/// Calcula quanto de cada alimento entra na ração diária.
 ///
-/// No modo automatico resolve o sistema linear de tres equacoes
-/// (materia seca total, proteina bruta e NDT) com tres alimentos.
-/// Quando a solucao exige uma proporcao de volumoso fora dos limites de
-/// manejo, o volumoso e fixado no limite e o concentrado passa a atender a
-/// proteina, sobrando ou faltando energia - diferenca sempre reportada.
+/// No modo automático resolve o sistema linear de três equações
+/// (matéria seca total, proteína bruta e NDT) com três alimentos.
+/// Quando a solução exige uma proporção de volumoso fora dos limites de
+/// manejo, o volumoso é fixado no limite e o concentrado passa a atender a
+/// proteína, sobrando ou faltando energia - diferença sempre reportada.
 enum FormuladorRacao {
 
     static func formular(exigencia: ExigenciaDiaria,
@@ -128,7 +128,7 @@ enum FormuladorRacao {
         let consumoTotal = exigencia.consumoMateriaSeca
         guard consumoTotal > 0 else { return .vazia }
 
-        // O mineral entra com quantidade fixa e nao participa do balanceamento.
+        // O mineral entra com quantidade fixa e não participa do balanceamento.
         var mineralMS = 0.0
         if let mineral = selecao.mineral, restricoes.mineralGramasDia > 0 {
             mineralMS = mineral.materiaSeca(deMateriaNatural: restricoes.mineralGramasDia / 1000)
@@ -137,7 +137,7 @@ enum FormuladorRacao {
         let disponivel = consumoTotal - mineralMS
         guard disponivel > 0.01 else {
             return ComposicaoRacao(itens: [], status: .invalida,
-                                   alertas: ["Consumo de materia seca insuficiente para formular."],
+                                   alertas: ["Consumo de matéria seca insuficiente para formular."],
                                    proteinaExigidaKg: exigencia.proteinaBrutaKg,
                                    ndtExigidoKg: exigencia.ndtKg)
         }
@@ -166,17 +166,17 @@ enum FormuladorRacao {
             if solucao.volumoso < limiteMin - 1e-6 {
                 kgVolumoso = limiteMin
                 status = .restrita
-                alertas.append("O balanceamento pediu menos volumoso que o minimo de \(Formatadores.percentual(restricoes.volumosoMinimo * 100, casas: 0)); a dieta foi ajustada ao limite.")
+                alertas.append("O balanceamento pediu menos volumoso que o mínimo de \(Formatadores.percentual(restricoes.volumosoMinimo * 100, casas: 0)); a dieta foi ajustada ao limite.")
             } else if solucao.volumoso > limiteMax + 1e-6 {
                 kgVolumoso = limiteMax
                 status = .restrita
-                alertas.append("O balanceamento pediu mais volumoso que o maximo de \(Formatadores.percentual(restricoes.volumosoMaximo * 100, casas: 0)); a dieta foi ajustada ao limite.")
+                alertas.append("O balanceamento pediu mais volumoso que o máximo de \(Formatadores.percentual(restricoes.volumosoMaximo * 100, casas: 0)); a dieta foi ajustada ao limite.")
             } else if solucao.energetico < -1e-6 || solucao.proteico < -1e-6 {
-                // Um dos concentrados ficaria negativo: mantem o volumoso da
-                // solucao e deixa o ajuste de proteina resolver o restante.
+                // Um dos concentrados ficaria negativo: mantém o volumoso da
+                // solução e deixa o ajuste de proteína resolver o restante.
                 kgVolumoso = min(max(solucao.volumoso, limiteMin), limiteMax)
                 status = .restrita
-                alertas.append("Os alimentos escolhidos nao permitem atingir PB e NDT ao mesmo tempo. Confira o balanco abaixo.")
+                alertas.append("Os alimentos escolhidos não permitem atingir PB e NDT ao mesmo tempo. Confira o balanço abaixo.")
             } else {
                 kgVolumoso = solucao.volumoso
                 kgEnergetico = solucao.energetico
@@ -185,11 +185,11 @@ enum FormuladorRacao {
         } else {
             kgVolumoso = min(max(disponivel * participacaoVolumosoPadrao, limiteMin), limiteMax)
             status = .restrita
-            alertas.append("Os teores dos alimentos escolhidos sao muito parecidos para um balanceamento exato.")
+            alertas.append("Os teores dos alimentos escolhidos são muito parecidos para um balanceamento exato.")
         }
 
         if status == .restrita {
-            // Com o volumoso fixado, ajusta energetico e proteico pela proteina.
+            // Com o volumoso fixado, ajusta energético e proteico pela proteína.
             let restante = max(0, disponivel - kgVolumoso)
             let proteinaVolumoso = kgVolumoso * volumoso.proteinaBruta / 100
             let faltaProteina = exigencia.proteinaBrutaKg - proteinaVolumoso
@@ -220,8 +220,8 @@ enum FormuladorRacao {
         return composicao
     }
 
-    /// Monta a composicao a partir de quantidades informadas manualmente
-    /// (em quilos de materia natural por animal por dia).
+    /// Monta a composição a partir de quantidades informadas manualmente
+    /// (em quilos de matéria natural por animal por dia).
     static func avaliar(quantidades: [(insumo: Insumo, kgMateriaNatural: Double)],
                         exigencia: ExigenciaDiaria) -> ComposicaoRacao {
         let itens = consolidar(quantidades.map {
@@ -246,7 +246,7 @@ enum FormuladorRacao {
         var proteico: Double
     }
 
-    /// Resolve o sistema 3x3: materia seca, proteina bruta e NDT.
+    /// Resolve o sistema 3x3: matéria seca, proteína bruta e NDT.
     private static func resolverSistema(disponivel: Double,
                                         proteinaAlvo: Double,
                                         ndtAlvo: Double,
@@ -262,7 +262,7 @@ enum FormuladorRacao {
         return Solucao(volumoso: x[0], energetico: x[1], proteico: x[2])
     }
 
-    /// Junta quantidades do mesmo alimento para nao repetir linhas na racao.
+    /// Junta quantidades do mesmo alimento para não repetir linhas na ração.
     static func consolidar(_ candidatos: [(Insumo, Double)]) -> [ItemRacao] {
         var ordem: [UUID] = []
         var somas: [UUID: Double] = [:]
@@ -280,7 +280,7 @@ enum FormuladorRacao {
         }
     }
 
-    /// Eliminacao de Gauss-Jordan com pivoteamento parcial para sistemas 3x3.
+    /// Eliminação de Gauss-Jordan com pivoteamento parcial para sistemas 3x3.
     static func gaussJordan(_ entrada: [[Double]]) -> [Double]? {
         var m = entrada
         let n = 3
@@ -310,9 +310,9 @@ enum FormuladorRacao {
         if composicao.proteinaExigidaKg > 0 {
             let desvio = composicao.balancoProteina / composicao.proteinaExigidaKg
             if desvio < -tolerancia {
-                avisos.append("Faltam \(Formatadores.gramas(abs(composicao.balancoProteina) * 1000)) de proteina bruta por animal por dia.")
+                avisos.append("Faltam \(Formatadores.gramas(abs(composicao.balancoProteina) * 1000)) de proteína bruta por animal por dia.")
             } else if desvio > tolerancia {
-                avisos.append("Sobram \(Formatadores.gramas(composicao.balancoProteina * 1000)) de proteina bruta por animal por dia.")
+                avisos.append("Sobram \(Formatadores.gramas(composicao.balancoProteina * 1000)) de proteína bruta por animal por dia.")
             }
         }
         if composicao.ndtExigidoKg > 0 {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Quantidade de um insumo consumida em um periodo, ja convertida para sacas.
+/// Quantidade de um insumo consumida em um período, já convertida para sacas.
 struct ConsumoInsumo: Identifiable, Hashable {
     var insumo: Insumo
     var kgMateriaNatural: Double
@@ -14,7 +14,7 @@ struct ConsumoInsumo: Identifiable, Hashable {
     var toneladas: Double { kgMateriaNatural / 1000 }
 }
 
-/// Um periodo do planejamento (por padrao 30 dias).
+/// Um período do planejamento (por padrão 30 dias).
 struct PeriodoPlano: Identifiable, Hashable {
     var id: Int
     var dataInicio: Date
@@ -28,7 +28,7 @@ struct PeriodoPlano: Identifiable, Hashable {
     var consumos: [ConsumoInsumo]
     var animais: Int
 
-    var titulo: String { "Periodo \(id)" }
+    var titulo: String { "Período \(id)" }
     var ganhoNoPeriodo: Double { pesoFinal - pesoInicial }
     var custo: Double { consumos.reduce(0) { $0 + $1.custo } }
     var materiaSecaTotal: Double { exigencia.consumoMateriaSeca * dias * Double(animais) }
@@ -39,7 +39,7 @@ struct PeriodoPlano: Identifiable, Hashable {
     }
 }
 
-/// Planejamento completo do lote ate o abate.
+/// Planejamento completo do lote até o abate.
 struct RelatorioPlanejamento {
     var lote: Lote
     var periodos: [PeriodoPlano]
@@ -55,7 +55,7 @@ struct RelatorioPlanejamento {
 
     var viavel: Bool { diasTotais > 0 && !periodos.isEmpty }
 
-    // MARK: Producao
+    // MARK: Produção
 
     var ganhoPorAnimal: Double { max(0, pesoAlvo - pesoInicial) }
     var ganhoTotalLote: Double { ganhoPorAnimal * Double(animais) }
@@ -85,7 +85,7 @@ struct RelatorioPlanejamento {
     var custoPorKgGanho: Double {
         ganhoTotalLote > 0 ? custoTotal / ganhoTotalLote : 0
     }
-    /// Quilos de materia seca por quilo de peso vivo ganho.
+    /// Quilos de matéria seca por quilo de peso vivo ganho.
     var conversaoAlimentar: Double {
         ganhoTotalLote > 0 ? materiaSecaTotal / ganhoTotalLote : 0
     }
@@ -108,10 +108,10 @@ struct RelatorioPlanejamento {
     }
 }
 
-/// Projeta o consumo de insumos e a data de abate periodo a periodo.
+/// Projeta o consumo de insumos e a data de abate período a período.
 ///
-/// A cada periodo o peso medio avanca conforme a meta de ganho, as
-/// exigencias sao recalculadas no peso medio do intervalo e a racao e
+/// A cada período o peso médio avança conforme a meta de ganho, as
+/// exigências são recalculadas no peso médio do intervalo e a ração é
 /// reformulada - por isso o consumo cresce ao longo do ciclo.
 enum PlanejadorAbate {
 
@@ -128,7 +128,7 @@ enum PlanejadorAbate {
         }
         let pesoInicial = lote.pesoAtual
         guard lote.pesoAlvoAbate > pesoInicial else {
-            return .vazio(lote: lote, alertas: ["O lote ja atingiu o peso alvo de abate."])
+            return .vazio(lote: lote, alertas: ["O lote já atingiu o peso alvo de abate."])
         }
 
         let ganho = lote.ganhoMetaDiario
@@ -173,7 +173,7 @@ enum PlanejadorAbate {
                                          animais: lote.quantidadeAnimais))
 
             if !exigencia.metaAtingivel {
-                alertas.append("No periodo \(indice) (peso medio \(Formatadores.numero(pesoMedio, casas: 0)) kg) a meta de ganho nao e alcancavel com dieta pratica.")
+                alertas.append("No período \(indice) (peso médio \(Formatadores.numero(pesoMedio, casas: 0)) kg) a meta de ganho não é alcançável com dieta prática.")
             }
             peso = pesoFinal
             diasAcumulados += dias
@@ -181,13 +181,13 @@ enum PlanejadorAbate {
         }
 
         if indice > maximoPeriodos && diasAcumulados < diasTotais - 0.001 {
-            alertas.append("Projecao limitada a \(maximoPeriodos) periodos. Aumente os dias por periodo para ver o ciclo completo.")
+            alertas.append("Projeção limitada a \(maximoPeriodos) períodos. Aumente os dias por período para ver o ciclo completo.")
         }
 
         let totais = consolidarTotais(periodos)
         let alertasComposicao = Set(periodos.flatMap { $0.composicao.alertas })
         if periodos.contains(where: { $0.composicao.status == .restrita }) {
-            alertas.append("A racao de pelo menos um periodo foi ajustada aos limites de volumoso. Confira a aba Racao.")
+            alertas.append("A ração de pelo menos um período foi ajustada aos limites de volumoso. Confira a aba Ração.")
         }
         alertas.append(contentsOf: alertasComposicao.sorted().prefix(3))
 
@@ -203,7 +203,7 @@ enum PlanejadorAbate {
                                      animais: lote.quantidadeAnimais)
     }
 
-    /// Soma os consumos de todos os periodos, insumo a insumo.
+    /// Soma os consumos de todos os períodos, insumo a insumo.
     static func consolidarTotais(_ periodos: [PeriodoPlano]) -> [ConsumoInsumo] {
         var ordem: [UUID] = []
         var acumulado: [UUID: ConsumoInsumo] = [:]

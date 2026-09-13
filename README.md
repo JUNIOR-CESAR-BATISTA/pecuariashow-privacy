@@ -10,8 +10,8 @@ Aplicativo iOS (SwiftUI) para controle nutricional de novilhas em semiconfinamen
 com **armazenamento exclusivamente local no aparelho**.
 
 A partir do peso inicial, da meta de ganho e da fase do animal, o aplicativo calcula
-as necessidades diarias de **Proteina Bruta (PB)** e **Nutrientes Digestiveis Totais (NDT)**,
-monta a racao diaria, converte o total de insumos de cada periodo em **quilos e sacas**
+as necessidades diárias de **Proteína Bruta (PB)** e **Nutrientes Digestíveis Totais (NDT)**,
+monta a ração diária, converte o total de insumos de cada período em **quilos e sacas**
 e gera o **planejamento de abate**.
 
 ## Como abrir
@@ -27,46 +27,46 @@ Os testes ficam em `NovilhaNutriTests` e rodam com Cmd+U.
 
 | Aba | O que faz |
 | --- | --- |
-| **Rebanho** | Cadastro dos lotes: numero de animais, peso de entrada, meta de ganho, fase, grupo genetico, sistema de criacao, peso alvo de abate, rendimento de carcaca e historico de pesagens. |
-| **Resumo** | Exigencias diarias por animal (PB em gramas e % da MS, NDT em kg e % da MS, consumo de materia seca), composicao da racao diaria alimento por alimento, quantidade a fornecer para o lote inteiro em kg e sacas por dia, balanco da dieta e ganho esperado. |
-| **Insumos** | Cadastro dos alimentos com MS, PB, NDT, forma de aquisicao (saca de 60/50/40/30/25/20 kg, granel ou pastejo) e preco. Inclui um conversor livre de quilos para sacas. |
-| **Relatorios** | Planejamento do abate: dias e data prevista, evolucao do peso, arrobas produzidas, conversao alimentar, custo por arroba, total de insumos do ciclo em kg e sacas, e o detalhamento periodo a periodo. Exporta o relatorio em texto. |
-| **Dados** | Onde os dados ficam, backup manual em JSON, exclusao de tudo e a metodologia dos calculos. |
+| **Rebanho** | Cadastro dos lotes: número de animais, peso de entrada, meta de ganho, fase, grupo genético, sistema de criação, peso alvo de abate, rendimento de carcaça e histórico de pesagens. |
+| **Resumo** | Exigências diárias por animal (PB em gramas e % da MS, NDT em kg e % da MS, consumo de matéria seca), composição da ração diária alimento por alimento, quantidade a fornecer para o lote inteiro em kg e sacas por dia, balanço da dieta e ganho esperado. |
+| **Insumos** | Cadastro dos alimentos com MS, PB, NDT, forma de aquisição (saca de 60/50/40/30/25/20 kg, granel ou pastejo) e preço. Inclui um conversor livre de quilos para sacas. |
+| **Relatórios** | Planejamento do abate: dias e data prevista, evolução do peso, arrobas produzidas, conversão alimentar, custo por arroba, total de insumos do ciclo em kg e sacas, e o detalhamento período a período. Exporta o relatório em texto. |
+| **Dados** | Onde os dados ficam, backup manual em JSON, exclusão de tudo e a metodologia dos cálculos. |
 
 ## Funcionalidades principais
 
-**Exigencias nutricionais.** Sistema de energia liquida e proteina metabolizavel
-(NRC para gado de corte), com coeficientes de femeas em crescimento e ajustes de
-grupo genetico (zebuino, cruzado, taurino) e de atividade (confinamento,
+**Exigências nutricionais.** Sistema de energia líquida e proteína metabolizável
+(NRC para gado de corte), com coeficientes de fêmeas em crescimento e ajustes de
+grupo genético (zebuíno, cruzado, taurino) e de atividade (confinamento,
 semiconfinamento, pasto). O peso equivalente corrige o grau de maturidade: uma
 novilha precoce exige mais energia por quilo ganho no mesmo peso.
 
-**Meta inviavel e aviso claro.** Se a meta de ganho estiver acima do que o animal
-consegue no peso atual, o aplicativo avisa e mostra o ganho maximo possivel em vez
-de devolver um numero irreal.
+**Meta inviável e aviso claro.** Se a meta de ganho estiver acima do que o animal
+consegue no peso atual, o aplicativo avisa e mostra o ganho máximo possível em vez
+de devolver um número irreal.
 
-**Formulacao da racao.** Com volumoso, energetico e proteico o aplicativo resolve um
-sistema de tres equacoes (materia seca, PB e NDT) e chega a proporcao exata. Se a
-solucao violar o limite de volumoso, o volumoso e fixado no limite, o concentrado
-passa a atender a proteina e o saldo de energia aparece no balanco, junto com o
+**Formulação da ração.** Com volumoso, energético e proteico o aplicativo resolve um
+sistema de três equações (matéria seca, PB e NDT) e chega a proporção exata. Se a
+solução violar o limite de volumoso, o volumoso é fixado no limite, o concentrado
+passa a atender a proteína e o saldo de energia aparece no balanço, junto com o
 ganho que aquela dieta realmente sustenta.
 
-**Conversao para sacas.** Todo total em quilos vira sacas do tamanho cadastrado para
+**Conversão para sacas.** Todo total em quilos vira sacas do tamanho cadastrado para
 cada insumo, mostrando sacas inteiras, a sobra em quilos e quantas sacas comprar
-(sempre arredondando para cima). Pastejo nao entra na lista de compras.
+(sempre arredondando para cima). Pastejo não entra na lista de compras.
 
-**Planejamento de abate.** O ciclo e dividido em periodos (30 dias por padrao). Em
-cada periodo as exigencias sao recalculadas no peso medio do intervalo e a racao e
-refeita, entao o consumo cresce ao longo do ciclo como acontece na pratica. O
-relatorio traz data de abate, peso e arrobas de carcaca, arrobas produzidas,
-conversao alimentar, custo total, custo por animal por dia e custo por arroba.
+**Planejamento de abate.** O ciclo é dividido em períodos (30 dias por padrão). Em
+cada período as exigências são recalculadas no peso médio do intervalo e a ração é
+refeita, então o consumo cresce ao longo do ciclo como acontece na prática. O
+relatório traz data de abate, peso e arrobas de carcaça, arrobas produzidas,
+conversão alimentar, custo total, custo por animal por dia e custo por arroba.
 
 ## Privacidade
 
-Nao ha servidor, conta de usuario, analytics nem sincronizacao. Os dados sao gravados
-em `Application Support/NovilhaNutri/novilhanutri.json`, dentro da area privada do
-aplicativo, com protecao de arquivo completa. A unica saida possivel e o backup em
-JSON que o proprio usuario gera e compartilha.
+Não há servidor, conta de usuário, analytics nem sincronização. Os dados são gravados
+em `Application Support/NovilhaNutri/novilhanutri.json`, dentro da área privada do
+aplicativo, com proteção de arquivo completa. A única saída possível é o backup em
+JSON que o próprio usuário gera e compartilha.
 
 ## Estrutura
 
@@ -85,13 +85,13 @@ NovilhaNutriTests/ Testes das exigencias, formulacao, conversao,
 docs/METODOLOGIA.md
 ```
 
-O `Core` nao depende de SwiftUI: sao tipos de valor e funcoes puras, o que mantem os
-calculos testaveis de forma isolada.
+O `Core` não depende de SwiftUI: são tipos de valor e funções puras, o que mantém os
+cálculos testáveis de forma isolada.
 
-## Aviso tecnico
+## Aviso técnico
 
-Os coeficientes usados sao medias de populacao e os teores dos alimentos sao valores
-de referencia de tabela. Ajuste os alimentos conforme a analise bromatologica da
+Os coeficientes usados são médias de população e os teores dos alimentos são valores
+de referência de tabela. Ajuste os alimentos conforme a análise bromatológica da
 propriedade, acompanhe as pesagens e use o ajuste de consumo do lote para aproximar a
-previsao do observado no cocho. O aplicativo e uma ferramenta de planejamento e nao
-substitui a avaliacao de um zootecnista ou medico veterinario.
+previsão do observado no cocho. O aplicativo é uma ferramenta de planejamento e não
+substitui a avaliação de um zootecnista ou médico veterinário.

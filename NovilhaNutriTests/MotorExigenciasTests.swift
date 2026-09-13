@@ -1,8 +1,8 @@
 import XCTest
 @testable import NovilhaNutri
 
-/// Os valores esperados foram conferidos contra uma implementacao
-/// independente das mesmas equacoes.
+/// Os valores esperados foram conferidos contra uma implementação
+/// independente das mesmas equações.
 final class MotorExigenciasTests: XCTestCase {
 
     private func perfil(peso: Double,
@@ -23,7 +23,7 @@ final class MotorExigenciasTests: XCTestCase {
         XCTAssertEqual(resultado.proteinaBrutaGramas, 757.4, accuracy: 1.0)
         XCTAssertTrue(resultado.metaAtingivel)
         XCTAssertEqual(resultado.ganhoDiario, 0.700, accuracy: 0.0001)
-        // Consumo entre 2% e 3% do peso vivo e o esperado nesta categoria.
+        // Consumo entre 2% e 3% do peso vivo é o esperado nesta categoria.
         XCTAssertTrue((2.0...3.0).contains(resultado.consumoPercentualPeso))
     }
 
@@ -140,13 +140,13 @@ final class MotorExigenciasTests: XCTestCase {
 
     func testNutrienteLimitanteApontaProteina() {
         let animal = perfil(peso: 300)
-        // Energia sobrando e proteina muito baixa.
+        // Energia sobrando e proteína muito baixa.
         let resultado = MotorExigencias.ganhoEsperado(perfil: animal,
                                                       consumoMS: 7.0,
                                                       ndtKg: 5.0,
                                                       proteinaBrutaKg: 0.45)
 
-        XCTAssertEqual(resultado.nutrienteLimitante, "Proteina (PB)")
+        XCTAssertEqual(resultado.nutrienteLimitante, "Proteína (PB)")
         XCTAssertEqual(resultado.ganho, resultado.porProteina, accuracy: 0.0001)
     }
 

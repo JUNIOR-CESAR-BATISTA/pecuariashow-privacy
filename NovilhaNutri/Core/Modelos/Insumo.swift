@@ -1,6 +1,6 @@
 import Foundation
 
-/// Forma de aquisicao do insumo, usada na conversao de quilos para sacas.
+/// Forma de aquisição do insumo, usada na conversão de quilos para sacas.
 struct Embalagem: Codable, Hashable {
     enum Tipo: String, Codable, CaseIterable, Identifiable, Hashable {
         case saca
@@ -13,13 +13,13 @@ struct Embalagem: Codable, Hashable {
             switch self {
             case .saca: return "Saca"
             case .granel: return "Granel (tonelada)"
-            case .pastejo: return "Pastejo (nao comprado)"
+            case .pastejo: return "Pastejo (não comprado)"
             }
         }
     }
 
     var tipo: Tipo
-    /// Peso liquido da saca em quilos. Relevante apenas quando `tipo == .saca`.
+    /// Peso líquido da saca em quilos. Relevante apenas quando `tipo == .saca`.
     var kgPorSaca: Double
 
     init(tipo: Tipo = .saca, kgPorSaca: Double = 50) {
@@ -47,7 +47,7 @@ struct Embalagem: Codable, Hashable {
     }
 
     /// Quantidade de quilos que corresponde a uma unidade de compra.
-    /// Retorna `nil` quando o insumo nao e adquirido (pastejo).
+    /// Retorna `nil` quando o insumo não é adquirido (pastejo).
     var kgPorUnidade: Double? {
         switch tipo {
         case .saca: return kgPorSaca > 0 ? kgPorSaca : nil
@@ -73,20 +73,20 @@ struct Embalagem: Codable, Hashable {
     }
 }
 
-/// Alimento disponivel na propriedade, com sua composicao bromatologica.
-/// Teores de PB e NDT sao sempre expressos em percentual da materia seca.
+/// Alimento disponível na propriedade, com sua composição bromatológica.
+/// Teores de PB e NDT são sempre expressos em percentual da matéria seca.
 struct Insumo: Identifiable, Codable, Hashable {
     var id: UUID
     var nome: String
     var categoria: CategoriaInsumo
-    /// Materia seca (% da materia natural).
+    /// Matéria seca (% da matéria natural).
     var materiaSeca: Double
-    /// Proteina bruta (% da materia seca).
+    /// Proteína bruta (% da matéria seca).
     var proteinaBruta: Double
-    /// Nutrientes digestiveis totais (% da materia seca).
+    /// Nutrientes digestíveis totais (% da matéria seca).
     var ndt: Double
     var embalagem: Embalagem
-    /// Preco por unidade de compra (por saca, ou por tonelada no granel).
+    /// Preço por unidade de compra (por saca, ou por tonelada no granel).
     var precoUnitario: Double
     var observacao: String
 
@@ -110,28 +110,28 @@ struct Insumo: Identifiable, Codable, Hashable {
         self.observacao = observacao
     }
 
-    /// Fracao de materia seca (0 a 1), protegida contra valores invalidos.
+    /// Fração de matéria seca (0 a 1), protegida contra valores inválidos.
     var fracaoMateriaSeca: Double {
         min(max(materiaSeca / 100, 0.01), 1.0)
     }
 
-    /// Converte quilos de materia seca em quilos de materia natural (como fornecido).
+    /// Converte quilos de matéria seca em quilos de matéria natural (como fornecido).
     func materiaNatural(deMateriaSeca kgMS: Double) -> Double {
         kgMS / fracaoMateriaSeca
     }
 
-    /// Converte quilos de materia natural em quilos de materia seca.
+    /// Converte quilos de matéria natural em quilos de matéria seca.
     func materiaSeca(deMateriaNatural kgMN: Double) -> Double {
         kgMN * fracaoMateriaSeca
     }
 
-    /// Preco por quilo de materia natural.
+    /// Preço por quilo de matéria natural.
     var precoPorKg: Double {
         guard let kg = embalagem.kgPorUnidade, kg > 0 else { return 0 }
         return precoUnitario / kg
     }
 
-    /// Preco por quilo de materia seca, util para comparar alimentos.
+    /// Preço por quilo de matéria seca, útil para comparar alimentos.
     var precoPorKgMateriaSeca: Double {
         precoPorKg / fracaoMateriaSeca
     }

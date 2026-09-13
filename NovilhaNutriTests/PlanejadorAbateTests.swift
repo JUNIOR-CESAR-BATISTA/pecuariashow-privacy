@@ -12,7 +12,7 @@ final class PlanejadorAbateTests: XCTestCase {
     private let soja = Insumo(nome: "Farelo de soja", categoria: .proteico,
                               materiaSeca: 89, proteinaBruta: 48.0, ndt: 82,
                               embalagem: .saca50, precoUnitario: 150)
-    private let mineral = Insumo(nome: "Nucleo", categoria: .mineral,
+    private let mineral = Insumo(nome: "Núcleo", categoria: .mineral,
                                  materiaSeca: 99, proteinaBruta: 0, ndt: 0,
                                  embalagem: .saca25, precoUnitario: 100)
 
@@ -48,7 +48,7 @@ final class PlanejadorAbateTests: XCTestCase {
     func testUltimoPeriodoEhParcialEChegaAoPesoAlvo() {
         let relatorio = PlanejadorAbate.projetar(lote: loteBase(), selecao: selecao)
 
-        guard let ultimo = relatorio.periodos.last else { return XCTFail("Sem periodos") }
+        guard let ultimo = relatorio.periodos.last else { return XCTFail("Sem períodos") }
         XCTAssertEqual(ultimo.dias, 16.667, accuracy: 0.01)
         XCTAssertEqual(ultimo.pesoFinal, 430, accuracy: 0.01)
         XCTAssertEqual(relatorio.periodos.first?.pesoInicial ?? 0, 260, accuracy: 0.001)
@@ -106,7 +106,7 @@ final class PlanejadorAbateTests: XCTestCase {
         XCTAssertEqual(relatorio.conversaoAlimentar,
                        relatorio.materiaSecaTotal / relatorio.ganhoTotalLote,
                        accuracy: 0.0001)
-        // Entre 8 e 14 kg de MS por kg de ganho e a faixa esperada em recria.
+        // Entre 8 e 14 kg de MS por kg de ganho é a faixa esperada em recria.
         XCTAssertTrue((8.0...14.0).contains(relatorio.conversaoAlimentar))
     }
 
@@ -126,7 +126,7 @@ final class PlanejadorAbateTests: XCTestCase {
 
         guard let milhoTotal = relatorio.totais.first(where: { $0.insumo.nome == "Milho" }),
               let conversao = milhoTotal.conversao else {
-            return XCTFail("Milho sem conversao")
+            return XCTFail("Milho sem conversão")
         }
         XCTAssertEqual(conversao.kgPorUnidade, 60, accuracy: 0.0001)
         XCTAssertEqual(Double(conversao.unidadesInteiras),
@@ -185,7 +185,7 @@ final class PlanejadorAbateTests: XCTestCase {
 
         XCTAssertTrue(texto.contains("PLANEJAMENTO NUTRICIONAL E DE ABATE"))
         XCTAssertTrue(texto.contains("INSUMOS DO CICLO COMPLETO"))
-        XCTAssertTrue(texto.contains("PERIODOS"))
+        XCTAssertTrue(texto.contains("PERÍODOS"))
         XCTAssertTrue(texto.contains("Milho"))
         XCTAssertTrue(texto.contains("sacas"))
     }

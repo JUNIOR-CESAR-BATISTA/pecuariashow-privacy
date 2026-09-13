@@ -1,6 +1,6 @@
 import Foundation
 
-/// Formatacao numerica e de datas no padrao brasileiro.
+/// Formatação numérica e de datas no padrão brasileiro.
 enum Formatadores {
     static let localeBR = Locale(identifier: "pt_BR")
 
@@ -41,7 +41,7 @@ enum Formatadores {
         return formatter(casas: casas).string(from: NSNumber(value: valor)) ?? "-"
     }
 
-    /// Quilos com uma casa decimal ate 100 kg e sem casas acima disso.
+    /// Quilos com uma casa decimal até 100 kg e sem casas acima disso.
     static func kg(_ valor: Double) -> String {
         guard valor.isFinite else { return "-" }
         let casas = abs(valor) < 100 ? 2 : 0
@@ -76,8 +76,8 @@ enum Formatadores {
         let meses = total / 30
         let resto = total % 30
         if meses == 0 { return "\(resto) dia\(resto == 1 ? "" : "s")" }
-        if resto == 0 { return "\(meses) \(meses == 1 ? "mes" : "meses")" }
-        return "\(meses) \(meses == 1 ? "mes" : "meses") e \(resto) dia\(resto == 1 ? "" : "s")"
+        if resto == 0 { return "\(meses) \(meses == 1 ? "mês" : "meses")" }
+        return "\(meses) \(meses == 1 ? "mês" : "meses") e \(resto) dia\(resto == 1 ? "" : "s")"
     }
 
     static func arroba(_ valor: Double) -> String {

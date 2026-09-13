@@ -1,11 +1,11 @@
 import Foundation
 
-/// Tabela inicial de alimentos, com valores de referencia de composicao.
+/// Tabela inicial de alimentos, com valores de referência de composição.
 ///
-/// Os teores sao medias de tabelas brasileiras de composicao de alimentos e
+/// Os teores são médias de tabelas brasileiras de composição de alimentos e
 /// servem apenas como ponto de partida: o produtor deve ajustar cada insumo
-/// conforme a analise bromatologica do que tem na propriedade. Os precos
-/// comecam zerados justamente porque variam por regiao e por safra.
+/// conforme a análise bromatológica do que tem na propriedade. Os preços
+/// começam zerados justamente porque variam por região e por safra.
 enum CatalogoInsumos {
 
     private static func uid(_ texto: String) -> UUID {
@@ -21,11 +21,11 @@ enum CatalogoInsumos {
     static let padrao: [Insumo] = [
         // Volumosos
         Insumo(id: pastoAguasID,
-               nome: "Pasto - capim das aguas",
+               nome: "Pasto - capim das águas",
                categoria: .volumoso,
                materiaSeca: 28, proteinaBruta: 9.0, ndt: 58,
                embalagem: .pastejo,
-               observacao: "Braquiaria em pleno crescimento, pastejo direto."),
+               observacao: "Braquiária em pleno crescimento, pastejo direto."),
         Insumo(id: uid("11111111-0000-4000-A000-000000000002"),
                nome: "Pasto - capim da seca",
                categoria: .volumoso,
@@ -43,11 +43,11 @@ enum CatalogoInsumos {
                materiaSeca: 30, proteinaBruta: 7.0, ndt: 60,
                embalagem: .granel),
         Insumo(id: uid("11111111-0000-4000-A000-000000000005"),
-               nome: "Cana-de-acucar picada",
+               nome: "Cana-de-açúcar picada",
                categoria: .volumoso,
                materiaSeca: 28, proteinaBruta: 3.0, ndt: 60,
                embalagem: .granel,
-               observacao: "Precisa de correcao proteica."),
+               observacao: "Precisa de correção proteica."),
         Insumo(id: uid("11111111-0000-4000-A000-000000000006"),
                nome: "Feno de tifton",
                categoria: .volumoso,
@@ -59,14 +59,14 @@ enum CatalogoInsumos {
                materiaSeca: 25, proteinaBruta: 8.0, ndt: 55,
                embalagem: .granel),
 
-        // Energeticos
+        // Energéticos
         Insumo(id: milhoID,
-               nome: "Milho grao moido",
+               nome: "Milho grão moído",
                categoria: .energetico,
                materiaSeca: 88, proteinaBruta: 9.0, ndt: 87,
                embalagem: .saca60),
         Insumo(id: uid("11111111-0000-4000-A000-000000000011"),
-               nome: "Sorgo grao moido",
+               nome: "Sorgo grão moído",
                categoria: .energetico,
                materiaSeca: 88, proteinaBruta: 9.5, ndt: 82,
                embalagem: .saca60),
@@ -76,7 +76,7 @@ enum CatalogoInsumos {
                materiaSeca: 88, proteinaBruta: 17.0, ndt: 70,
                embalagem: .saca40),
         Insumo(id: uid("11111111-0000-4000-A000-000000000013"),
-               nome: "Polpa citrica peletizada",
+               nome: "Polpa cítrica peletizada",
                categoria: .energetico,
                materiaSeca: 88, proteinaBruta: 7.0, ndt: 78,
                embalagem: .saca25),
@@ -86,11 +86,11 @@ enum CatalogoInsumos {
                materiaSeca: 89, proteinaBruta: 12.0, ndt: 70,
                embalagem: .saca40),
         Insumo(id: uid("11111111-0000-4000-A000-000000000015"),
-               nome: "Caroco de algodao",
+               nome: "Caroço de algodão",
                categoria: .energetico,
                materiaSeca: 90, proteinaBruta: 23.0, ndt: 85,
                embalagem: .granel,
-               observacao: "Limitar a 15% da materia seca da dieta."),
+               observacao: "Limitar a 15% da matéria seca da dieta."),
 
         // Proteicos
         Insumo(id: fareloSojaID,
@@ -99,7 +99,7 @@ enum CatalogoInsumos {
                materiaSeca: 89, proteinaBruta: 48.0, ndt: 82,
                embalagem: .saca50),
         Insumo(id: uid("11111111-0000-4000-A000-000000000017"),
-               nome: "Farelo de algodao 38%",
+               nome: "Farelo de algodão 38%",
                categoria: .proteico,
                materiaSeca: 90, proteinaBruta: 38.0, ndt: 72,
                embalagem: .saca50),
@@ -109,11 +109,11 @@ enum CatalogoInsumos {
                materiaSeca: 90, proteinaBruta: 45.0, ndt: 78,
                embalagem: .saca50),
         Insumo(id: uid("11111111-0000-4000-A000-000000000019"),
-               nome: "Ureia pecuaria",
+               nome: "Ureia pecuária",
                categoria: .proteico,
                materiaSeca: 99, proteinaBruta: 281.0, ndt: 0,
                embalagem: .saca25,
-               observacao: "Maximo de 1% da materia seca total. Adaptacao gradual."),
+               observacao: "Máximo de 1% da matéria seca total. Adaptação gradual."),
         Insumo(id: uid("11111111-0000-4000-A000-000000000020"),
                nome: "Concentrado proteico comercial",
                categoria: .proteico,
@@ -122,17 +122,17 @@ enum CatalogoInsumos {
 
         // Minerais
         Insumo(id: mineralID,
-               nome: "Nucleo mineral para recria",
+               nome: "Núcleo mineral para recria",
                categoria: .mineral,
                materiaSeca: 99, proteinaBruta: 0, ndt: 0,
                embalagem: .saca25,
-               observacao: "Fornecimento medio de 100 g por animal por dia."),
+               observacao: "Fornecimento médio de 100 g por animal por dia."),
         Insumo(id: uid("11111111-0000-4000-A000-000000000022"),
                nome: "Sal mineral proteinado",
                categoria: .mineral,
                materiaSeca: 95, proteinaBruta: 20.0, ndt: 25,
                embalagem: .saca30,
-               observacao: "Consumo tipico de 200 a 400 g por animal por dia.")
+               observacao: "Consumo típico de 200 a 400 g por animal por dia.")
     ]
 
     static func porCategoria(_ categoria: CategoriaInsumo, em lista: [Insumo]) -> [Insumo] {

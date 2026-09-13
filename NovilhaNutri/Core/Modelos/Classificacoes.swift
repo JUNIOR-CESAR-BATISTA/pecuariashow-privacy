@@ -1,8 +1,8 @@
 import Foundation
 
-/// Fase de criacao da novilha. Define apenas parametros de manejo
-/// (faixas de peso, pisos praticos de proteina e sugestoes de dieta);
-/// a exigencia nutricional em si e calculada a partir de peso e ganho.
+/// Fase de criação da novilha. Define apenas parâmetros de manejo
+/// (faixas de peso, pisos práticos de proteína e sugestões de dieta);
+/// a exigência nutricional em si é calculada a partir de peso e ganho.
 enum FaseAnimal: String, Codable, CaseIterable, Identifiable, Hashable {
     case desmama
     case recriaInicial
@@ -16,13 +16,13 @@ enum FaseAnimal: String, Codable, CaseIterable, Identifiable, Hashable {
         case .desmama: return "Desmama"
         case .recriaInicial: return "Recria inicial"
         case .recriaFinal: return "Recria final"
-        case .terminacao: return "Terminacao"
+        case .terminacao: return "Terminação"
         }
     }
 
     var descricao: String {
         switch self {
-        case .desmama: return "Pos-desmame, 150 a 210 kg"
+        case .desmama: return "Pós-desmame, 150 a 210 kg"
         case .recriaInicial: return "Crescimento, 210 a 280 kg"
         case .recriaFinal: return "Crescimento, 280 a 360 kg"
         case .terminacao: return "Acabamento, acima de 360 kg"
@@ -38,8 +38,8 @@ enum FaseAnimal: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Piso pratico de proteina bruta na materia seca (%), usado como
-    /// seguranca para funcionamento ruminal e consumo.
+    /// Piso prático de proteína bruta na matéria seca (%), usado como
+    /// segurança para funcionamento ruminal e consumo.
     var proteinaMinimaDieta: Double {
         switch self {
         case .desmama: return 13.0
@@ -49,7 +49,7 @@ enum FaseAnimal: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Participacao de volumoso sugerida na materia seca (fracao).
+    /// Participação de volumoso sugerida na matéria seca (fração).
     var volumosoSugerido: Double {
         switch self {
         case .desmama: return 0.65
@@ -78,7 +78,7 @@ enum FaseAnimal: String, Codable, CaseIterable, Identifiable, Hashable {
     }
 }
 
-/// Grupo genetico predominante do lote.
+/// Grupo genético predominante do lote.
 enum GrupoGenetico: String, Codable, CaseIterable, Identifiable, Hashable {
     case zebuino
     case cruzado
@@ -88,7 +88,7 @@ enum GrupoGenetico: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var nome: String {
         switch self {
-        case .zebuino: return "Zebuino (Nelore e similares)"
+        case .zebuino: return "Zebuíno (Nelore e similares)"
         case .cruzado: return "Cruzado (F1 e compostos)"
         case .taurino: return "Taurino (Angus e similares)"
         }
@@ -96,13 +96,13 @@ enum GrupoGenetico: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var nomeCurto: String {
         switch self {
-        case .zebuino: return "Zebuino"
+        case .zebuino: return "Zebuíno"
         case .cruzado: return "Cruzado"
         case .taurino: return "Taurino"
         }
     }
 
-    /// Ajuste da exigencia de mantenca em relacao ao padrao taurino.
+    /// Ajuste da exigência de mantença em relação ao padrão taurino.
     var fatorMantenca: Double {
         switch self {
         case .zebuino: return 0.90
@@ -111,7 +111,7 @@ enum GrupoGenetico: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Peso adulto/de terminacao tipico das femeas, usado no peso equivalente.
+    /// Peso adulto/de terminação típico das fêmeas, usado no peso equivalente.
     var pesoFinalSugerido: Double {
         switch self {
         case .zebuino: return 430
@@ -129,7 +129,7 @@ enum GrupoGenetico: String, Codable, CaseIterable, Identifiable, Hashable {
     }
 }
 
-/// Sistema de criacao: define o incremento de gasto energetico com atividade.
+/// Sistema de criação: define o incremento de gasto energético com atividade.
 enum SistemaCriacao: String, Codable, CaseIterable, Identifiable, Hashable {
     case confinamento
     case semiconfinamento
@@ -148,12 +148,12 @@ enum SistemaCriacao: String, Codable, CaseIterable, Identifiable, Hashable {
     var descricao: String {
         switch self {
         case .confinamento: return "Animais em curral, sem deslocamento"
-        case .semiconfinamento: return "Pastejo com racao no cocho"
+        case .semiconfinamento: return "Pastejo com ração no cocho"
         case .pasto: return "Pastejo extensivo, maior deslocamento"
         }
     }
 
-    /// Fator de atividade aplicado a exigencia de mantenca.
+    /// Fator de atividade aplicado a exigência de mantença.
     var fatorAtividade: Double {
         switch self {
         case .confinamento: return 1.00
@@ -163,7 +163,7 @@ enum SistemaCriacao: String, Codable, CaseIterable, Identifiable, Hashable {
     }
 }
 
-/// Papel do insumo na formulacao da racao.
+/// Papel do insumo na formulação da ração.
 enum CategoriaInsumo: String, Codable, CaseIterable, Identifiable, Hashable {
     case volumoso
     case energetico
@@ -175,9 +175,9 @@ enum CategoriaInsumo: String, Codable, CaseIterable, Identifiable, Hashable {
     var nome: String {
         switch self {
         case .volumoso: return "Volumoso"
-        case .energetico: return "Energetico"
+        case .energetico: return "Energético"
         case .proteico: return "Proteico"
-        case .mineral: return "Mineral / nucleo"
+        case .mineral: return "Mineral / núcleo"
         }
     }
 

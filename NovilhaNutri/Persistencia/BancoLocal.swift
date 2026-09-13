@@ -1,6 +1,6 @@
 import Foundation
 
-/// Conteudo completo persistido pelo aplicativo.
+/// Conteúdo completo persistido pelo aplicativo.
 struct DadosApp: Codable {
     var versao: Int
     var lotes: [Lote]
@@ -15,9 +15,9 @@ struct DadosApp: Codable {
 
 /// Armazenamento local em arquivo JSON dentro do sandbox do aplicativo.
 ///
-/// Nao existe servidor, conta de usuario nem sincronizacao: os dados ficam
-/// apenas no aparelho, no diretorio de suporte do proprio aplicativo, e so
-/// saem dali se o usuario exportar o arquivo por conta propria.
+/// Não existe servidor, conta de usuário nem sincronização: os dados ficam
+/// apenas no aparelho, no diretório de suporte do próprio aplicativo, e só
+/// saem dali se o usuário exportar o arquivo por conta própria.
 struct BancoLocal {
 
     enum ErroBanco: LocalizedError {
@@ -28,7 +28,7 @@ struct BancoLocal {
         var errorDescription: String? {
             switch self {
             case .diretorioIndisponivel:
-                return "Nao foi possivel acessar a pasta de dados do aplicativo."
+                return "Não foi possível acessar a pasta de dados do aplicativo."
             case .falhaAoSalvar(let detalhe):
                 return "Falha ao salvar os dados: \(detalhe)"
             case .falhaAoLer(let detalhe):
@@ -58,7 +58,7 @@ struct BancoLocal {
     }
 
     var caminhoLegivel: String {
-        arquivo?.path ?? "indisponivel"
+        arquivo?.path ?? "indisponível"
     }
 
     private static var encoder: JSONEncoder {
@@ -74,7 +74,7 @@ struct BancoLocal {
         return d
     }
 
-    /// Le os dados salvos. Retorna `nil` quando ainda nao existe arquivo.
+    /// Lê os dados salvos. Retorna `nil` quando ainda não existe arquivo.
     func carregar() throws -> DadosApp? {
         guard let arquivo else { throw ErroBanco.diretorioIndisponivel }
         guard FileManager.default.fileExists(atPath: arquivo.path) else { return nil }
@@ -86,7 +86,7 @@ struct BancoLocal {
         }
     }
 
-    /// Grava os dados de forma atomica, sem sair do aparelho.
+    /// Grava os dados de forma atômica, sem sair do aparelho.
     func salvar(_ dados: DadosApp) throws {
         guard let pastaBase, let arquivo else { throw ErroBanco.diretorioIndisponivel }
         do {
@@ -118,7 +118,7 @@ struct BancoLocal {
         return tamanho.intValue
     }
 
-    /// Serializa os dados para exportacao manual pelo usuario.
+    /// Serializa os dados para exportação manual pelo usuário.
     static func exportar(_ dados: DadosApp) throws -> Data {
         try encoder.encode(dados)
     }

@@ -20,7 +20,7 @@ enum Paleta {
     }
 }
 
-/// Cartao com um numero em destaque.
+/// Cartão com um número em destaque.
 struct CartaoIndicador: View {
     let titulo: String
     let valor: String
@@ -55,7 +55,7 @@ struct CartaoIndicador: View {
     }
 }
 
-/// Linha de rotulo e valor dentro de uma secao.
+/// Linha de rótulo e valor dentro de uma seção.
 struct LinhaDado: View {
     let rotulo: String
     let valor: String
@@ -76,7 +76,7 @@ struct LinhaDado: View {
     }
 }
 
-/// Campo de entrada numerica com teclado decimal.
+/// Campo de entrada numérica com teclado decimal.
 struct CampoNumerico: View {
     let titulo: String
     @Binding var valor: Double
@@ -101,7 +101,7 @@ struct CampoNumerico: View {
     }
 }
 
-/// Campo de entrada de numeros inteiros.
+/// Campo de entrada de números inteiros.
 struct CampoInteiro: View {
     let titulo: String
     @Binding var valor: Int
@@ -143,7 +143,7 @@ struct Aviso: View {
     }
 }
 
-/// Fatia da barra de composicao.
+/// Fatia da barra de composição.
 struct ParteComposicao: Identifiable {
     var id: UUID
     var nome: String
@@ -151,7 +151,7 @@ struct ParteComposicao: Identifiable {
     var cor: Color
 }
 
-/// Barra proporcional que mostra a participacao de cada alimento na materia seca.
+/// Barra proporcional que mostra a participação de cada alimento na matéria seca.
 struct BarraComposicao: View {
     let partes: [ParteComposicao]
 
@@ -178,7 +178,7 @@ struct BarraComposicao: View {
     }
 }
 
-/// Legenda em linhas para a barra de composicao.
+/// Legenda em linhas para a barra de composição.
 struct LegendaComposicao: View {
     let partes: [ParteComposicao]
     let total: Double
@@ -203,13 +203,13 @@ struct LegendaComposicao: View {
     }
 }
 
-/// Ponto do grafico de evolucao de peso.
+/// Ponto do gráfico de evolução de peso.
 struct PontoGrafico: Hashable {
     var dia: Double
     var peso: Double
 }
 
-/// Grafico simples de evolucao de peso ao longo dos periodos.
+/// Gráfico simples de evolução de peso ao longo dos períodos.
 struct GraficoEvolucao: View {
     let pontos: [PontoGrafico]
     var cor: Color = Paleta.verde
@@ -270,7 +270,7 @@ struct GraficoEvolucao: View {
     }
 }
 
-/// Rotulo colorido pequeno.
+/// Rótulo colorido pequeno.
 struct Etiqueta: View {
     let texto: String
     var cor: Color = Paleta.verde
@@ -285,7 +285,7 @@ struct Etiqueta: View {
     }
 }
 
-/// Estado vazio com acao sugerida.
+/// Estado vazio com ação sugerida.
 struct EstadoVazio: View {
     let simbolo: String
     let titulo: String

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pesagem registrada do lote (peso medio dos animais).
+/// Pesagem registrada do lote (peso médio dos animais).
 struct Pesagem: Identifiable, Codable, Hashable {
     var id: UUID
     var data: Date
@@ -21,7 +21,7 @@ struct Lote: Identifiable, Codable, Hashable {
     var nome: String
     var quantidadeAnimais: Int
     var pesoMedioInicial: Double
-    /// Meta de ganho medio diario (kg/dia).
+    /// Meta de ganho médio diário (kg/dia).
     var ganhoMetaDiario: Double
     var fase: FaseAnimal
     var grupoGenetico: GrupoGenetico
@@ -31,14 +31,14 @@ struct Lote: Identifiable, Codable, Hashable {
     /// Planejamento de abate.
     var pesoAlvoAbate: Double
     var rendimentoCarcaca: Double
-    /// Peso de acabamento usado no calculo de peso equivalente.
+    /// Peso de acabamento usado no cálculo de peso equivalente.
     var pesoFinalMaturidade: Double
     var diasPorPeriodo: Int
 
-    /// Calibracao do consumo previsto (0,85 a 1,15).
+    /// Calibração do consumo previsto (0,85 a 1,15).
     var ajusteConsumo: Double
 
-    /// Insumos que compoem a racao.
+    /// Insumos que compõem a ração.
     var volumosoID: UUID?
     var energeticoID: UUID?
     var proteicoID: UUID?
@@ -92,14 +92,14 @@ struct Lote: Identifiable, Codable, Hashable {
         self.observacoes = observacoes
     }
 
-    /// Pesagens em ordem cronologica.
+    /// Pesagens em ordem cronológica.
     var pesagensOrdenadas: [Pesagem] {
         pesagens.sorted { $0.data < $1.data }
     }
 
     var ultimaPesagem: Pesagem? { pesagensOrdenadas.last }
 
-    /// Peso medio atual: ultima pesagem registrada ou o peso de entrada.
+    /// Peso médio atual: última pesagem registrada ou o peso de entrada.
     var pesoAtual: Double {
         ultimaPesagem?.pesoMedio ?? pesoMedioInicial
     }
@@ -108,7 +108,7 @@ struct Lote: Identifiable, Codable, Hashable {
         ultimaPesagem?.data ?? dataEntrada
     }
 
-    /// Ganho medio diario observado entre a entrada e a ultima pesagem.
+    /// Ganho médio diário observado entre a entrada e a última pesagem.
     var ganhoRealDiario: Double? {
         guard let ultima = ultimaPesagem else { return nil }
         let dias = ultima.data.timeIntervalSince(dataEntrada) / 86_400
@@ -118,7 +118,7 @@ struct Lote: Identifiable, Codable, Hashable {
 
     var pesoTotalLote: Double { pesoAtual * Double(quantidadeAnimais) }
 
-    /// Perfil para o calculo de exigencias em um determinado peso.
+    /// Perfil para o cálculo de exigências em um determinado peso.
     func perfil(paraPeso peso: Double, faseAutomatica: Bool = false) -> PerfilAnimal {
         PerfilAnimal(pesoVivo: peso,
                      fase: faseAutomatica ? FaseAnimal.sugerida(paraPeso: peso) : fase,
@@ -130,13 +130,13 @@ struct Lote: Identifiable, Codable, Hashable {
 
     var perfilAtual: PerfilAnimal { perfil(paraPeso: pesoAtual) }
 
-    /// Peso ainda a ganhar por animal ate o abate.
+    /// Peso ainda a ganhar por animal até o abate.
     var ganhoRestante: Double { max(0, pesoAlvoAbate - pesoAtual) }
 
-    /// Arrobas de carcaca no peso atual.
+    /// Arrobas de carcaça no peso atual.
     var arrobasAtuais: Double { pesoAtual * rendimentoCarcaca / 15 }
 
-    /// Arrobas de carcaca previstas no abate.
+    /// Arrobas de carcaça previstas no abate.
     var arrobasNoAbate: Double { pesoAlvoAbate * rendimentoCarcaca / 15 }
 
     var estaPronto: Bool { pesoAtual >= pesoAlvoAbate }
