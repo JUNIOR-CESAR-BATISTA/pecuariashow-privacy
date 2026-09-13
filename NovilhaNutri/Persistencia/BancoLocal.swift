@@ -80,7 +80,7 @@ struct BancoLocal {
             self.pastaBase = FileManager.default
                 .urls(for: .applicationSupportDirectory, in: .userDomainMask)
                 .first?
-                .appendingPathComponent(nomePasta, isDirectory: true)
+                .appendingPathComponent(Self.nomePasta, isDirectory: true)
         }
     }
 
