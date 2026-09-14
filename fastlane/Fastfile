@@ -77,36 +77,48 @@ def garantir_identificador_e_app(chave)
   criar_app_no_connect
 end
 
-# A Apple exige o nome da empresa no primeiro app da conta e recusa esse mesmo
-# campo depois disso. Como não dá para saber de fora qual é o caso, tentamos as
-# duas formas.
+# Tenta criar o registro do app.
+#
+# A Apple costuma recusar isto por chave de integração - ela responde "The
+# resource 'apps' does not allow 'CREATE'". Criar o app é justamente a etapa
+# que a API não delega. Tentamos assim mesmo, porque não custa nada e algumas
+# contas conseguem; se não der, explicamos o que fazer à mão. É uma vez só na
+# vida do app: depois disso todo envio volta a ser automático.
 def criar_app_no_connect
-  [EMPRESA, nil].each do |empresa|
-    atributos = {
-      name: NOME_APP,
-      version_string: ENV.fetch("VERSAO"),
-      sku: SKU,
-      primary_locale: "pt-BR",
-      bundle_id: BUNDLE_ID,
-      platforms: [Spaceship::ConnectAPI::Platform::IOS]
-    }
-    atributos[:company_name] = empresa if empresa
-
-    begin
-      Spaceship::ConnectAPI::App.create(**atributos)
-      UI.success("App criado no App Store Connect#{empresa ? " (com nome de empresa)" : ""}")
-      return
-    rescue StandardError => erro
-      UI.important("Tentativa #{empresa ? 'com' : 'sem'} nome de empresa falhou: #{erro.message}")
-    end
-  end
-
-  UI.user_error!(
-    "Não consegui criar o app no App Store Connect. A causa mais comum é o nome " \
-    "'#{NOME_APP}' já estar em uso por outra pessoa. Nesse caso, crie o app à mão em " \
-    "appstoreconnect.apple.com com outro nome (o identificador continua #{BUNDLE_ID}) " \
-    "e rode a tag de novo."
+  Spaceship::ConnectAPI::App.create(
+    name: NOME_APP,
+    version_string: ENV.fetch("VERSAO"),
+    sku: SKU,
+    primary_locale: "pt-BR",
+    bundle_id: BUNDLE_ID,
+    platforms: [Spaceship::ConnectAPI::Platform::IOS],
+    company_name: EMPRESA
   )
+  UI.success("App criado no App Store Connect")
+rescue StandardError => erro
+  UI.important("A API recusou criar o app: #{erro.message}")
+  UI.user_error!(instrucoes_para_criar_a_mao)
+end
+
+def instrucoes_para_criar_a_mao
+  <<~TEXTO
+
+    O app precisa ser criado uma vez à mão no App Store Connect.
+
+      1. Abra appstoreconnect.apple.com e entre em "Apps"
+      2. Clique no "+" e escolha "Novo app"
+      3. Plataforma: iOS
+      4. Nome: #{NOME_APP}
+      5. Idioma principal: Português (Brasil)
+      6. ID do pacote: escolha #{BUNDLE_ID} na lista. Ele já está
+         registrado, então aparece lá.
+      7. SKU: #{SKU}
+      8. Acesso de usuário: Acesso completo
+      9. Clique em "Criar" e publique a próxima tag
+
+    Se o nome "#{NOME_APP}" estiver em uso por outra conta, escolha outro - o
+    que importa aqui é o identificador, que continua sendo #{BUNDLE_ID}.
+  TEXTO
 end
 
 # Revoga os certificados de distribuição já registrados na conta. Nenhum deles
