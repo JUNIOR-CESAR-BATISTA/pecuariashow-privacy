@@ -79,9 +79,14 @@ def garantir_identificador_e_app(chave)
   # tem permissão para ver os apps da conta".
   UI.important("Não encontrei nenhum app com o identificador #{BUNDLE_ID}.")
   listar_apps_visiveis
-
-  UI.important("Criando o app '#{NOME_APP}' no App Store Connect")
   criar_app_no_connect
+
+  # E seguimos assim mesmo. Esta busca é uma conveniência, não um pré-requisito:
+  # quem exige o registro do app é só o envio, lá no fim. Compilar e assinar
+  # dependem apenas do App ID, que já existe. Parar aqui seria trocar o erro
+  # real da Apple, que é preciso, por um palpite nosso.
+  UI.important("Seguindo mesmo assim - a compilação não depende deste registro.")
+  UI.important("Se o envio falhar no fim, a mensagem da Apple vai dizer o que falta.")
 end
 
 # Lista os apps que a chave da API enxerga, para o log dizer onde está o
@@ -110,6 +115,7 @@ end
 # contas conseguem; se não der, explicamos o que fazer à mão. É uma vez só na
 # vida do app: depois disso todo envio volta a ser automático.
 def criar_app_no_connect
+  UI.important("Tentando criar o app '#{NOME_APP}' no App Store Connect")
   Spaceship::ConnectAPI::App.create(
     name: NOME_APP,
     version_string: ENV.fetch("VERSAO"),
@@ -121,8 +127,8 @@ def criar_app_no_connect
   )
   UI.success("App criado no App Store Connect")
 rescue StandardError => erro
-  UI.important("A API recusou criar o app: #{erro.message}")
-  UI.user_error!(instrucoes_para_criar_a_mao)
+  UI.important("A API não criou o app: #{erro.message}")
+  instrucoes_para_criar_a_mao.each_line { |linha| UI.important(linha.chomp) }
 end
 
 def instrucoes_para_criar_a_mao
