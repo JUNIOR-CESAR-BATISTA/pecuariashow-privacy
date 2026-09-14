@@ -21,30 +21,48 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 45
 
-    env:
-      CHAVE_ID: ${{ secrets.APPSTORE_KEY_ID }}
-      EMISSOR: ${{ secrets.APPSTORE_ISSUER_ID }}
-      TIME: ${{ secrets.APPLE_TEAM_ID }}
-
     steps:
       - name: Baixar o código
         uses: actions/checkout@v4
 
-      - name: Conferir se os segredos estão configurados
+      - name: Conferir e limpar os segredos
         env:
+          CHAVE_ID_BRUTO: ${{ secrets.APPSTORE_KEY_ID }}
+          EMISSOR_BRUTO: ${{ secrets.APPSTORE_ISSUER_ID }}
+          TIME_BRUTO: ${{ secrets.APPLE_TEAM_ID }}
           CHAVE: ${{ secrets.APPSTORE_PRIVATE_KEY }}
         run: |
+          # Espaços e quebras de linha coladas junto do valor quebram tudo
+          # mais adiante, então os identificadores são limpos aqui.
+          CHAVE_ID=$(printf '%s' "$CHAVE_ID_BRUTO" | tr -d '[:space:]')
+          EMISSOR=$(printf '%s' "$EMISSOR_BRUTO" | tr -d '[:space:]')
+          TIME=$(printf '%s' "$TIME_BRUTO" | tr -d '[:space:]')
+
           faltando=""
-          [ -z "$EMISSOR" ] && faltando="$faltando APPSTORE_ISSUER_ID"
           [ -z "$CHAVE_ID" ] && faltando="$faltando APPSTORE_KEY_ID"
-          [ -z "$CHAVE" ] && faltando="$faltando APPSTORE_PRIVATE_KEY"
+          [ -z "$EMISSOR" ] && faltando="$faltando APPSTORE_ISSUER_ID"
           [ -z "$TIME" ] && faltando="$faltando APPLE_TEAM_ID"
+          [ -z "$CHAVE" ] && faltando="$faltando APPSTORE_PRIVATE_KEY"
           if [ -n "$faltando" ]; then
             echo "::error::Faltam estes segredos no repositório:$faltando"
-            echo "Configure em Settings > Secrets and variables > Actions."
             exit 1
           fi
-          echo "Segredos presentes."
+
+          # Confere o tamanho sem revelar o conteúdo.
+          echo "Key ID: ${#CHAVE_ID} caracteres (esperado 10)"
+          echo "Issuer ID: ${#EMISSOR} caracteres (esperado 36)"
+          echo "Team ID: ${#TIME} caracteres (esperado 10)"
+          [ "${#CHAVE_ID}" -ne 10 ] && echo "::warning::O Key ID não tem 10 caracteres. Confira o segredo APPSTORE_KEY_ID."
+          [ "${#TIME}" -ne 10 ] && echo "::warning::O Team ID não tem 10 caracteres. Confira o segredo APPLE_TEAM_ID."
+          [ "${#EMISSOR}" -ne 36 ] && echo "::warning::O Issuer ID não parece um UUID. Confira o segredo APPSTORE_ISSUER_ID."
+
+          {
+            echo "CHAVE_ID=$CHAVE_ID"
+            echo "EMISSOR=$EMISSOR"
+            echo "TIME=$TIME"
+            echo "CHAVE_ARQUIVO=$HOME/private_keys/AuthKey_$CHAVE_ID.p8"
+          } >> "$GITHUB_ENV"
+          exit 0
 
       - name: Escolher o Xcode mais novo do runner
         run: |
@@ -62,7 +80,6 @@ jobs:
           else
             VERSAO="${{ github.event.inputs.versao }}"
           fi
-          # a Apple so aceita versao no formato 1, 1.0 ou 1.0.0
           if ! echo "$VERSAO" | grep -qE '^[0-9]+(\.[0-9]+){0,2}$'; then
             echo "::warning::A tag '${GITHUB_REF_NAME}' não vira uma versão válida para a Apple. Usando 1.0.0."
             VERSAO="1.0.0"
@@ -74,15 +91,16 @@ jobs:
         env:
           CHAVE: ${{ secrets.APPSTORE_PRIVATE_KEY }}
         run: |
-          mkdir -p ~/private_keys ~/.appstoreconnect/private_keys
-          printf '%s\n' "$CHAVE" > ~/private_keys/AuthKey_${CHAVE_ID}.p8
-          chmod 600 ~/private_keys/AuthKey_${CHAVE_ID}.p8
-          cp ~/private_keys/AuthKey_${CHAVE_ID}.p8 ~/.appstoreconnect/private_keys/
-          # confere que o arquivo veio inteiro, sem revelar o conteúdo
-          if ! grep -q "BEGIN PRIVATE KEY" ~/private_keys/AuthKey_${CHAVE_ID}.p8; then
+          mkdir -p "$HOME/private_keys" "$HOME/.appstoreconnect/private_keys"
+          # tr remove o retorno de carro que vem quando o .p8 é colado no Windows
+          printf '%s\n' "$CHAVE" | tr -d '\r' > "$CHAVE_ARQUIVO"
+          chmod 600 "$CHAVE_ARQUIVO"
+          cp "$CHAVE_ARQUIVO" "$HOME/.appstoreconnect/private_keys/"
+          if ! grep -q "BEGIN PRIVATE KEY" "$CHAVE_ARQUIVO"; then
             echo "::error::A chave .p8 parece incompleta. Cole o arquivo inteiro no segredo, incluindo as linhas BEGIN e END."
             exit 1
           fi
+          echo "Chave gravada em $CHAVE_ARQUIVO ($(wc -l < "$CHAVE_ARQUIVO") linhas)."
 
       - name: Arquivar o aplicativo
         run: |
@@ -94,7 +112,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/NovilhaNutri.xcarchive" \
             -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${CHAVE_ID}.p8 \
+            -authenticationKeyPath "$CHAVE_ARQUIVO" \
             -authenticationKeyID "$CHAVE_ID" \
             -authenticationKeyIssuerID "$EMISSOR" \
             DEVELOPMENT_TEAM="$TIME" \
@@ -129,7 +147,7 @@ jobs:
             -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
             -exportPath "$RUNNER_TEMP/ipa" \
             -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${CHAVE_ID}.p8 \
+            -authenticationKeyPath "$CHAVE_ARQUIVO" \
             -authenticationKeyID "$CHAVE_ID" \
             -authenticationKeyIssuerID "$EMISSOR" \
             2>&1 | tee export.log
