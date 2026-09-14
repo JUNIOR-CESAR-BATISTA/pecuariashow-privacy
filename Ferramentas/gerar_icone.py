@@ -1,12 +1,19 @@
 """Gera o ícone do NovilhaNutri.
 
-Cabeça de nelore em silhueta dourada sobre verde profundo: orelhas caídas e
-chifres em lira, que é o que identifica a raça de longe. O contorno é montado
-com curvas de Bézier em vez de formas geométricas prontas, porque é a curva
-que separa um desenho de um clip-art.
+Cabeça de nelore mocho em silhueta dourada sobre verde profundo. A orelha
+longa e caída é o que identifica a raça de longe, e é ela que carrega o
+desenho: chifre somado a orelha punha quatro apêndices saindo do mesmo oval,
+e o olho lia aquilo como antena e asa.
+
+O contorno é montado com curvas de Bézier em vez de formas geométricas
+prontas, porque é a curva que separa um desenho de um clip-art. Orelha e
+chifre, quando existe, nascem de uma linha de centro que é engrossada ao
+longo do caminho - traçar as duas bordas em separado faz elas divergirem e a
+forma vira cunha.
 
 Uso:  python3 Ferramentas/gerar_icone.py caminho/do/AppIcon.png
 """
+import math
 import sys
 
 from PIL import Image, ImageDraw, ImageFilter
@@ -19,7 +26,7 @@ VERDE_CENTRO = (0x2B, 0x6B, 0x4A)
 VERDE_BORDA = (0x0A, 0x14, 0x0E)
 OURO = (0xE8, 0xC7, 0x62)
 OURO_SOMBRA = (0xC2, 0x9E, 0x40)
-FOCINHO = (0xB2, 0x8B, 0x36)
+FOCINHO = (0xCE, 0xA9, 0x4C)
 
 
 # --------------------------------------------------------------------------
@@ -45,6 +52,28 @@ def traçado(inicio, segmentos):
         pontos.extend(cubica(atual, c1, c2, fim)[1:])
         atual = fim
     return pontos
+
+
+def perfil_orelha(t):
+    """Orelha: estreita onde nasce, cheia no meio, fechando na ponta."""
+    return (0.42 + 0.58 * math.sin(math.pi * t)) * (1 - t ** 5)
+
+
+def faixa_perfilada(centro, largura, perfil):
+    """Como faixa(), mas com a espessura dada por uma função ao longo do caminho."""
+    n = len(centro)
+    esquerda, direita = [], []
+    for i, (x, y) in enumerate(centro):
+        t = i / (n - 1)
+        anterior = centro[max(i - 1, 0)]
+        seguinte = centro[min(i + 1, n - 1)]
+        tx, ty = seguinte[0] - anterior[0], seguinte[1] - anterior[1]
+        norma = (tx * tx + ty * ty) ** 0.5 or 1.0
+        nx, ny = -ty / norma, tx / norma
+        meia = largura * perfil(t) / 2
+        esquerda.append((x + nx * meia, y + ny * meia))
+        direita.append((x - nx * meia, y - ny * meia))
+    return esquerda + direita[::-1]
 
 
 def faixa(centro, largura_base, largura_ponta, expoente=1.6):
@@ -81,7 +110,7 @@ def escalar(pontos):
     para cima. Aqui ele é ampliado em torno do próprio centro visual e descido,
     para o conjunto ficar opticamente centrado e ocupar o ícone.
     """
-    k, eixo, descida = 1.14, 462, 50
+    k, eixo, descida = 1.22, 551, -39
     return [
         ((512 + (x - 512) * k) * S, (eixo + (y - eixo) * k + descida) * S)
         for x, y in pontos
@@ -92,27 +121,43 @@ def escalar(pontos):
 # peças do desenho
 # --------------------------------------------------------------------------
 def cabeca():
-    """Testa larga afinando para o focinho. Sem orelha, sem detalhe."""
-    direita = traçado((512, 398), [
-        ((614, 400), (674, 470), (670, 558)),
-        ((666, 650), (600, 744), (512, 746)),
+    """Cara de nelore: comprida e estreita, com o topo da cabeça abaulado."""
+    direita = traçado((512, 350), [
+        ((584, 354), (614, 400), (620, 454)),    # o alto abaulado, a nuca do zebu
+        ((650, 502), (666, 554), (658, 608)),    # bochecha, o ponto mais largo
+        ((648, 678), (594, 750), (512, 752)),    # focinho cheio, sem bico
     ])
     return direita + espelhar(direita)[::-1]
 
 
-def chifre_direito():
-    """Chifre em lira: nasce dentro da testa, abre, sobe e curva na ponta."""
-    centro = traçado((534, 446), [
-        ((666, 372), (824, 330), (812, 178)),
+def orelha_direita():
+    """A marca da raça: orelha longa e caída, larga no meio.
+
+    Sem chifre, de propósito. Nelore mocho é comum, e chifre somado a orelha
+    dava quatro apêndices saindo do mesmo oval - o olho lia aquilo como
+    antena e asa, não como boi.
+    """
+    centro = traçado((598, 508), [
+        ((706, 558), (764, 624), (756, 720)),
     ])
-    return faixa(centro, largura_base=104, largura_ponta=9)
+    return faixa_perfilada(centro, largura=118, perfil=perfil_orelha)
+
+
+def narina_direita():
+    """Duas vírgulas no focinho. Marcam a boca sem precisar de outra cor:
+    mancha cheia naquele tamanho vira boca aberta."""
+    return traçado((530, 686), [
+        ((546, 678), (558, 692), (554, 708)),
+        ((548, 722), (530, 720), (526, 706)),
+        ((524, 698), (524, 688), (530, 686)),
+    ])
 
 
 def olho_direito():
     """Amêndoa inclinada, só o suficiente para a forma virar rosto."""
-    return traçado((562, 534), [
-        ((580, 508), (620, 506), (632, 530)),
-        ((620, 558), (578, 560), (562, 534)),
+    return traçado((556, 558), [
+        ((574, 532), (616, 530), (628, 554)),
+        ((616, 582), (572, 584), (556, 558)),
     ])
 
 
@@ -145,14 +190,27 @@ def desenhar():
 
     # Uma cor só: chifres e cabeça formam uma silhueta contínua. Camadas de
     # tom diferente pediriam detalhe, e detalhe é o oposto do que se quer aqui.
-    for peça in (chifre_direito(), espelhar(chifre_direito()), cabeca()):
-        d.polygon(escalar(peça), fill=OURO)
+    d.polygon(escalar(orelha_direita()), fill=OURO)
+    d.polygon(escalar(espelhar(orelha_direita())), fill=OURO)
+
+    # Fresta entre a cabeça e o que vem atrás dela. Sem isso a orelha encosta
+    # na bochecha e as duas viram um bloco só, que é o que faz a silhueta
+    # perder a leitura.
+    contorno = escalar(cabeca())
+    fresta = Image.new("L", (L, L), 0)
+    ImageDraw.Draw(fresta).line(
+        contorno + [contorno[0]], fill=255, width=26 * S, joint="curve"
+    )
+    figura.paste((0, 0, 0, 0), (0, 0), fresta)
+
+    d.polygon(contorno, fill=OURO)
 
     # olhos vazados, deixando o fundo aparecer
     recorte = Image.new("RGBA", (L, L), (0, 0, 0, 0))
     dr = ImageDraw.Draw(recorte)
-    dr.polygon(escalar(olho_direito()), fill=(0, 0, 0, 255))
-    dr.polygon(escalar(espelhar(olho_direito())), fill=(0, 0, 0, 255))
+    for peça in (olho_direito(), narina_direita()):
+        dr.polygon(escalar(peça), fill=(0, 0, 0, 255))
+        dr.polygon(escalar(espelhar(peça)), fill=(0, 0, 0, 255))
     figura.paste((0, 0, 0, 0), (0, 0), recorte)
 
     # sombra curta sob a figura, só para ela não flutuar
