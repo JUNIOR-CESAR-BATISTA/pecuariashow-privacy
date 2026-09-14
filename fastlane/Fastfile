@@ -1,0 +1,67 @@
+# Envio da build para o TestFlight, rodando no runner macOS do GitHub.
+#
+# Tudo se resolve com a chave da App Store Connect: o certificado de
+# distribuição e o perfil de provisionamento são criados na hora, sem Mac e
+# sem precisar de nenhum aparelho cadastrado na conta - que é a pegadinha da
+# assinatura automática, ela exige um iPhone registrado para gerar o perfil
+# de desenvolvimento.
+
+default_platform(:ios)
+
+BUNDLE_ID = "br.com.novilhanutri.app".freeze
+
+platform :ios do
+  desc "Compila em Release, assina para distribuição e envia ao TestFlight"
+  lane :beta do
+    chave = app_store_connect_api_key(
+      key_id: ENV.fetch("CHAVE_ID"),
+      issuer_id: ENV.fetch("EMISSOR"),
+      key_filepath: ENV.fetch("CHAVE_ARQUIVO"),
+      duration: 1200,
+      in_house: false
+    )
+
+    # Cria uma keychain temporária no runner e a deixa destravada.
+    setup_ci
+
+    # Cria ou reaproveita o certificado de distribuição da conta.
+    get_certificates(api_key: chave, development: false)
+
+    # Cria ou baixa o perfil de distribuição para a App Store.
+    get_provisioning_profile(
+      api_key: chave,
+      app_identifier: BUNDLE_ID,
+      development: false,
+      force: false
+    )
+
+    perfil = lane_context[SharedValues::SIGH_NAME]
+    UI.message("Perfil de provisionamento em uso: #{perfil}")
+
+    build_app(
+      project: "NovilhaNutri.xcodeproj",
+      scheme: "NovilhaNutri",
+      configuration: "Release",
+      export_method: "app-store",
+      export_team_id: ENV.fetch("TIME"),
+      export_options: {
+        provisioningProfiles: { BUNDLE_ID => perfil }
+      },
+      xcargs: [
+        "CODE_SIGN_STYLE=Manual",
+        "DEVELOPMENT_TEAM=#{ENV.fetch('TIME')}",
+        "PROVISIONING_PROFILE_SPECIFIER='#{perfil}'",
+        "MARKETING_VERSION=#{ENV.fetch('VERSAO')}",
+        "CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD')}"
+      ].join(" "),
+      output_directory: "build",
+      output_name: "NovilhaNutri.ipa"
+    )
+
+    upload_to_testflight(
+      api_key: chave,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
+  end
+end
