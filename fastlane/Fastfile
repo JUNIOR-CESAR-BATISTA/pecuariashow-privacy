@@ -68,13 +68,38 @@ def garantir_identificador_e_app(chave)
   end
 
   # 2. O registro do app. Sem ele o TestFlight recusa o envio.
-  if Spaceship::ConnectAPI::App.find(BUNDLE_ID)
-    UI.message("App #{BUNDLE_ID} já existe no App Store Connect")
+  app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  if app
+    UI.success("App encontrado no App Store Connect: '#{app.name}' (#{app.bundle_id})")
     return
   end
 
+  # Não achou. Antes de acusar qualquer coisa, mostramos o que esta chave
+  # consegue enxergar - é o que separa "o app não foi criado" de "a chave não
+  # tem permissão para ver os apps da conta".
+  UI.important("Não encontrei nenhum app com o identificador #{BUNDLE_ID}.")
+  listar_apps_visiveis
+
   UI.important("Criando o app '#{NOME_APP}' no App Store Connect")
   criar_app_no_connect
+end
+
+# Lista os apps que a chave da API enxerga, para o log dizer onde está o
+# problema em vez de deixar adivinhando.
+def listar_apps_visiveis
+  apps = Spaceship::ConnectAPI::App.all
+  if apps.empty?
+    UI.important("Esta chave não enxerga nenhum app na conta.")
+    UI.important("Ou o app ainda não foi criado, ou a função da chave é baixa demais.")
+    UI.important("Confira em Usuários e Acesso > Integrações: precisa ser Admin ou Gerente de Apps.")
+  else
+    UI.important("Apps que esta chave enxerga (#{apps.count}):")
+    apps.each { |a| UI.important("  - '#{a.name}' | #{a.bundle_id}") }
+    UI.important("Se o app está aí com outro identificador, foi escolhido o pacote errado no cadastro.")
+  end
+rescue StandardError => erro
+  UI.important("Não deu nem para listar os apps: #{erro.message}")
+  UI.important("Isso costuma ser função insuficiente da chave da API.")
 end
 
 # Tenta criar o registro do app.
