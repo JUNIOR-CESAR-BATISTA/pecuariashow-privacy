@@ -1,0 +1,153 @@
+name: TestFlight
+
+# Gera a build assinada e envia para o TestFlight, sem precisar de Mac.
+# Dispara ao publicar uma tag "v..." (pelo site do GitHub, em Releases) ou
+# pelo botão manual quando o workflow estiver na branch padrão.
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: "Versão exibida no TestFlight (ex.: 1.0.0)"
+        required: false
+        default: "1.0.0"
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  testflight:
+    name: Enviar para o TestFlight
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    env:
+      CHAVE_ID: ${{ secrets.APPSTORE_KEY_ID }}
+      EMISSOR: ${{ secrets.APPSTORE_ISSUER_ID }}
+      TIME: ${{ secrets.APPLE_TEAM_ID }}
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Conferir se os segredos estão configurados
+        env:
+          CHAVE: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          faltando=""
+          [ -z "$EMISSOR" ] && faltando="$faltando APPSTORE_ISSUER_ID"
+          [ -z "$CHAVE_ID" ] && faltando="$faltando APPSTORE_KEY_ID"
+          [ -z "$CHAVE" ] && faltando="$faltando APPSTORE_PRIVATE_KEY"
+          [ -z "$TIME" ] && faltando="$faltando APPLE_TEAM_ID"
+          if [ -n "$faltando" ]; then
+            echo "::error::Faltam estes segredos no repositório:$faltando"
+            echo "Configure em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "Segredos presentes."
+
+      - name: Escolher o Xcode mais novo do runner
+        run: |
+          XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Definir a versão da build
+        id: versao
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSAO="${GITHUB_REF_NAME#v}"
+          else
+            VERSAO="${{ github.event.inputs.versao }}"
+          fi
+          [ -z "$VERSAO" ] && VERSAO="1.0.0"
+          echo "Versão $VERSAO, build ${GITHUB_RUN_NUMBER}"
+          echo "marketing=$VERSAO" >> "$GITHUB_OUTPUT"
+
+      - name: Guardar a chave do App Store Connect
+        env:
+          CHAVE: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/private_keys ~/.appstoreconnect/private_keys
+          printf '%s\n' "$CHAVE" > ~/private_keys/AuthKey_${CHAVE_ID}.p8
+          chmod 600 ~/private_keys/AuthKey_${CHAVE_ID}.p8
+          cp ~/private_keys/AuthKey_${CHAVE_ID}.p8 ~/.appstoreconnect/private_keys/
+          # confere que o arquivo veio inteiro, sem revelar o conteúdo
+          if ! grep -q "BEGIN PRIVATE KEY" ~/private_keys/AuthKey_${CHAVE_ID}.p8; then
+            echo "::error::A chave .p8 parece incompleta. Cole o arquivo inteiro no segredo, incluindo as linhas BEGIN e END."
+            exit 1
+          fi
+
+      - name: Arquivar o aplicativo
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project NovilhaNutri.xcodeproj \
+            -scheme NovilhaNutri \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/NovilhaNutri.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${CHAVE_ID}.p8 \
+            -authenticationKeyID "$CHAVE_ID" \
+            -authenticationKeyIssuerID "$EMISSOR" \
+            DEVELOPMENT_TEAM="$TIME" \
+            CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="${{ steps.versao.outputs.marketing }}" \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            2>&1 | tee archive.log
+
+      - name: Exportar e enviar para o App Store Connect
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${TIME}</string>
+            <key>destination</key>
+            <string>upload</string>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>manageAppVersionAndBuildNumber</key>
+            <false/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/NovilhaNutri.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/ipa" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${CHAVE_ID}.p8 \
+            -authenticationKeyID "$CHAVE_ID" \
+            -authenticationKeyIssuerID "$EMISSOR" \
+            2>&1 | tee export.log
+
+      - name: Resumir na página do run
+        if: always()
+        run: |
+          {
+            echo "## Envio para o TestFlight"
+            echo "- Versão: ${{ steps.versao.outputs.marketing }}"
+            echo "- Build: ${GITHUB_RUN_NUMBER}"
+            echo ""
+            echo "### Erros"
+            echo '```'
+            cat archive.log export.log 2>/dev/null | grep -E "error:|error |Error Domain|\*\* .* FAILED \*\*" | sort -u | head -40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar os logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-testflight
+          path: |
+            archive.log
+            export.log
+          if-no-files-found: ignore
+          retention-days: 14
