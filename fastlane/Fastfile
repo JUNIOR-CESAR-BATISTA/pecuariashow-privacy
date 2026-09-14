@@ -9,6 +9,11 @@
 default_platform(:ios)
 
 BUNDLE_ID = "br.com.novilhanutri.app".freeze
+# O chaveiro é criado pelo workflow antes de chamar o fastlane, e o caminho
+# precisa ser dito explicitamente: sem isso o certificado é instalado em um
+# chaveiro e procurado em outro.
+CHAVEIRO = File.expand_path("~/Library/Keychains/build.keychain-db").freeze
+SENHA_CHAVEIRO = "ci".freeze
 
 platform :ios do
   desc "Compila em Release, assina para distribuição e envia ao TestFlight"
@@ -21,11 +26,22 @@ platform :ios do
       in_house: false
     )
 
-    # Cria uma keychain temporária no runner e a deixa destravada.
-    setup_ci
-
     # Cria ou reaproveita o certificado de distribuição da conta.
-    get_certificates(api_key: chave, development: false)
+    get_certificates(
+      api_key: chave,
+      development: false,
+      keychain_path: CHAVEIRO,
+      keychain_password: SENHA_CHAVEIRO
+    )
+
+    # Libera a chave privada para o codesign usar sem abrir caixa de diálogo,
+    # que em runner sem tela trava o build.
+    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: " \
+       "-s -k '#{SENHA_CHAVEIRO}' '#{CHAVEIRO}' >/dev/null 2>&1 || true")
+
+    # Mostra quais identidades ficaram utilizáveis, para o log dizer algo
+    # quando a assinatura falhar adiante.
+    sh("security find-identity -v -p codesigning '#{CHAVEIRO}' || true")
 
     # Cria ou baixa o perfil de distribuição para a App Store.
     get_provisioning_profile(
@@ -52,7 +68,8 @@ platform :ios do
         "DEVELOPMENT_TEAM=#{ENV.fetch('TIME')}",
         "PROVISIONING_PROFILE_SPECIFIER='#{perfil}'",
         "MARKETING_VERSION=#{ENV.fetch('VERSAO')}",
-        "CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD')}"
+        "CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD')}",
+        "OTHER_CODE_SIGN_FLAGS='--keychain #{CHAVEIRO}'"
       ].join(" "),
       output_directory: "build",
       output_name: "NovilhaNutri.ipa"

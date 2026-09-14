@@ -104,6 +104,18 @@ jobs:
           fi
           echo "Chave gravada em $CHAVE_ARQUIVO ($(wc -l < "$CHAVE_ARQUIVO") linhas)."
 
+      - name: Preparar o chaveiro do runner
+        run: |
+          # O chaveiro padrão do runner não serve: o certificado precisa ir
+          # para um chaveiro destravado e que não bloqueie no meio do build.
+          security create-keychain -p "ci" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "ci" build.keychain
+          security set-keychain-settings build.keychain
+          security list-keychains -d user -s build.keychain login.keychain-db
+          echo "Chaveiro pronto:"
+          security list-keychains -d user
+
       - name: Compilar, assinar e enviar
         env:
           VERSAO: ${{ steps.versao.outputs.marketing }}
