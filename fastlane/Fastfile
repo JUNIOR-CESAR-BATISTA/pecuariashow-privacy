@@ -20,27 +20,100 @@ require "spaceship"
 default_platform(:ios)
 
 BUNDLE_ID = "br.com.novilhanutri.app".freeze
+NOME_APP = "NovilhaNutri".freeze
+SKU = "novilhanutri".freeze
+EMPRESA = "Junior Cesar Batista".freeze
 # O chaveiro é criado pelo workflow antes de chamar o fastlane, e o caminho
 # precisa ser dito explicitamente: sem isso o certificado é instalado em um
 # chaveiro e procurado em outro.
 CHAVEIRO = File.expand_path("~/Library/Keychains/build.keychain-db").freeze
 SENHA_CHAVEIRO = "ci".freeze
 
+# Abre a sessão do spaceship com a mesma chave usada pelas actions do fastlane.
+# Precisamos dela para falar direto com a API da Apple nos pontos em que as
+# actions prontas não servem.
+def autenticar(chave)
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(**chave)
+rescue StandardError => erro
+  # Caminho alternativo, caso o formato do hash mude entre versões do fastlane.
+  UI.important("Token pelo hash não funcionou (#{erro.message}); tentando pelo arquivo da chave")
+  Spaceship::ConnectAPI.auth(
+    key_id: ENV.fetch("CHAVE_ID"),
+    issuer_id: ENV.fetch("EMISSOR"),
+    filepath: ENV.fetch("CHAVE_ARQUIVO")
+  )
+end
+
+# Garante que o identificador exista no Developer Portal e que o app exista no
+# App Store Connect.
+#
+# Isto era trabalho da action 'produce', mas ela só sabe entrar com Apple ID e
+# senha: não aceita a chave da API. Como aqui só temos a chave, falamos direto
+# com a API.
+def garantir_identificador_e_app(chave)
+  autenticar(chave)
+
+  # 1. O App ID. Sem ele não existe perfil de provisionamento.
+  registrado = Spaceship::ConnectAPI::BundleId.all(filter: { identifier: BUNDLE_ID })
+                                              .find { |b| b.identifier == BUNDLE_ID }
+  if registrado
+    UI.message("Identificador #{BUNDLE_ID} já está no Developer Portal (#{registrado.id})")
+  else
+    UI.important("Registrando o identificador #{BUNDLE_ID} no Developer Portal")
+    Spaceship::ConnectAPI::BundleId.create(
+      name: NOME_APP,
+      identifier: BUNDLE_ID,
+      platform: Spaceship::ConnectAPI::BundleIdPlatform::IOS
+    )
+  end
+
+  # 2. O registro do app. Sem ele o TestFlight recusa o envio.
+  if Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+    UI.message("App #{BUNDLE_ID} já existe no App Store Connect")
+    return
+  end
+
+  UI.important("Criando o app '#{NOME_APP}' no App Store Connect")
+  criar_app_no_connect
+end
+
+# A Apple exige o nome da empresa no primeiro app da conta e recusa esse mesmo
+# campo depois disso. Como não dá para saber de fora qual é o caso, tentamos as
+# duas formas.
+def criar_app_no_connect
+  [EMPRESA, nil].each do |empresa|
+    atributos = {
+      name: NOME_APP,
+      version_string: ENV.fetch("VERSAO"),
+      sku: SKU,
+      primary_locale: "pt-BR",
+      bundle_id: BUNDLE_ID,
+      platforms: [Spaceship::ConnectAPI::Platform::IOS]
+    }
+    atributos[:company_name] = empresa if empresa
+
+    begin
+      Spaceship::ConnectAPI::App.create(**atributos)
+      UI.success("App criado no App Store Connect#{empresa ? " (com nome de empresa)" : ""}")
+      return
+    rescue StandardError => erro
+      UI.important("Tentativa #{empresa ? 'com' : 'sem'} nome de empresa falhou: #{erro.message}")
+    end
+  end
+
+  UI.user_error!(
+    "Não consegui criar o app no App Store Connect. A causa mais comum é o nome " \
+    "'#{NOME_APP}' já estar em uso por outra pessoa. Nesse caso, crie o app à mão em " \
+    "appstoreconnect.apple.com com outro nome (o identificador continua #{BUNDLE_ID}) " \
+    "e rode a tag de novo."
+  )
+end
+
 # Revoga os certificados de distribuição já registrados na conta. Nenhum deles
 # tem mais serventia: a chave privada correspondente ficou no runner que os
 # criou e foi destruída junto com ele.
 def liberar_vagas_de_certificado(chave)
-  begin
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(**chave)
-  rescue StandardError => erro
-    # Caminho alternativo, caso o formato do hash mude entre versões do fastlane.
-    UI.important("Token pelo hash não funcionou (#{erro.message}); tentando pelo arquivo da chave")
-    Spaceship::ConnectAPI.auth(
-      key_id: ENV.fetch("CHAVE_ID"),
-      issuer_id: ENV.fetch("EMISSOR"),
-      filepath: ENV.fetch("CHAVE_ARQUIVO")
-    )
-  end
+  autenticar(chave)
 
   apagados = 0
   %w[DISTRIBUTION IOS_DISTRIBUTION].each do |tipo|
@@ -101,19 +174,7 @@ platform :ios do
 
     # Registra o identificador no portal e cria o app no App Store Connect.
     # É idempotente: se já existirem, apenas segue.
-    begin
-      produce(
-        api_key: chave,
-        app_identifier: BUNDLE_ID,
-        app_name: "NovilhaNutri",
-        language: "Brazilian Portuguese",
-        app_version: ENV.fetch("VERSAO"),
-        sku: "novilhanutri",
-        team_id: ENV.fetch("TIME")
-      )
-    rescue StandardError => erro
-      UI.important("produce não criou nada novo (provavelmente já existe): #{erro.message}")
-    end
+    garantir_identificador_e_app(chave)
 
     # Cria o perfil de distribuição. Tem que ser force: true, porque qualquer
     # perfil antigo aponta para um certificado que acabou de ser revogado.
