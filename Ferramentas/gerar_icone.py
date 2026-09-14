@@ -1,82 +1,171 @@
-"""Gera o icone do NovilhaNutri: cabeca bovina dourada sobre verde escuro."""
-from PIL import Image, ImageDraw
+"""Gera o ícone do NovilhaNutri.
 
-S = 4                      # supersampling
-L = 1024 * S               # lado do canvas de trabalho
+Cabeça de nelore em silhueta dourada sobre verde profundo: orelhas caídas e
+chifres em lira, que é o que identifica a raça de longe. O contorno é montado
+com curvas de Bézier em vez de formas geométricas prontas, porque é a curva
+que separa um desenho de um clip-art.
 
-FUNDO_TOPO = (0x27, 0x5C, 0x41)
-FUNDO_BASE = (0x0D, 0x18, 0x11)
-OURO = (0xE4, 0xC0, 0x53)
-OURO_ESCURO = (0xC9, 0xA3, 0x3A)
+Uso:  python3 Ferramentas/gerar_icone.py caminho/do/AppIcon.png
+"""
+import sys
 
+from PIL import Image, ImageDraw, ImageFilter
 
-def gradiente():
-    img = Image.new("RGB", (L, L))
-    d = ImageDraw.Draw(img)
-    for y in range(L):
-        t = y / (L - 1)
-        t = t ** 0.85
-        cor = tuple(int(a + (b - a) * t) for a, b in zip(FUNDO_TOPO, FUNDO_BASE))
-        d.line([(0, y), (L, y)], fill=cor)
-    return img
+S = 4                       # supersampling: desenha grande e reduz
+LADO = 1024
+L = LADO * S
 
-
-def elipse_rotacionada(camada, bbox, angulo, cor):
-    """PIL nao rotaciona elipse: desenha numa camada propria e gira."""
-    x0, y0, x1, y1 = bbox
-    w, h = int(x1 - x0), int(y1 - y0)
-    lado = int((w ** 2 + h ** 2) ** 0.5) + 4
-    tmp = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
-    ImageDraw.Draw(tmp).ellipse(
-        [(lado - w) // 2, (lado - h) // 2, (lado + w) // 2, (lado + h) // 2], fill=cor
-    )
-    tmp = tmp.rotate(angulo, resample=Image.BICUBIC)
-    cx, cy = int((x0 + x1) / 2), int((y0 + y1) / 2)
-    camada.alpha_composite(tmp, (cx - lado // 2, cy - lado // 2))
+VERDE_CENTRO = (0x2B, 0x6B, 0x4A)
+VERDE_BORDA = (0x0A, 0x14, 0x0E)
+OURO = (0xE8, 0xC7, 0x62)
+OURO_SOMBRA = (0xC2, 0x9E, 0x40)
+FOCINHO = (0xB2, 0x8B, 0x36)
 
 
+# --------------------------------------------------------------------------
+# geometria
+# --------------------------------------------------------------------------
+def cubica(p0, p1, p2, p3, n=48):
+    """Amostra uma Bézier cúbica."""
+    saida = []
+    for i in range(n + 1):
+        t = i / n
+        u = 1 - t
+        x = u ** 3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t ** 3 * p3[0]
+        y = u ** 3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t ** 3 * p3[1]
+        saida.append((x, y))
+    return saida
+
+
+def traçado(inicio, segmentos):
+    """Concatena segmentos cúbicos [(c1, c2, fim), ...] a partir de um ponto."""
+    pontos = [inicio]
+    atual = inicio
+    for c1, c2, fim in segmentos:
+        pontos.extend(cubica(atual, c1, c2, fim)[1:])
+        atual = fim
+    return pontos
+
+
+def faixa(centro, largura_base, largura_ponta, expoente=1.6):
+    """Engrossa uma linha de centro, afinando até a ponta.
+
+    Traçar chifre por duas bordas independentes não funciona: elas divergem e
+    o resultado vira cunha. Aqui a espessura é dada ao longo do caminho, então
+    o afilamento é real e a curva manda na forma.
+    """
+    n = len(centro)
+    esquerda, direita = [], []
+    for i, (x, y) in enumerate(centro):
+        t = i / (n - 1)
+        anterior = centro[max(i - 1, 0)]
+        seguinte = centro[min(i + 1, n - 1)]
+        tx, ty = seguinte[0] - anterior[0], seguinte[1] - anterior[1]
+        norma = (tx * tx + ty * ty) ** 0.5 or 1.0
+        nx, ny = -ty / norma, tx / norma
+        meia = (largura_ponta + (largura_base - largura_ponta) * (1 - t) ** expoente) / 2
+        esquerda.append((x + nx * meia, y + ny * meia))
+        direita.append((x - nx * meia, y - ny * meia))
+    return esquerda + direita[::-1]
+
+
+def espelhar(pontos):
+    """Reflete no eixo vertical do ícone, para a simetria sair exata."""
+    return [(LADO - x, y) for x, y in pontos]
+
+
+def escalar(pontos):
+    """Enquadra a figura e leva para as coordenadas do canvas ampliado.
+
+    O desenho nasce menor e alto no quadro, porque os chifres puxam a massa
+    para cima. Aqui ele é ampliado em torno do próprio centro visual e descido,
+    para o conjunto ficar opticamente centrado e ocupar o ícone.
+    """
+    k, eixo, descida = 1.14, 462, 50
+    return [
+        ((512 + (x - 512) * k) * S, (eixo + (y - eixo) * k + descida) * S)
+        for x, y in pontos
+    ]
+
+
+# --------------------------------------------------------------------------
+# peças do desenho
+# --------------------------------------------------------------------------
+def cabeca():
+    """Testa larga afinando para o focinho. Sem orelha, sem detalhe."""
+    direita = traçado((512, 398), [
+        ((614, 400), (674, 470), (670, 558)),
+        ((666, 650), (600, 744), (512, 746)),
+    ])
+    return direita + espelhar(direita)[::-1]
+
+
+def chifre_direito():
+    """Chifre em lira: nasce dentro da testa, abre, sobe e curva na ponta."""
+    centro = traçado((534, 446), [
+        ((666, 372), (824, 330), (812, 178)),
+    ])
+    return faixa(centro, largura_base=104, largura_ponta=9)
+
+
+def olho_direito():
+    """Amêndoa inclinada, só o suficiente para a forma virar rosto."""
+    return traçado((562, 534), [
+        ((580, 508), (620, 506), (632, 530)),
+        ((620, 558), (578, 560), (562, 534)),
+    ])
+
+
+# --------------------------------------------------------------------------
+# fundo
+# --------------------------------------------------------------------------
+def fundo():
+    """Gradiente radial suave: claro no alto ao centro, fechando nas bordas."""
+    pequeno = 128
+    img = Image.new("RGB", (pequeno, pequeno))
+    px = img.load()
+    cx, cy = pequeno * 0.5, pequeno * 0.40
+    maior = (pequeno ** 2 + pequeno ** 2) ** 0.5
+    for y in range(pequeno):
+        for x in range(pequeno):
+            d = (((x - cx) ** 2 + (y - cy) ** 2) ** 0.5) / (maior * 0.62)
+            t = min(1.0, d) ** 1.15
+            px[x, y] = tuple(
+                int(a + (b - a) * t) for a, b in zip(VERDE_CENTRO, VERDE_BORDA)
+            )
+    return img.resize((L, L), Image.BICUBIC)
+
+
+# --------------------------------------------------------------------------
 def desenhar():
-    base = gradiente().convert("RGBA")
+    base = fundo().convert("RGBA")
+
     figura = Image.new("RGBA", (L, L), (0, 0, 0, 0))
     d = ImageDraw.Draw(figura)
 
-    def p(*vals):
-        return [v * S for v in vals]
+    # Uma cor só: chifres e cabeça formam uma silhueta contínua. Camadas de
+    # tom diferente pediriam detalhe, e detalhe é o oposto do que se quer aqui.
+    for peça in (chifre_direito(), espelhar(chifre_direito()), cabeca()):
+        d.polygon(escalar(peça), fill=OURO)
 
-    # --- chifres: crescentes que sobem e abrem para fora ---
-    largura_chifre = 34 * S
-    d.arc(p(215, 75, 565, 425), start=100, end=200, fill=OURO, width=largura_chifre)
-    d.arc(p(459, 75, 809, 425), start=340, end=80, fill=OURO, width=largura_chifre)
-    # Pontas arredondadas: o arco do PIL termina em corte reto.
-    r = largura_chifre // 2
-    for cx, cy in ((226, 190), (798, 190)):
-        d.ellipse([cx * S - r, cy * S - r, cx * S + r, cy * S + r], fill=OURO)
+    # olhos vazados, deixando o fundo aparecer
+    recorte = Image.new("RGBA", (L, L), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(recorte)
+    dr.polygon(escalar(olho_direito()), fill=(0, 0, 0, 255))
+    dr.polygon(escalar(espelhar(olho_direito())), fill=(0, 0, 0, 255))
+    figura.paste((0, 0, 0, 0), (0, 0), recorte)
 
-    # --- orelhas ---
-    elipse_rotacionada(figura, p(168, 392, 388, 512), 28, OURO_ESCURO)
-    elipse_rotacionada(figura, p(636, 392, 856, 512), -28, OURO_ESCURO)
+    # sombra curta sob a figura, só para ela não flutuar
+    sombra = Image.new("RGBA", (L, L), (0, 0, 0, 0))
+    sombra.paste((0, 0, 0, 90), (0, 10 * S), figura.split()[3])
+    sombra = sombra.filter(ImageFilter.GaussianBlur(9 * S))
 
-    # --- testa / cabeca ---
-    d.ellipse(p(300, 316, 724, 700), fill=OURO)
-    d.polygon(p(330, 560, 694, 560, 620, 752, 404, 752), fill=OURO)
-
-    # --- focinho ---
-    d.rounded_rectangle(p(392, 640, 632, 810), radius=88 * S, fill=OURO_ESCURO)
-
-    # --- olhos e narinas, vazados no fundo ---
-    vazio = (0, 0, 0, 0)
-    for cx in (410, 614):
-        d.ellipse(p(cx - 34, 452, cx + 34, 520), fill=vazio)
-    for cx in (472, 552):
-        d.ellipse(p(cx - 26, 706, cx + 26, 756), fill=vazio)
-
+    base.alpha_composite(sombra)
     base.alpha_composite(figura)
-    return base.convert("RGB").resize((1024, 1024), Image.LANCZOS)
+    return base.convert("RGB").resize((LADO, LADO), Image.LANCZOS)
 
 
 if __name__ == "__main__":
-    import sys
-
-    saida = sys.argv[1]
-    desenhar().save(saida, "PNG")
-    print("gerado", saida)
+    destino = sys.argv[1] if len(sys.argv) > 1 else "AppIcon.png"
+    desenhar().save(destino, "PNG")
+    print("gerado", destino)
