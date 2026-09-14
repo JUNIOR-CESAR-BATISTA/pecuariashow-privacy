@@ -38,23 +38,25 @@ jobs:
           EMISSOR=$(printf '%s' "$EMISSOR_BRUTO" | tr -d '[:space:]')
           TIME=$(printf '%s' "$TIME_BRUTO" | tr -d '[:space:]')
 
-          faltando=""
-          [ -z "$CHAVE_ID" ] && faltando="$faltando APPSTORE_KEY_ID"
-          [ -z "$EMISSOR" ] && faltando="$faltando APPSTORE_ISSUER_ID"
-          [ -z "$TIME" ] && faltando="$faltando APPLE_TEAM_ID"
-          [ -z "$CHAVE" ] && faltando="$faltando APPSTORE_PRIVATE_KEY"
-          if [ -n "$faltando" ]; then
-            echo "::error::Faltam estes segredos no repositório:$faltando"
+          erros=""
+          if ! printf '%s' "$CHAVE_ID" | grep -qE '^[A-Za-z0-9]{10}$'; then
+            erros="$erros%0A- APPSTORE_KEY_ID: precisa ser o Key ID da chave, 10 letras e números, algo como 2X9R4KJ8AB. Está com ${#CHAVE_ID} caracteres."
+          fi
+          if ! printf '%s' "$EMISSOR" | grep -qE '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'; then
+            erros="$erros%0A- APPSTORE_ISSUER_ID: precisa ser o Issuer ID, um UUID com traços, algo como 69a6de70-1a2b-47e3-e053-5b8c7c11a4d1. Está com ${#EMISSOR} caracteres."
+          fi
+          if ! printf '%s' "$TIME" | grep -qE '^[A-Za-z0-9]{10}$'; then
+            erros="$erros%0A- APPLE_TEAM_ID: precisa ser o Team ID, 10 letras e números, algo como A1B2C3D4E5. Está com ${#TIME} caracteres."
+          fi
+          if ! printf '%s' "$CHAVE" | grep -q 'BEGIN PRIVATE KEY'; then
+            erros="$erros%0A- APPSTORE_PRIVATE_KEY: precisa ser o conteúdo inteiro do arquivo AuthKey_XXXXXXXXXX.p8, começando com -----BEGIN PRIVATE KEY-----."
+          fi
+          if [ -n "$erros" ]; then
+            echo "::error::Os segredos abaixo não estão com o valor certo:$erros"
+            echo "Nenhum valor é exibido aqui por segurança, só o tamanho."
             exit 1
           fi
-
-          # Confere o tamanho sem revelar o conteúdo.
-          echo "Key ID: ${#CHAVE_ID} caracteres (esperado 10)"
-          echo "Issuer ID: ${#EMISSOR} caracteres (esperado 36)"
-          echo "Team ID: ${#TIME} caracteres (esperado 10)"
-          [ "${#CHAVE_ID}" -ne 10 ] && echo "::warning::O Key ID não tem 10 caracteres. Confira o segredo APPSTORE_KEY_ID."
-          [ "${#TIME}" -ne 10 ] && echo "::warning::O Team ID não tem 10 caracteres. Confira o segredo APPLE_TEAM_ID."
-          [ "${#EMISSOR}" -ne 36 ] && echo "::warning::O Issuer ID não parece um UUID. Confira o segredo APPSTORE_ISSUER_ID."
+          echo "Os quatro segredos estão no formato esperado."
 
           {
             echo "CHAVE_ID=$CHAVE_ID"
