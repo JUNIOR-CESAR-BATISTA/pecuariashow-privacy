@@ -43,6 +43,22 @@ platform :ios do
     # quando a assinatura falhar adiante.
     sh("security find-identity -v -p codesigning '#{CHAVEIRO}' || true")
 
+    # Registra o identificador no portal e cria o app no App Store Connect.
+    # É idempotente: se já existirem, apenas segue.
+    begin
+      produce(
+        api_key: chave,
+        app_identifier: BUNDLE_ID,
+        app_name: "NovilhaNutri",
+        language: "Brazilian Portuguese",
+        app_version: ENV.fetch("VERSAO"),
+        sku: "novilhanutri",
+        team_id: ENV.fetch("TIME")
+      )
+    rescue StandardError => erro
+      UI.important("produce não criou nada novo (provavelmente já existe): #{erro.message}")
+    end
+
     # Cria ou baixa o perfil de distribuição para a App Store.
     get_provisioning_profile(
       api_key: chave,
