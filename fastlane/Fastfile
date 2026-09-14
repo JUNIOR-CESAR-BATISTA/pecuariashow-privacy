@@ -5,6 +5,17 @@
 # sem precisar de nenhum aparelho cadastrado na conta - que é a pegadinha da
 # assinatura automática, ela exige um iPhone registrado para gerar o perfil
 # de desenvolvimento.
+#
+# Sobre revogar o certificado a cada envio: o certificado de distribuição só
+# funciona junto com a chave privada que o gerou, e essa chave nasce e morre
+# dentro do runner, que é descartado no fim do run. O certificado que fica
+# registrado na conta da Apple é, portanto, inútil no run seguinte - ele
+# apenas ocupa uma das duas vagas que a Apple permite. Por isso, antes de
+# pedir um certificado novo, apagamos os antigos: são cascas sem chave.
+# Isso não afeta nada já enviado, porque a Apple reassina com o certificado
+# dela o que está no TestFlight e na App Store.
+
+require "spaceship"
 
 default_platform(:ios)
 
@@ -14,6 +25,47 @@ BUNDLE_ID = "br.com.novilhanutri.app".freeze
 # chaveiro e procurado em outro.
 CHAVEIRO = File.expand_path("~/Library/Keychains/build.keychain-db").freeze
 SENHA_CHAVEIRO = "ci".freeze
+
+# Revoga os certificados de distribuição já registrados na conta. Nenhum deles
+# tem mais serventia: a chave privada correspondente ficou no runner que os
+# criou e foi destruída junto com ele.
+def liberar_vagas_de_certificado(chave)
+  begin
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(**chave)
+  rescue StandardError => erro
+    # Caminho alternativo, caso o formato do hash mude entre versões do fastlane.
+    UI.important("Token pelo hash não funcionou (#{erro.message}); tentando pelo arquivo da chave")
+    Spaceship::ConnectAPI.auth(
+      key_id: ENV.fetch("CHAVE_ID"),
+      issuer_id: ENV.fetch("EMISSOR"),
+      filepath: ENV.fetch("CHAVE_ARQUIVO")
+    )
+  end
+
+  apagados = 0
+  %w[DISTRIBUTION IOS_DISTRIBUTION].each do |tipo|
+    begin
+      certificados = Spaceship::ConnectAPI::Certificate.all(filter: { certificateType: tipo })
+    rescue StandardError => erro
+      UI.important("Não deu para listar os certificados #{tipo}: #{erro.message}")
+      next
+    end
+
+    certificados.each do |certificado|
+      next unless certificado.certificate_type.to_s.include?("DISTRIBUTION")
+
+      begin
+        UI.important("Revogando o certificado #{certificado.id} (#{certificado.certificate_type}) para liberar a vaga")
+        certificado.delete!
+        apagados += 1
+      rescue StandardError => erro
+        UI.important("Não deu para revogar #{certificado.id}: #{erro.message}")
+      end
+    end
+  end
+
+  UI.message("Certificados de distribuição revogados: #{apagados}")
+end
 
 platform :ios do
   desc "Compila em Release, assina para distribuição e envia ao TestFlight"
@@ -26,7 +78,11 @@ platform :ios do
       in_house: false
     )
 
-    # Cria ou reaproveita o certificado de distribuição da conta.
+    # Apaga os certificados de distribuição órfãos antes de pedir um novo,
+    # senão a Apple recusa dizendo que o limite de dois foi atingido.
+    liberar_vagas_de_certificado(chave)
+
+    # Cria o certificado de distribuição desta build.
     get_certificates(
       api_key: chave,
       development: false,
@@ -59,12 +115,13 @@ platform :ios do
       UI.important("produce não criou nada novo (provavelmente já existe): #{erro.message}")
     end
 
-    # Cria ou baixa o perfil de distribuição para a App Store.
+    # Cria o perfil de distribuição. Tem que ser force: true, porque qualquer
+    # perfil antigo aponta para um certificado que acabou de ser revogado.
     get_provisioning_profile(
       api_key: chave,
       app_identifier: BUNDLE_ID,
       development: false,
-      force: false
+      force: true
     )
 
     perfil = lane_context[SharedValues::SIGH_NAME]
