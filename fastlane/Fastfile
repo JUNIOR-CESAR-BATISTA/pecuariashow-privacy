@@ -242,6 +242,11 @@ platform :ios do
       },
       xcargs: [
         "CODE_SIGN_STYLE=Manual",
+        # Sem isto o Xcode cai no padrão do projeto, que é de desenvolvimento,
+        # e procura um certificado "iOS Development" que aqui nunca vai existir:
+        # o runner só tem o de distribuição. Manual sem identidade declarada é
+        # meio caminho, e meio caminho não assina.
+        "CODE_SIGN_IDENTITY='Apple Distribution'",
         "DEVELOPMENT_TEAM=#{ENV.fetch('TIME')}",
         "PROVISIONING_PROFILE_SPECIFIER='#{perfil}'",
         "MARKETING_VERSION=#{ENV.fetch('VERSAO')}",
