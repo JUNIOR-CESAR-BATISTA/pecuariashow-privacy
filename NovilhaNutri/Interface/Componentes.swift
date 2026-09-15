@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Cartão com um número em destaque.
 struct CartaoIndicador: View {
@@ -323,5 +324,54 @@ struct EstadoVazio: View {
         }
         .padding(28)
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Compartilhamento
+
+/// Embrulho identificável do que vai ser compartilhado.
+///
+/// O `.sheet(item:)` só abre quando recebe algo identificável, e é ele que
+/// garante que a folha use o conteúdo montado no toque, não um de antes.
+private struct ConteudoCompartilhado: Identifiable {
+    let id = UUID()
+    let itens: [Any]
+}
+
+/// A folha de compartilhamento do sistema.
+///
+/// O `ShareLink` do SwiftUI é mais enxuto e era o que estava aqui, mas dentro
+/// de uma `NavigationStack` que é trocada por aba ele nem sempre chega a
+/// apresentar a folha. Este caminho, pelo `UIActivityViewController`, é o que
+/// o sistema usa há anos e não depende de onde a tela está na hierarquia.
+struct FolhaCompartilhar: UIViewControllerRepresentable {
+    let itens: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: itens, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controlador: UIActivityViewController, context: Context) {}
+}
+
+/// Botão que abre a folha de compartilhamento com o que a closure devolver.
+///
+/// O conteúdo é montado só no toque: o relatório é um texto longo e não há
+/// motivo para gerá-lo de novo a cada redesenho da tela.
+struct BotaoCompartilhar<Rotulo: View>: View {
+    let itens: () -> [Any]
+    @ViewBuilder let rotulo: () -> Rotulo
+
+    @State private var conteudo: ConteudoCompartilhado?
+
+    var body: some View {
+        Button {
+            conteudo = ConteudoCompartilhado(itens: itens())
+        } label: {
+            rotulo()
+        }
+        .sheet(item: $conteudo) { pronto in
+            FolhaCompartilhar(itens: pronto.itens)
+        }
     }
 }

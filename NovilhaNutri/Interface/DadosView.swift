@@ -48,7 +48,9 @@ struct DadosView: View {
                     Label("Gerar arquivo de backup", systemImage: "doc.badge.plus")
                 }
                 if let arquivoBackup {
-                    ShareLink(item: arquivoBackup) {
+                    BotaoCompartilhar {
+                        return [arquivoBackup]
+                    } rotulo: {
                         Label("Compartilhar backup", systemImage: "square.and.arrow.up")
                     }
                 }

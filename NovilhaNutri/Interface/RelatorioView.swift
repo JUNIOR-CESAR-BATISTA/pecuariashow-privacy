@@ -200,8 +200,11 @@ struct RelatorioView: View {
     }
 
     private func compartilhar(relatorio: RelatorioPlanejamento) -> some View {
-        ShareLink(item: RelatorioTexto.gerar(relatorio),
-                  preview: SharePreview("Planejamento - \(relatorio.lote.nome)")) {
+        BotaoCompartilhar {
+            // O return é obrigatório: sem ele o Swift lê o colchete que abre
+            // como lista de captura da closure, não como início do vetor.
+            return [RelatorioTexto.gerar(relatorio)]
+        } rotulo: {
             Label("Compartilhar relatório completo", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
