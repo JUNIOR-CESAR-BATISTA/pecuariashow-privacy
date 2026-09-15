@@ -29,14 +29,25 @@ struct InicioView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 100)
         }
         .fundoTela()
         .toolbar(.hidden, for: .navigationBar)
-        .overlay(alignment: .bottomTrailing) {
+        // Aqui não pode ser .overlay: o overlay se alinha pela moldura da
+        // rolagem, que vai até a borda de baixo da tela, por baixo da barra de
+        // abas - e o botão ficava escondido atrás dela. O safeAreaInset se
+        // alinha pela área segura, que já desconta a barra, e ainda reserva o
+        // espaço para o conteúdo não passar por trás do botão.
+        .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
             BotaoFlutuante(titulo: "Novo lote") { folha = .novoLote }
                 .padding(.trailing, 18)
                 .padding(.bottom, 12)
+        }
+        // Tampa o vão do relógio e da bateria. Sem barra de navegação, o
+        // conteúdo rolava por baixo do status e os textos se sobrepunham.
+        .overlay(alignment: .top) {
+            Tema.fundo
+                .frame(height: 0)
+                .ignoresSafeArea(edges: .top)
         }
         .sheet(item: $folha) { qual in
             switch qual {

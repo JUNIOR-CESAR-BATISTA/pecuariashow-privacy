@@ -50,7 +50,9 @@ struct RebanhoView: View {
                 }
             }
         }
-        .overlay(alignment: .bottomTrailing) {
+        // Pela área segura, e não por overlay: o overlay punha o botão por
+        // baixo da barra de abas.
+        .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
             if !estado.lotes.isEmpty {
                 BotaoFlutuante(titulo: "Novo lote") { folha = .novo(estado.novoLote()) }
                     .padding(.trailing, 18)
