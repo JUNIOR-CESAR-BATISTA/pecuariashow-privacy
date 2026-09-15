@@ -77,6 +77,21 @@ final class AppEstado: ObservableObject {
         }
     }
 
+    /// Substitui tudo o que está no aparelho pelo conteúdo de um backup.
+    ///
+    /// O `carregando` fica ligado durante a troca para o salvamento automático
+    /// não disparar uma vez por propriedade; a gravação sai de uma vez no fim.
+    func restaurar(_ dados: DadosApp) {
+        carregando = true
+        lotes = dados.lotes
+        insumos = dados.insumos.isEmpty ? CatalogoInsumos.padrao : dados.insumos
+        ciclos = dados.ciclos
+        usarCalibracao = dados.usarCalibracao
+        carregando = false
+        loteSelecionadoID = lotes.first?.id
+        salvarAgora()
+    }
+
     func apagarTudo() {
         do {
             try banco.apagar()

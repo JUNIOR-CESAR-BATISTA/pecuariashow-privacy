@@ -1,10 +1,22 @@
 import SwiftUI
+import UniformTypeIdentifiers
+
+/// O que está para ser confirmado antes de mexer nos dados.
+///
+/// As duas confirmações vivem no mesmo lugar de propósito: dois
+/// `confirmationDialog` na mesma tela disputam a apresentação e só um
+/// costuma abrir.
+private enum ConfirmacaoDados {
+    case apagar
+    case restaurar(DadosApp)
+}
 
 /// Informações sobre o armazenamento local, backup manual e metodologia.
 struct DadosView: View {
     @EnvironmentObject private var estado: AppEstado
     @State private var arquivoBackup: URL?
-    @State private var confirmandoApagar = false
+    @State private var escolhendoArquivo = false
+    @State private var confirmacao: ConfirmacaoDados?
     @State private var erroBackup: String?
 
     var body: some View {
@@ -54,13 +66,18 @@ struct DadosView: View {
                         Label("Compartilhar backup", systemImage: "square.and.arrow.up")
                     }
                 }
+                Button {
+                    escolhendoArquivo = true
+                } label: {
+                    Label("Restaurar de um arquivo", systemImage: "arrow.down.doc")
+                }
                 if let erroBackup {
                     Aviso(texto: erroBackup)
                 }
             } header: {
                 Text("Backup manual")
             } footer: {
-                Text("Gera um arquivo JSON com todos os dados. Guarde onde preferir. A exportação é sempre uma ação sua: nada é enviado automaticamente.")
+                Text("Gera um arquivo JSON com todos os dados. Guarde onde preferir. A exportação é sempre uma ação sua: nada é enviado automaticamente. A restauração substitui o que estiver no aparelho, e pede confirmação antes.")
             }
             .listRowBackground(Tema.superficie)
 
@@ -77,7 +94,7 @@ struct DadosView: View {
 
             Section {
                 Button(role: .destructive) {
-                    confirmandoApagar = true
+                    confirmacao = .apagar
                 } label: {
                     Label("Apagar todos os dados", systemImage: "trash")
                 }
@@ -99,16 +116,66 @@ struct DadosView: View {
         .navigationTitle("Dados")
 .listaEscura()
 .barraEscura()
-        .confirmationDialog("Apagar todos os dados?",
-                            isPresented: $confirmandoApagar,
+        .fileImporter(isPresented: $escolhendoArquivo,
+                      allowedContentTypes: [.json],
+                      allowsMultipleSelection: false) { resultado in
+            lerBackup(resultado)
+        }
+        .confirmationDialog(tituloConfirmacao,
+                            isPresented: Binding(get: { confirmacao != nil },
+                                                 set: { if !$0 { confirmacao = nil } }),
                             titleVisibility: .visible) {
-            Button("Apagar tudo", role: .destructive) {
-                estado.apagarTudo()
-                arquivoBackup = nil
+            switch confirmacao {
+            case .apagar:
+                Button("Apagar tudo", role: .destructive) {
+                    estado.apagarTudo()
+                    arquivoBackup = nil
+                }
+            case .restaurar(let dados):
+                Button("Substituir meus dados", role: .destructive) {
+                    estado.restaurar(dados)
+                    arquivoBackup = nil
+                }
+            case nil:
+                EmptyView()
             }
             Button("Cancelar", role: .cancel) { }
         } message: {
-            Text("Esta ação não pode ser desfeita. Gere um backup antes se quiser guardar os dados.")
+            Text(mensagemConfirmacao)
+        }
+    }
+
+    private var tituloConfirmacao: String {
+        if case .restaurar = confirmacao { return "Restaurar este backup?" }
+        return "Apagar todos os dados?"
+    }
+
+    private var mensagemConfirmacao: String {
+        if case .restaurar(let dados) = confirmacao {
+            return "O arquivo traz \(dados.lotes.count) lote(s), \(dados.insumos.count) insumo(s) "
+                + "e \(dados.ciclos.count) ciclo(s) encerrado(s). Tudo o que está hoje no aparelho "
+                + "será substituído, e isso não pode ser desfeito."
+        }
+        return "Esta ação não pode ser desfeita. Gere um backup antes se quiser guardar os dados."
+    }
+
+    /// Lê o arquivo escolhido e guarda o conteúdo para a confirmação.
+    ///
+    /// Nada é gravado aqui: primeiro conferimos que o arquivo abre e quanta
+    /// coisa ele traz, e só então perguntamos se pode substituir.
+    private func lerBackup(_ resultado: Result<[URL], Error>) {
+        erroBackup = nil
+        do {
+            guard let arquivo = try resultado.get().first else { return }
+            // Arquivo escolhido fora da área do aplicativo precisa de permissão
+            // explícita para ser lido, e ela tem que ser devolvida depois.
+            let liberado = arquivo.startAccessingSecurityScopedResource()
+            defer { if liberado { arquivo.stopAccessingSecurityScopedResource() } }
+
+            let conteudo = try Data(contentsOf: arquivo)
+            confirmacao = .restaurar(try BancoLocal.importar(conteudo))
+        } catch {
+            erroBackup = "Não foi possível ler esse arquivo de backup: \(error.localizedDescription)"
         }
     }
 

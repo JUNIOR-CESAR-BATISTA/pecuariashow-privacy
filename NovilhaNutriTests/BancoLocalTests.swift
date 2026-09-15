@@ -87,6 +87,32 @@ final class BancoLocalTests: XCTestCase {
         XCTAssertThrowsError(try banco.carregar())
     }
 
+    // A restauração substitui tudo o que está no aparelho. Se a importação
+    // aceitasse um JSON qualquer, ela o leria como um backup vazio e o usuário
+    // perderia os dados por escolher o arquivo errado no seletor.
+
+    func testJsonEstranhoNaoPassaPorBackup() {
+        let intruso = Data(#"{"nome":"outra coisa","itens":[1,2,3]}"#.utf8)
+        XCTAssertThrowsError(try BancoLocal.importar(intruso))
+    }
+
+    func testObjetoVazioNaoPassaPorBackup() {
+        XCTAssertThrowsError(try BancoLocal.importar(Data("{}".utf8)))
+    }
+
+    func testTextoSoltoNaoPassaPorBackup() {
+        XCTAssertThrowsError(try BancoLocal.importar(Data("isto não é json".utf8)))
+    }
+
+    func testBackupSemLotesMasComInsumosEhAceito() throws {
+        // Rebanho zerado é um estado legítimo: o backup continua válido.
+        let vazio = Data(#"{"versao":2,"insumos":[],"lotes":[]}"#.utf8)
+        let dados = try BancoLocal.importar(vazio)
+
+        XCTAssertEqual(dados.versao, 2)
+        XCTAssertTrue(dados.lotes.isEmpty)
+    }
+
     func testEmbalagemSobreviveAoCodificar() throws {
         let insumo = Insumo(nome: "Milho", categoria: .energetico,
                             materiaSeca: 88, proteinaBruta: 9, ndt: 87,

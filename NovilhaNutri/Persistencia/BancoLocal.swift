@@ -55,6 +55,7 @@ struct BancoLocal {
         case diretorioIndisponivel
         case falhaAoSalvar(String)
         case falhaAoLer(String)
+        case arquivoNaoReconhecido
 
         var errorDescription: String? {
             switch self {
@@ -64,6 +65,8 @@ struct BancoLocal {
                 return "Falha ao salvar os dados: \(detalhe)"
             case .falhaAoLer(let detalhe):
                 return "Falha ao ler os dados salvos: \(detalhe)"
+            case .arquivoNaoReconhecido:
+                return "este arquivo não é um backup do NovilhaNutri"
             }
         }
     }
@@ -154,7 +157,19 @@ struct BancoLocal {
         try encoder.encode(dados)
     }
 
+    /// Lê um backup escolhido pelo usuário.
+    ///
+    /// A decodificação de `DadosApp` é tolerante de propósito, para que
+    /// arquivos gravados na versão 1 continuem abrindo. Só que essa mesma
+    /// tolerância aceitaria qualquer JSON como um backup vazio - e restaurar
+    /// um "backup vazio" apagaria tudo o que está no aparelho. Por isso, antes
+    /// de decodificar, exigimos as marcas que o próprio aplicativo grava.
     static func importar(_ dados: Data) throws -> DadosApp {
-        try decoder.decode(DadosApp.self, from: dados)
+        guard let objeto = try? JSONSerialization.jsonObject(with: dados) as? [String: Any],
+              objeto["versao"] as? Int != nil,
+              objeto["lotes"] != nil || objeto["insumos"] != nil else {
+            throw ErroBanco.arquivoNaoReconhecido
+        }
+        return try decoder.decode(DadosApp.self, from: dados)
     }
 }
