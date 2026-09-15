@@ -1,0 +1,15 @@
+{
+  "name": "novilhanutri-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Versão web do NovilhaNutri. Os dados continuam no aparelho.",
+  "scripts": {
+    "teste": "vitest run",
+    "teste:acompanhar": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  }
+}
