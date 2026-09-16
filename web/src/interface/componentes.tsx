@@ -12,6 +12,14 @@ export const CORES_CATEGORIA: Record<CategoriaInsumo, string> = {
   mineral: "text-textoSuave",
 };
 
+/** As mesmas cores de CORES_CATEGORIA, para pontos e marcas. */
+export const CORES_FUNDO_CATEGORIA: Record<CategoriaInsumo, string> = {
+  volumoso: "bg-verdeClaro",
+  energetico: "bg-laranja",
+  proteico: "bg-azul",
+  mineral: "bg-textoSuave",
+};
+
 export function TituloSecao({
   texto,
   acao,
