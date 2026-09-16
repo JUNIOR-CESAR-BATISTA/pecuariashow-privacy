@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #raiz {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-fundo text-texto antialiased;
+    margin: 0;
+    /* O aplicativo tem identidade escura própria, e não segue o tema do
+       sistema: seguir deixaria a leitura no sol pior, não melhor. */
+    color-scheme: dark;
+  }
+
+  /* Some com as setinhas dos campos numéricos, que atrapalham no celular. */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .cartao {
+    @apply rounded-2xl border border-borda bg-superficie p-4;
+  }
+
+  .campo {
+    @apply w-full rounded-xl border border-borda bg-superficieAlta px-3 py-2 text-texto
+           outline-none transition focus:border-ouroEscuro;
+  }
+
+  .rotulo {
+    @apply mb-1 block text-xs font-medium text-textoSuave;
+  }
+
+  .botao {
+    @apply rounded-xl px-4 py-2.5 font-semibold transition active:scale-[0.98]
+           disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .botao-ouro {
+    @apply botao border border-ouroEscuro bg-ouro/10 text-ouro hover:bg-ouro/20;
+  }
+
+  .botao-verde {
+    @apply botao bg-verde text-white hover:bg-verde/90;
+  }
+}
