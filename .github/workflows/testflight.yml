@@ -76,15 +76,20 @@ jobs:
         id: versao
         run: |
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            VERSAO="${GITHUB_REF_NAME}"
-            VERSAO="${VERSAO#[vV]}"   # tira o v ou V da frente
-            VERSAO="${VERSAO#.}"      # tira um ponto logo em seguida
+            BRUTA="${GITHUB_REF_NAME}"
           else
-            VERSAO="${{ github.event.inputs.versao }}"
+            BRUTA="${{ github.event.inputs.versao }}"
           fi
-          if ! echo "$VERSAO" | grep -qE '^[0-9]+(\.[0-9]+){0,2}$'; then
-            echo "::warning::A tag '${GITHUB_REF_NAME}' não vira uma versão válida para a Apple. Usando 1.0.0."
-            VERSAO="1.0.0"
+          VERSAO="${BRUTA#[vV]}"   # o v da frente é opcional
+
+          # Sem tolerância a formato torto, e de propósito. A tag "V.10.14"
+          # já passou por aqui uma vez: o ponto solto era descartado em
+          # silêncio e a build saiu como versão 10.14 no aparelho. Parar aqui
+          # custa dez segundos; publicar a versão errada custa bem mais.
+          if ! echo "$VERSAO" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::A tag '${BRUTA}' não é uma versão válida."
+            echo "::error::Use três números separados por ponto, com um v opcional na frente. Exemplo: v1.0.15"
+            exit 1
           fi
           echo "Versão $VERSAO, build ${GITHUB_RUN_NUMBER}"
           echo "marketing=$VERSAO" >> "$GITHUB_OUTPUT"
