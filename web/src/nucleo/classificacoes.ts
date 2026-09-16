@@ -168,3 +168,35 @@ export const TODAS_AS_CATEGORIAS: readonly CategoriaInsumo[] = [
   "proteico",
   "mineral",
 ];
+
+// --------------------------------------------------------- modo de compra
+
+/** Como o animal foi comprado: por arroba de carcaça ou por cabeça. */
+export type ModoCompra = "porArroba" | "porCabeca";
+
+export const MODOS_COMPRA: Record<
+  ModoCompra,
+  {
+    readonly nome: string;
+    /** Sufixo do campo de entrada, onde só vai o número. */
+    readonly unidade: string;
+    /** Para frases: "R$ 300,00 <por arroba de carcaça na entrada>". */
+    readonly porQue: string;
+    readonly descricao: string;
+  }
+> = {
+  porArroba: {
+    nome: "Por arroba",
+    unidade: "R$/@",
+    porQue: "por arroba de carcaça na entrada",
+    descricao: "O preço combinado vale por arroba de carcaça no peso de entrada.",
+  },
+  porCabeca: {
+    nome: "Por cabeça",
+    unidade: "R$/cab",
+    porQue: "por cabeça",
+    descricao: "O preço combinado vale por animal, qualquer que seja o peso.",
+  },
+};
+
+export const TODOS_OS_MODOS_COMPRA: readonly ModoCompra[] = ["porArroba", "porCabeca"];

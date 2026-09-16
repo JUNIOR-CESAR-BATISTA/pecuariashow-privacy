@@ -5,7 +5,13 @@
  * arquivo gravado, para o backup continuar legível e para não depender de
  * fuso na leitura; dentro do programa circulam como `Date`.
  */
-import { faseSugerida, type FaseAnimal, type GrupoGenetico, type SistemaCriacao } from "./classificacoes.js";
+import {
+  faseSugerida,
+  type FaseAnimal,
+  type GrupoGenetico,
+  type ModoCompra,
+  type SistemaCriacao,
+} from "./classificacoes.js";
 import { RESTRICOES_PADRAO, type RestricoesFormulacao } from "./formuladorRacao.js";
 import { perfilAnimal, type PerfilAnimal } from "./motorExigencias.js";
 
@@ -48,6 +54,18 @@ export interface Lote {
   /** Calibração do consumo previsto (0,85 a 1,15). */
   ajusteConsumo: number;
 
+  /** Compra e venda, para a previsão de resultado. */
+  modoCompra: ModoCompra;
+  /**
+   * Preço pago pelo animal, na unidade do `modoCompra`: reais por arroba de
+   * carcaça no peso de entrada, ou reais por cabeça. Zero quer dizer que não
+   * houve compra (animal de cria própria) ou que o valor ainda não foi
+   * informado - nos dois casos o resultado sai contando só a dieta.
+   */
+  precoCompra: number;
+  /** Preço esperado da arroba na venda (R$/@). */
+  precoArrobaVenda: number;
+
   /** Insumos que compõem a ração. */
   volumosoID?: string;
   energeticoID?: string;
@@ -75,6 +93,9 @@ export function criarLote(entrada: Partial<Lote> = {}): Lote {
     pesoFinalMaturidade: 430,
     diasPorPeriodo: 30,
     ajusteConsumo: 1.0,
+    modoCompra: "porArroba",
+    precoCompra: 0,
+    precoArrobaVenda: 0,
     restricoes: RESTRICOES_PADRAO,
     pesagens: [],
     observacoes: "",
@@ -145,6 +166,32 @@ export function arrobasAtuais(lote: Lote): number {
 /** Arrobas de carcaça previstas no abate. */
 export function arrobasNoAbate(lote: Lote): number {
   return (lote.pesoAlvoAbate * lote.rendimentoCarcaca) / 15;
+}
+
+// ------------------------------------------------------------ compra do lote
+
+/**
+ * Arrobas de carcaça consideradas na compra.
+ *
+ * Usa o peso de **entrada**, não o de hoje: é o peso pelo qual o animal foi
+ * pago. O rendimento é o mesmo cadastrado para o abate - na prática o
+ * rendimento do magro é menor, então quem negocia com rendimentos diferentes
+ * deve informar o preço já por cabeça.
+ */
+export function arrobasCompra(lote: Lote): number {
+  return (lote.pesoMedioInicial * lote.rendimentoCarcaca) / 15;
+}
+
+/** O que cada animal custou na entrada, seja qual for o modo de compra. */
+export function custoCompraPorAnimal(lote: Lote): number {
+  if (!(lote.precoCompra > 0)) return 0;
+  return lote.modoCompra === "porArroba"
+    ? lote.precoCompra * arrobasCompra(lote)
+    : lote.precoCompra;
+}
+
+export function custoCompraLote(lote: Lote): number {
+  return custoCompraPorAnimal(lote) * lote.quantidadeAnimais;
 }
 
 export function estaPronto(lote: Lote): boolean {

@@ -190,3 +190,43 @@ enum CategoriaInsumo: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 }
+
+/// Como o animal foi comprado, para a previsão de resultado.
+enum ModoCompra: String, Codable, CaseIterable, Identifiable, Hashable {
+    case porArroba
+    case porCabeca
+
+    var id: String { rawValue }
+
+    var nome: String {
+        switch self {
+        case .porArroba: return "Por arroba"
+        case .porCabeca: return "Por cabeça"
+        }
+    }
+
+    /// Sufixo do campo de entrada, onde só vai o número.
+    var unidade: String {
+        switch self {
+        case .porArroba: return "R$/@"
+        case .porCabeca: return "R$/cab"
+        }
+    }
+
+    /// Para frases: "R$ 300,00 <por arroba de carcaça na entrada>".
+    var porQue: String {
+        switch self {
+        case .porArroba: return "por arroba de carcaça na entrada"
+        case .porCabeca: return "por cabeça"
+        }
+    }
+
+    var descricao: String {
+        switch self {
+        case .porArroba:
+            return "O preço combinado vale por arroba de carcaça no peso de entrada."
+        case .porCabeca:
+            return "O preço combinado vale por animal, qualquer que seja o peso."
+        }
+    }
+}

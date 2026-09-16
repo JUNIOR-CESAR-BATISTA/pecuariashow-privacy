@@ -1,7 +1,7 @@
 /** Telas de consulta: Início, Ração e Abate. */
 import { useMemo, useState } from "react";
 
-import { FASES } from "../nucleo/classificacoes.js";
+import { FASES, MODOS_COMPRA } from "../nucleo/classificacoes.js";
 import { descricao as descricaoSacas, descricaoCompra } from "../nucleo/conversorSacas.js";
 import {
   arroba,
@@ -33,13 +33,25 @@ import { ganhoRestante, perfilAtual, pesoAtual, type Lote } from "../nucleo/lote
 import { calcular } from "../nucleo/motorExigencias.js";
 import {
   arrobasProduzidasPorAnimal,
+  compraTotal,
   consumoConversao,
   conversaoAlimentar,
   custoPorArroba,
   custoTotal,
   ganhoTotalLote,
+  investimentoTotal,
+  lucroPorAnimal,
+  lucroPorArrobaProduzida,
+  lucroTotal,
+  margemDaEngorda,
+  margemSobreReceita,
+  precoArrobaEquilibrio,
   projetar,
+  receitaTotal,
+  retornoSobreInvestimento,
+  temPrecos,
   viavel,
+  type RelatorioPlanejamento,
 } from "../nucleo/planejadorAbate.js";
 import { gerar as gerarTexto } from "../nucleo/relatorioTexto.js";
 import {
@@ -441,6 +453,105 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
 
 // -------------------------------------------------------------------- Abate
 
+/**
+ * Previsão de resultado do ciclo: compra, dieta e venda.
+ *
+ * Fica junto do planejamento porque depende dele - é a projeção que responde
+ * se o lote fecha no azul com a dieta que o aplicativo montou.
+ */
+function ResultadoPrevisto({
+  relatorio,
+  irPara,
+}: {
+  relatorio: RelatorioPlanejamento;
+  irPara: (aba: string) => void;
+}) {
+  const lote = relatorio.lote;
+
+  if (!temPrecos(relatorio)) {
+    return (
+      <div className="cartao space-y-3">
+        <TituloSecao texto="Resultado previsto" />
+        <p className="text-sm text-textoSuave">
+          Informe o preço pago pelo animal e o preço esperado da arroba na venda para o
+          aplicativo calcular o lucro do ciclo.
+        </p>
+        <button className="botao-ouro w-full" onClick={() => irPara("rebanho")}>
+          Preencher no cadastro do lote
+        </button>
+      </div>
+    );
+  }
+
+  const lucro = lucroTotal(relatorio);
+  const positivo = lucro >= 0;
+  const cor = positivo ? "text-verdeClaro" : "text-vermelho";
+
+  return (
+    <div className="cartao space-y-4">
+      <TituloSecao texto="Resultado previsto" />
+
+      <div className="grid grid-cols-2 gap-3">
+        <CartaoIndicador
+          compacto
+          titulo={positivo ? "Lucro do lote" : "Prejuízo do lote"}
+          valor={moeda(lucro)}
+          detalhe={`${moeda(lucroPorAnimal(relatorio))}/animal`}
+          cor={cor}
+        />
+        <CartaoIndicador
+          compacto
+          titulo="Retorno"
+          valor={percentual(retornoSobreInvestimento(relatorio))}
+          detalhe={`${percentual(margemSobreReceita(relatorio))} da venda`}
+          cor={cor}
+        />
+      </div>
+
+      <div>
+        <LinhaDado rotulo="Compra do lote" valor={moeda(compraTotal(relatorio))} />
+        <LinhaDado rotulo="Dieta até o abate" valor={moeda(custoTotal(relatorio))} />
+        <LinhaDado rotulo="Investido" valor={moeda(investimentoTotal(relatorio))} />
+        <LinhaDado rotulo="Venda prevista" valor={moeda(receitaTotal(relatorio))} />
+      </div>
+
+      <div className="border-t border-borda pt-2">
+        <LinhaDado
+          rotulo="Lucro por arroba produzida"
+          valor={moeda(lucroPorArrobaProduzida(relatorio))}
+        />
+        <LinhaDado
+          rotulo="Arroba de equilíbrio"
+          valor={moeda(precoArrobaEquilibrio(relatorio))}
+        />
+        <LinhaDado rotulo="Resultado só da engorda" valor={moeda(margemDaEngorda(relatorio))} />
+      </div>
+
+      <p className="text-xs text-textoTenue">
+        Compra a {moeda(lote.precoCompra)} {MODOS_COMPRA[lote.modoCompra].porQue}, venda a{" "}
+        {moeda(lote.precoArrobaVenda)} por arroba. O resultado só da engorda compara as arrobas
+        que a dieta produz com o que ela custa, sem a compra. Não entram sanidade, transporte,
+        pastagem, mão de obra nem impostos.
+      </p>
+
+      {!(lote.precoCompra > 0) ? (
+        <Aviso texto="Sem preço de compra informado: o resultado conta apenas a dieta." />
+      ) : null}
+      {/* Sem preço nos insumos a dieta entra como zero, e aí o lucro sai
+          inflado. Vale avisar: é o erro mais fácil de cometer aqui. */}
+      {custoTotal(relatorio) <= 0 ? (
+        <Aviso texto="Nenhum alimento do lote tem preço cadastrado, então a dieta está entrando como custo zero. Informe os preços na aba Insumos." />
+      ) : null}
+      {precoArrobaEquilibrio(relatorio) > lote.precoArrobaVenda ? (
+        <Aviso
+          tom="vermelho"
+          texto={`A arroba precisaria sair a ${moeda(precoArrobaEquilibrio(relatorio))} só para empatar.`}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function TelaAbate({ irPara }: { irPara: (aba: string) => void }) {
   const { loteSelecionado } = useApp();
   const calculo = useCalculo(loteSelecionado);
@@ -558,6 +669,8 @@ export function TelaAbate({ irPara }: { irPara: (aba: string) => void }) {
           </div>
         </div>
       ) : null}
+
+      <ResultadoPrevisto relatorio={relatorio} irPara={irPara} />
 
       <div className="cartao space-y-3">
         <TituloSecao texto="Períodos" />

@@ -1,5 +1,5 @@
 /** Peças de interface reaproveitadas pelas telas. */
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { CategoriaInsumo } from "../nucleo/classificacoes.js";
 import { IconeMais, IconeSeta } from "./icones.js";
@@ -110,31 +110,69 @@ export function EstadoVazio({
   );
 }
 
+/** Como o número guardado aparece no campo: 0,75 e não 0.75. */
+function comoTexto(valor: string | number): string {
+  if (typeof valor !== "number") return valor;
+  return Number.isFinite(valor) ? String(valor).replace(".", ",") : "";
+}
+
 export function Campo({
   rotulo,
   valor,
   aoMudar,
   sufixo,
-  passo = 1,
   tipo = "number",
 }: {
   rotulo: string;
   valor: string | number;
   aoMudar: (valor: string) => void;
   sufixo?: string;
-  passo?: number;
   tipo?: "number" | "text" | "date";
 }) {
+  const numerico = tipo === "number";
+
+  /**
+   * O que está sendo digitado, enquanto está sendo digitado.
+   *
+   * Sem isto o campo não deixava apagar o zero: apagar mandava "" para cima,
+   * "" virava 0 na leitura, e o 0 voltava para a tela no mesmo instante.
+   * Digitar por cima dava "0300". Guardando o texto do usuário até ele sair
+   * do campo, o que ele escreveu é o que ele vê; ao sair, o campo volta a
+   * mostrar o valor já arrumado.
+   */
+  const [rascunho, setRascunho] = useState<string | null>(null);
+  const exibido = rascunho ?? comoTexto(valor);
+
+  const digitar = (bruto: string) => {
+    if (!numerico) {
+      aoMudar(bruto);
+      return;
+    }
+    // Só o que pode fazer parte de um número. A tesoura aqui é o que permite
+    // usar type="text": sem ela entraria qualquer letra.
+    const limpo = bruto.replace(/[^\d.,-]/g, "");
+    setRascunho(limpo);
+    aoMudar(limpo);
+  };
+
   return (
     <label className="block">
       <span className="rotulo">{rotulo}</span>
       <div className="relative">
         <input
           className="campo"
-          type={tipo}
-          step={tipo === "number" ? passo : undefined}
-          value={valor}
-          onChange={(e) => aoMudar(e.target.value)}
+          /*
+           * Numérico vai como texto de propósito. Com type="number" o
+           * navegador descarta a vírgula sem avisar, e "0,750" chegava aqui
+           * como "0750": a meta de ganho virava 750 kg por dia. O
+           * inputMode mantém o teclado numérico no celular.
+           */
+          type={numerico ? "text" : tipo}
+          inputMode={numerico ? "decimal" : undefined}
+          value={exibido}
+          onChange={(e) => digitar(e.target.value)}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={() => setRascunho(null)}
         />
         {sufixo ? (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-textoTenue">

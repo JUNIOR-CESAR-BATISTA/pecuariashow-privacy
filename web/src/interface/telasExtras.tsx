@@ -2,21 +2,21 @@
 import { useState } from "react";
 
 import { descricao, descricaoCompra, equivalencias } from "../nucleo/conversorSacas.js";
-import { numero } from "../nucleo/formatadores.js";
+import { numero, paraNumero } from "../nucleo/formatadores.js";
 import { Campo, LinhaDado, TituloSecao } from "./componentes.js";
 
 // ----------------------------------------------------------------- Conversor
 
 export function TelaConversor() {
   const [texto, setTexto] = useState("1000");
-  const quilos = Math.max(0, Number(texto.replace(",", ".")) || 0);
+  const quilos = Math.max(0, paraNumero(texto, 0));
 
   return (
     <div className="space-y-5">
       <TituloSecao texto="Conversor de sacas" />
 
       <div className="cartao space-y-3">
-        <Campo rotulo="Total" valor={texto} aoMudar={setTexto} sufixo="kg" passo={10} />
+        <Campo rotulo="Total" valor={texto} aoMudar={setTexto} sufixo="kg" />
         <LinhaDado rotulo="Em toneladas" valor={`${numero(quilos / 1000, 3)} t`} />
       </div>
 
@@ -127,6 +127,29 @@ export function TelaMetodologia() {
         <Metodo
           titulo="Períodos"
           corpo="O ciclo é dividido em períodos. Em cada um as exigências são recalculadas no peso médio do intervalo e a ração é refeita, por isso o consumo cresce ao longo do ciclo."
+        />
+      </Bloco>
+
+      <Bloco titulo="Resultado previsto">
+        <Metodo
+          titulo="Compra"
+          corpo="Por arroba, o preço combinado multiplica as arrobas de carcaça no peso de entrada (peso de entrada x rendimento / 15). Por cabeça, vale o valor informado, qualquer que seja o peso."
+        />
+        <Metodo
+          titulo="Venda"
+          corpo="As arrobas de carcaça no peso de abate multiplicadas pelo preço de arroba informado."
+        />
+        <Metodo
+          titulo="Lucro"
+          corpo="Venda menos compra menos o custo da dieta até o abate. Não entram sanidade, transporte, pastagem, mão de obra nem impostos."
+        />
+        <Metodo
+          titulo="Arroba de equilíbrio"
+          corpo="O investimento dividido por todas as arrobas vendidas. É o preço em que o ciclo empata; abaixo dele a venda não paga a compra mais a dieta."
+        />
+        <Metodo
+          titulo="Resultado só da engorda"
+          corpo="As arrobas produzidas no ciclo ao preço de venda, menos o custo da dieta. Separa o mérito da ração do mérito da compra."
         />
       </Bloco>
 

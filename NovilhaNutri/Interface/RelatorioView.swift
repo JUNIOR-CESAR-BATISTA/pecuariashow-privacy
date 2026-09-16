@@ -34,6 +34,7 @@ struct RelatorioView: View {
                     abate(relatorio: relatorio)
                     insumosDoCiclo(relatorio: relatorio)
                     if relatorio.custoTotal > 0 { custos(relatorio: relatorio) }
+                    resultado(relatorio: relatorio)
                     periodos(relatorio: relatorio)
                     compartilhar(relatorio: relatorio)
                 } else {
@@ -159,6 +160,82 @@ struct RelatorioView: View {
                           valor: Formatadores.kg(relatorio.consumoMedioMateriaSeca))
             }
             .cartao(espacamento: 14)
+        }
+    }
+
+    /// Previsão de resultado do ciclo: compra, dieta e venda.
+    ///
+    /// Fica junto do planejamento porque depende dele - é a projeção que
+    /// responde se o lote fecha no azul com a dieta que o aplicativo montou.
+    @ViewBuilder
+    private func resultado(relatorio: RelatorioPlanejamento) -> some View {
+        let lote = relatorio.lote
+
+        VStack(alignment: .leading, spacing: 10) {
+            TituloSecao(texto: "Resultado previsto")
+
+            if !relatorio.temPrecos {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Informe o preço pago pelo animal e o preço esperado da arroba na venda, no cadastro do lote, para o aplicativo calcular o lucro do ciclo.")
+                        .font(.footnote)
+                        .foregroundStyle(Tema.textoSuave)
+                }
+                .cartao(espacamento: 14)
+            } else {
+                let positivo = relatorio.lucroTotal >= 0
+                let cor = positivo ? Tema.verdeClaro : Tema.vermelho
+
+                LazyVGrid(columns: colunas, spacing: 10) {
+                    CartaoIndicador(titulo: positivo ? "Lucro do lote" : "Prejuízo do lote",
+                                    valor: Formatadores.moeda(relatorio.lucroTotal),
+                                    detalhe: "\(Formatadores.moeda(relatorio.lucroPorAnimal))/animal",
+                                    simbolo: positivo ? "arrow.up.right" : "arrow.down.right",
+                                    cor: cor)
+                    CartaoIndicador(titulo: "Retorno",
+                                    valor: Formatadores.percentual(relatorio.retornoSobreInvestimento),
+                                    detalhe: "\(Formatadores.percentual(relatorio.margemSobreReceita)) da venda",
+                                    simbolo: "percent",
+                                    cor: cor)
+                }
+
+                VStack(spacing: 8) {
+                    LinhaDado(rotulo: "Compra do lote",
+                              valor: Formatadores.moeda(relatorio.compraTotal))
+                    LinhaDado(rotulo: "Dieta até o abate",
+                              valor: Formatadores.moeda(relatorio.custoTotal))
+                    LinhaDado(rotulo: "Investido",
+                              valor: Formatadores.moeda(relatorio.investimentoTotal))
+                    LinhaDado(rotulo: "Venda prevista",
+                              valor: Formatadores.moeda(relatorio.receitaTotal))
+                    Divider().overlay(Tema.borda)
+                    LinhaDado(rotulo: "Lucro por arroba produzida",
+                              valor: Formatadores.moeda(relatorio.lucroPorArrobaProduzida))
+                    LinhaDado(rotulo: "Arroba de equilíbrio",
+                              valor: Formatadores.moeda(relatorio.precoArrobaEquilibrio),
+                              destaque: true)
+                    LinhaDado(rotulo: "Resultado só da engorda",
+                              valor: Formatadores.moeda(relatorio.margemDaEngorda))
+                }
+                .cartao(espacamento: 14)
+
+                Text("Compra a \(Formatadores.moeda(lote.precoCompra)) \(lote.modoCompra.porQue), venda a \(Formatadores.moeda(lote.precoArrobaVenda)) por arroba. O resultado só da engorda compara as arrobas que a dieta produz com o que ela custa, sem a compra. Não entram sanidade, transporte, pastagem, mão de obra nem impostos.")
+                    .font(.caption2)
+                    .foregroundStyle(Tema.textoSuave)
+
+                if lote.precoCompra <= 0 {
+                    Aviso(texto: "Sem preço de compra informado: o resultado conta apenas a dieta.")
+                }
+                // Sem preço nos insumos a dieta entra como zero, e aí o lucro
+                // sai inflado. Vale avisar: é o erro mais fácil de cometer aqui.
+                if relatorio.custoTotal <= 0 {
+                    Aviso(texto: "Nenhum alimento do lote tem preço cadastrado, então a dieta está entrando como custo zero. Informe os preços na aba Insumos.")
+                }
+                if relatorio.precoArrobaEquilibrio > lote.precoArrobaVenda {
+                    Aviso(texto: "A arroba precisaria sair a \(Formatadores.moeda(relatorio.precoArrobaEquilibrio)) só para empatar.",
+                          simbolo: "exclamationmark.octagon.fill",
+                          cor: Tema.vermelho)
+                }
+            }
         }
     }
 
