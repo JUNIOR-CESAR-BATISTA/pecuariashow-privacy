@@ -23,8 +23,20 @@
     height: 100%;
   }
 
+  /*
+   * Um claro difuso no alto da tela. O fundo chapado de ponta a ponta lia
+   * como papel de parede; a luz vinda de cima dá ao aplicativo um lugar de
+   * onde a cena é iluminada, e é o que separa escuro de apagado.
+   */
   body {
     @apply bg-fundo text-texto antialiased;
+    background-image: radial-gradient(
+      120% 60% at 50% -10%,
+      rgba(46, 125, 87, 0.16) 0%,
+      rgba(228, 192, 83, 0.05) 38%,
+      transparent 70%
+    );
+    background-attachment: fixed;
     margin: 0;
     /* O aplicativo tem identidade escura própria, e não segue o tema do
        sistema: seguir deixaria a leitura no sol pior, não melhor. */
@@ -66,6 +78,36 @@
   .fio {
     @apply h-px w-full bg-realce;
   }
+
+  /*
+   * Entrada das peças ao abrir a tela: sobem um fio e aparecem. Dura pouco
+   * mais de um terço de segundo e não se repete - é o suficiente para a tela
+   * parecer montada, e não despejada. Quem pediu menos movimento no sistema
+   * não vê nada disso.
+   */
+  .entra {
+    animation: entra 0.38s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entra {
+      animation: none;
+    }
+  }
+}
+
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer components {
 
   .campo {
     @apply w-full rounded-xl border border-borda bg-superficieAlta px-3.5 py-2.5 text-texto

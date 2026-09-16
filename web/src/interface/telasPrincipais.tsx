@@ -76,7 +76,6 @@ import {
   IconeCaixa,
   IconeDocumento,
   IconeEscudo,
-  IconeFolha,
   IconeFuncao,
   IconeLista,
   IconeMais,
@@ -126,13 +125,12 @@ function saudacao(agora = new Date()): string {
 function Cabecalho({ irPara }: { irPara: (destino: string) => void }) {
   return (
     <header className="flex items-center gap-3.5">
-      <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full
-                   border border-ouro/25 bg-ouro/[0.07] text-ouro"
+      <img
+        src="/pecuariashow-privacy/icone-192.png"
+        alt=""
         aria-hidden="true"
-      >
-        <IconeFolha className="h-[18px] w-[18px]" />
-      </span>
+        className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-ouro/30"
+      />
       <div className="min-w-0 flex-1">
         <p className="rotulo-secao text-[10px] text-textoTenue">{saudacao()}</p>
         <h1 className="mt-1 whitespace-nowrap font-display text-[26px] leading-none text-texto">
@@ -177,7 +175,32 @@ function CartaoLoteAtivo({
   const temPrazo = relatorio !== null && viavel(relatorio);
 
   return (
-    <button onClick={aoTocar} className="cartao w-full space-y-6 p-6 text-left">
+    <button onClick={aoTocar} className="cartao relative w-full overflow-hidden p-6 text-left">
+      {/*
+        Um claro dourado no canto de cima. É degradê radial, não imagem: não
+        tem borda para ficar dura nem textura para embolar com os números.
+        Uma fotografia aqui, por mais apagada, virava mancha atrás do texto.
+      */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(228,192,83,0.16) 0%, rgba(228,192,83,0.05) 45%, transparent 70%)",
+        }}
+      />
+      {/* Fio dourado que nasce à esquerda e some à direita, no lugar do
+          contorno branco de sempre: marca o cartão principal sem cercá-lo. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(228,192,83,0.5) 22%, rgba(228,192,83,0.12) 62%, transparent 100%)",
+        }}
+      />
+
+      <div className="relative space-y-6">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <p className="rotulo-secao flex items-center gap-2 text-[10px]">
@@ -241,6 +264,7 @@ function CartaoLoteAtivo({
           </div>
         )}
       </div>
+      </div>
     </button>
   );
 }
@@ -268,20 +292,32 @@ function CochoHoje({
         {racao.itens.map((item) => {
           const porAnimal = itemMateriaNatural(item);
           return (
-            <div key={item.insumo.id} className="flex items-baseline gap-3 py-3">
-              <span
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${CORES_FUNDO_CATEGORIA[item.insumo.categoria]}`}
-                aria-hidden="true"
-              />
-              <span className="min-w-0 flex-1 truncate text-sm text-texto">{item.insumo.nome}</span>
-              <span className="shrink-0 text-right">
-                <span className="block font-display text-base leading-none tabular-nums text-texto">
-                  {formatarKg(porAnimal)}
+            <div key={item.insumo.id} className="space-y-2 py-3.5">
+              <div className="flex items-baseline gap-3">
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${CORES_FUNDO_CATEGORIA[item.insumo.categoria]}`}
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 flex-1 truncate text-sm text-texto">
+                  {item.insumo.nome}
                 </span>
-                <span className="mt-1 block text-[11px] tabular-nums text-textoTenue">
-                  {numero(porAnimal * animais, 0)} kg no lote
+                <span className="shrink-0 text-right">
+                  <span className="block font-display text-base leading-none tabular-nums text-texto">
+                    {formatarKg(porAnimal)}
+                  </span>
+                  <span className="mt-1 block text-[11px] tabular-nums text-textoTenue">
+                    {numero(porAnimal * animais, 0)} kg no lote
+                  </span>
                 </span>
-              </span>
+              </div>
+              {/* A fatia de cada alimento na matéria seca. Dá ritmo à lista e
+                  mostra de relance quem é volumoso e quem é acerto fino. */}
+              <div className="ml-[18px] h-0.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className={`h-full rounded-full ${CORES_FUNDO_CATEGORIA[item.insumo.categoria]} opacity-70`}
+                  style={{ width: `max(3px, ${participacaoMS(racao, item)}%)` }}
+                />
+              </div>
             </div>
           );
         })}
@@ -297,8 +333,11 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
 
   return (
     <div className="space-y-9 pb-4">
-      <Cabecalho irPara={irPara} />
+      <div className="entra">
+        <Cabecalho irPara={irPara} />
+      </div>
 
+      <div className="entra" style={{ animationDelay: "60ms" }}>
       {lote && calculo ? (
         <CartaoLoteAtivo
           lote={lote}
@@ -317,16 +356,19 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
           }
         />
       )}
+      </div>
 
       {lote && calculo?.racao ? (
-        <CochoHoje
-          racao={calculo.racao}
-          animais={lote.quantidadeAnimais}
-          aoTocar={() => irPara("racao")}
-        />
+        <div className="entra" style={{ animationDelay: "120ms" }}>
+          <CochoHoje
+            racao={calculo.racao}
+            animais={lote.quantidadeAnimais}
+            aoTocar={() => irPara("racao")}
+          />
+        </div>
       ) : null}
 
-      <section className="space-y-1">
+      <section className="entra space-y-1" style={{ animationDelay: "180ms" }}>
         <TituloSecao texto="Atalhos" />
         <div className="divide-y divide-realce">
           <LinhaAtalho
