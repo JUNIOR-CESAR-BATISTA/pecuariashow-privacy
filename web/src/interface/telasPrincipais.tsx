@@ -63,7 +63,7 @@ import {
   CartaoIndicador,
   Chip,
   CORES_CATEGORIA,
-  CORES_CATEGORIA_CREME,
+  CORES_FUNDO_CATEGORIA,
   Etiqueta,
   EstadoVazio,
   LinhaAtalho,
@@ -72,8 +72,6 @@ import {
   TituloSecao,
 } from "./componentes.js";
 import {
-  IconeBarras,
-  IconeCaixa,
   IconeDocumento,
   IconeEscudo,
   IconeFuncao,
@@ -301,14 +299,7 @@ function ReguaAbate({
   );
 }
 
-/**
- * O que vai no cocho hoje, por animal.
- *
- * É o único cartão claro da tela, de propósito: é a informação que se lê de
- * manhã, no curral, com sol na tela - e creme com verde profundo tem muito
- * mais contraste ao sol que texto claro sobre fundo escuro. De quebra, sendo
- * a única peça clara, ela vira o destaque do painel sem precisar de ouro.
- */
+/** O que vai no cocho hoje, por animal e no lote. */
 function CochoHoje({
   racao,
   animais,
@@ -321,34 +312,34 @@ function CochoHoje({
   return (
     <section className="space-y-4">
       <TituloSecao texto="No cocho hoje" textoAcao="Ver ração" aoAgir={aoTocar} />
-      <div className="cartao-creme">
+      <div className="cartao py-1">
         {racao.itens.map((item, indice) => {
           const porAnimal = itemMateriaNatural(item);
           return (
             <div
               key={item.insumo.id}
-              className={`py-4 ${indice > 0 ? "border-t border-cremeFio" : ""}`}
+              className={`py-3.5 ${indice > 0 ? "border-t border-realce" : ""}`}
             >
               <div className="flex items-baseline gap-3">
                 <span
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${CORES_CATEGORIA_CREME[item.insumo.categoria]}`}
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${CORES_FUNDO_CATEGORIA[item.insumo.categoria]}`}
                   aria-hidden="true"
                 />
-                <span className="min-w-0 flex-1 truncate text-sm text-cremeTexto">
+                <span className="min-w-0 flex-1 truncate text-sm text-texto">
                   {item.insumo.nome}
                 </span>
                 <span className="shrink-0 text-right">
-                  <span className="block font-display text-[17px] leading-none tabular-nums text-cremeTexto">
+                  <span className="block font-display text-[17px] leading-none tabular-nums text-texto">
                     {formatarKg(porAnimal)}
                   </span>
-                  <span className="mt-1 block text-[11px] tabular-nums text-cremeSuave">
+                  <span className="mt-1 block text-[11px] tabular-nums text-textoTenue">
                     {numero(porAnimal * animais, 0)} kg no lote
                   </span>
                 </span>
               </div>
-              <div className="ml-[17px] mt-2.5 h-[3px] overflow-hidden rounded-full bg-cremeTexto/[0.09]">
+              <div className="ml-[17px] mt-2.5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
                 <div
-                  className={`h-full rounded-full ${CORES_CATEGORIA_CREME[item.insumo.categoria]} opacity-90`}
+                  className={`h-full rounded-full ${CORES_FUNDO_CATEGORIA[item.insumo.categoria]} opacity-80`}
                   style={{ width: `max(3px, ${participacaoMS(racao, item)}%)` }}
                 />
               </div>
@@ -406,6 +397,24 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
             titulo="Novo lote"
             detalhe="Cadastrar outro lote de novilhas"
             aoTocar={() => irPara("novo-lote")}
+          />
+          <LinhaAtalho
+            icone={<IconeLista className="h-[18px] w-[18px]" />}
+            titulo="Rebanho"
+            detalhe="Os lotes cadastrados e as pesagens"
+            aoTocar={() => irPara("rebanho")}
+          />
+          <LinhaAtalho
+            icone={<IconePizza className="h-[18px] w-[18px]" />}
+            titulo="Ração"
+            detalhe="A dieta do dia, alimento por alimento"
+            aoTocar={() => irPara("racao")}
+          />
+          <LinhaAtalho
+            icone={<IconeDocumento className="h-[18px] w-[18px]" />}
+            titulo="Planejar o abate"
+            detalhe="Insumos do ciclo e resultado previsto"
+            aoTocar={() => irPara("abate")}
           />
           <LinhaAtalho
             icone={<IconeTroca className="h-[18px] w-[18px]" />}

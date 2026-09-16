@@ -12,14 +12,6 @@ export const CORES_CATEGORIA: Record<CategoriaInsumo, string> = {
   mineral: "text-textoSuave",
 };
 
-/** As cores dos alimentos fechadas para o cartão claro do cocho. */
-export const CORES_CATEGORIA_CREME: Record<CategoriaInsumo, string> = {
-  volumoso: "bg-volumosoEscuro",
-  energetico: "bg-energeticoEscuro",
-  proteico: "bg-proteicoEscuro",
-  mineral: "bg-mineralEscuro",
-};
-
 /** As mesmas cores de CORES_CATEGORIA, para pontos e marcas. */
 export const CORES_FUNDO_CATEGORIA: Record<CategoriaInsumo, string> = {
   volumoso: "bg-verdeClaro",
