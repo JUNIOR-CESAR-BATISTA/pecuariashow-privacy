@@ -72,8 +72,6 @@ import {
   TituloSecao,
 } from "./componentes.js";
 import {
-  IconeBarras,
-  IconeCaixa,
   IconeDocumento,
   IconeEscudo,
   IconeFuncao,
@@ -399,6 +397,24 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
             titulo="Novo lote"
             detalhe="Cadastrar outro lote de novilhas"
             aoTocar={() => irPara("novo-lote")}
+          />
+          <LinhaAtalho
+            icone={<IconeLista className="h-[18px] w-[18px]" />}
+            titulo="Rebanho"
+            detalhe="Os lotes cadastrados e as pesagens"
+            aoTocar={() => irPara("rebanho")}
+          />
+          <LinhaAtalho
+            icone={<IconePizza className="h-[18px] w-[18px]" />}
+            titulo="Ração"
+            detalhe="A dieta do dia, alimento por alimento"
+            aoTocar={() => irPara("racao")}
+          />
+          <LinhaAtalho
+            icone={<IconeDocumento className="h-[18px] w-[18px]" />}
+            titulo="Planejar o abate"
+            detalhe="Insumos do ciclo e resultado previsto"
+            aoTocar={() => irPara("abate")}
           />
           <LinhaAtalho
             icone={<IconeTroca className="h-[18px] w-[18px]" />}
