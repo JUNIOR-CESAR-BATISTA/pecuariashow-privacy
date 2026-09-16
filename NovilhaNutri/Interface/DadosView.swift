@@ -239,6 +239,20 @@ struct MetodologiaView: View {
             }
             .listRowBackground(Tema.superficie)
 
+            Section("Resultado previsto") {
+                TextoMetodo(titulo: "Compra",
+                            corpo: "Por arroba, o preço combinado multiplica as arrobas de carcaça no peso de entrada (peso de entrada x rendimento / 15). Por cabeça, vale o valor informado, qualquer que seja o peso.")
+                TextoMetodo(titulo: "Venda",
+                            corpo: "As arrobas de carcaça no peso de abate multiplicadas pelo preço de arroba informado.")
+                TextoMetodo(titulo: "Lucro",
+                            corpo: "Venda menos compra menos o custo da dieta até o abate. Não entram sanidade, transporte, pastagem, mão de obra nem impostos.")
+                TextoMetodo(titulo: "Arroba de equilíbrio",
+                            corpo: "O investimento dividido por todas as arrobas vendidas. É o preço em que o ciclo empata; abaixo dele a venda não paga a compra mais a dieta.")
+                TextoMetodo(titulo: "Resultado só da engorda",
+                            corpo: "As arrobas produzidas no ciclo ao preço de venda, menos o custo da dieta. Separa o mérito da ração do mérito da compra.")
+            }
+            .listRowBackground(Tema.superficie)
+
             Section {
                 Text("Os coeficientes são médias de população. Acompanhe pesagens reais e use o ajuste de consumo do lote para aproximar a previsão do que acontece no cocho.")
                     .font(.footnote)

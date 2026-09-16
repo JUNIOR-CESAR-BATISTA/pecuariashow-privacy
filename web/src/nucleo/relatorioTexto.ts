@@ -3,7 +3,7 @@
  *
  * Porte de `Core/Calculo/RelatorioTexto.swift`.
  */
-import { FASES, GRUPOS, SISTEMAS } from "./classificacoes.js";
+import { FASES, GRUPOS, MODOS_COMPRA, SISTEMAS } from "./classificacoes.js";
 import { descricao as descricaoConversao, descricaoCompra } from "./conversorSacas.js";
 import {
   arroba,
@@ -15,6 +15,7 @@ import {
   numero,
   percentual,
 } from "./formatadores.js";
+import { arrobasCompra, custoCompraPorAnimal } from "./lote.js";
 import {
   arrobasFinais,
   arrobasProduzidasLote,
@@ -27,9 +28,22 @@ import {
   custoPorKgGanho,
   custoPeriodo,
   custoTotal,
+  compraTotal,
   ganhoPorAnimal,
   ganhoTotalLote,
+  investimentoPorAnimal,
+  investimentoTotal,
+  lucroPorAnimal,
+  lucroPorArrobaProduzida,
+  lucroTotal,
+  margemDaEngorda,
+  margemSobreReceita,
   pesoCarcacaFinal,
+  precoArrobaEquilibrio,
+  receitaPorAnimal,
+  receitaTotal,
+  retornoSobreInvestimento,
+  temPrecos,
   tituloPeriodo,
   viavel,
   consumoToneladas,
@@ -111,6 +125,41 @@ export function gerar(relatorio: RelatorioPlanejamento): string {
     linhas.push(`Custo por animal por dia: ${moeda(custoPorAnimalDia(relatorio))}`);
     linhas.push(`Custo por quilo ganho: ${moeda(custoPorKgGanho(relatorio))}`);
     linhas.push(`Custo por arroba produzida: ${moeda(custoPorArroba(relatorio))}`);
+    linhas.push("");
+  }
+
+  if (temPrecos(relatorio)) {
+    const modo = MODOS_COMPRA[lote.modoCompra];
+    linhas.push("RESULTADO PREVISTO");
+    linhas.push(
+      `Compra: ${moeda(lote.precoCompra)} ${modo.porQue}` +
+        (lote.modoCompra === "porArroba" ? ` (${arroba(arrobasCompra(lote))})` : ""),
+    );
+    linhas.push(`Venda: ${moeda(lote.precoArrobaVenda)} por arroba`);
+    linhas.push("");
+    linhas.push(`Compra por animal: ${moeda(custoCompraPorAnimal(lote))}`);
+    linhas.push(`Dieta por animal: ${moeda(custoPorAnimal(relatorio))}`);
+    linhas.push(`Investido por animal: ${moeda(investimentoPorAnimal(relatorio))}`);
+    linhas.push(`Venda por animal: ${moeda(receitaPorAnimal(relatorio))}`);
+    linhas.push(`Lucro por animal: ${moeda(lucroPorAnimal(relatorio))}`);
+    linhas.push("");
+    linhas.push(`Compra do lote: ${moeda(compraTotal(relatorio))}`);
+    linhas.push(`Dieta do lote: ${moeda(custoTotal(relatorio))}`);
+    linhas.push(`Investido no lote: ${moeda(investimentoTotal(relatorio))}`);
+    linhas.push(`Venda do lote: ${moeda(receitaTotal(relatorio))}`);
+    linhas.push(`Lucro do lote: ${moeda(lucroTotal(relatorio))}`);
+    linhas.push("");
+    linhas.push(`Margem sobre a venda: ${percentual(margemSobreReceita(relatorio))}`);
+    linhas.push(`Retorno sobre o investido: ${percentual(retornoSobreInvestimento(relatorio))}`);
+    linhas.push(`Lucro por arroba produzida: ${moeda(lucroPorArrobaProduzida(relatorio))}`);
+    linhas.push(`Arroba de equilíbrio: ${moeda(precoArrobaEquilibrio(relatorio))}`);
+    linhas.push(`Resultado só da engorda: ${moeda(margemDaEngorda(relatorio))}`);
+    if (!(lote.precoCompra > 0)) {
+      linhas.push("Sem preço de compra informado: o resultado conta apenas a dieta.");
+    }
+    linhas.push(
+      "Não entram sanidade, transporte, pastagem, mão de obra nem impostos.",
+    );
     linhas.push("");
   }
 

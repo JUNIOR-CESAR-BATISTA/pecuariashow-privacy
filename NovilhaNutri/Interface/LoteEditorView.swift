@@ -37,6 +37,7 @@ struct LoteEditorView: View {
                 identificacao
                 animais
                 metas
+                compraVenda
                 racao
                 pesagens
                 previaSection
@@ -141,6 +142,31 @@ struct LoteEditorView: View {
                 if let nota = notaCalibracao {
                     Text(nota).foregroundStyle(Tema.ouro)
                 }
+            }
+        }
+        .listRowBackground(Tema.superficie)
+    }
+
+    private var compraVenda: some View {
+        Section {
+            Picker("Como o animal foi comprado", selection: $lote.modoCompra) {
+                ForEach(ModoCompra.allCases) { modo in
+                    Text(modo.nome).tag(modo)
+                }
+            }
+            CampoNumerico(titulo: "Preço pago", valor: $lote.precoCompra,
+                          casas: 2, sufixo: lote.modoCompra.unidade)
+            CampoNumerico(titulo: "Arroba na venda", valor: $lote.precoArrobaVenda,
+                          casas: 2, sufixo: "R$/@")
+        } header: {
+            Text("Compra e venda")
+        } footer: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(lote.modoCompra.descricao)
+                if lote.modoCompra == .porArroba && lote.precoCompra > 0 {
+                    Text("São \(Formatadores.arroba(lote.arrobasCompra)) de carcaça na entrada, \(Formatadores.moeda(lote.custoCompraPorAnimal)) por animal.")
+                }
+                Text("Com os dois preços preenchidos, a aba Abate mostra o lucro previsto do ciclo.")
             }
         }
         .listRowBackground(Tema.superficie)

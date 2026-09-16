@@ -38,6 +38,16 @@ struct Lote: Identifiable, Codable, Hashable {
     /// Calibração do consumo previsto (0,85 a 1,15).
     var ajusteConsumo: Double
 
+    /// Compra e venda, para a previsão de resultado.
+    var modoCompra: ModoCompra
+    /// Preço pago pelo animal, na unidade do `modoCompra`: reais por arroba de
+    /// carcaça no peso de entrada, ou reais por cabeça. Zero quer dizer que não
+    /// houve compra (animal de cria própria) ou que o valor ainda não foi
+    /// informado - nos dois casos o resultado sai contando só a dieta.
+    var precoCompra: Double
+    /// Preço esperado da arroba na venda (R$/@).
+    var precoArrobaVenda: Double
+
     /// Insumos que compõem a ração.
     var volumosoID: UUID?
     var energeticoID: UUID?
@@ -62,6 +72,9 @@ struct Lote: Identifiable, Codable, Hashable {
          pesoFinalMaturidade: Double = 430,
          diasPorPeriodo: Int = 30,
          ajusteConsumo: Double = 1.0,
+         modoCompra: ModoCompra = .porArroba,
+         precoCompra: Double = 0,
+         precoArrobaVenda: Double = 0,
          volumosoID: UUID? = nil,
          energeticoID: UUID? = nil,
          proteicoID: UUID? = nil,
@@ -83,6 +96,9 @@ struct Lote: Identifiable, Codable, Hashable {
         self.pesoFinalMaturidade = pesoFinalMaturidade
         self.diasPorPeriodo = diasPorPeriodo
         self.ajusteConsumo = ajusteConsumo
+        self.modoCompra = modoCompra
+        self.precoCompra = precoCompra
+        self.precoArrobaVenda = precoArrobaVenda
         self.volumosoID = volumosoID
         self.energeticoID = energeticoID
         self.proteicoID = proteicoID
@@ -90,6 +106,40 @@ struct Lote: Identifiable, Codable, Hashable {
         self.restricoes = restricoes
         self.pesagens = pesagens
         self.observacoes = observacoes
+    }
+
+    /// Leitura tolerante do arquivo gravado.
+    ///
+    /// O `Codable` sintetizado exige todas as chaves, então um backup feito
+    /// antes de um campo novo deixaria de abrir. Aqui cada campo ausente cai
+    /// no mesmo padrão do inicializador - foi o que permitiu acrescentar
+    /// compra e venda sem invalidar os arquivos de quem já usa o aplicativo.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        nome = try c.decodeIfPresent(String.self, forKey: .nome) ?? ""
+        quantidadeAnimais = try c.decodeIfPresent(Int.self, forKey: .quantidadeAnimais) ?? 50
+        pesoMedioInicial = try c.decodeIfPresent(Double.self, forKey: .pesoMedioInicial) ?? 240
+        ganhoMetaDiario = try c.decodeIfPresent(Double.self, forKey: .ganhoMetaDiario) ?? 0.700
+        fase = try c.decodeIfPresent(FaseAnimal.self, forKey: .fase) ?? .recriaInicial
+        grupoGenetico = try c.decodeIfPresent(GrupoGenetico.self, forKey: .grupoGenetico) ?? .zebuino
+        sistema = try c.decodeIfPresent(SistemaCriacao.self, forKey: .sistema) ?? .semiconfinamento
+        dataEntrada = try c.decodeIfPresent(Date.self, forKey: .dataEntrada) ?? Date()
+        pesoAlvoAbate = try c.decodeIfPresent(Double.self, forKey: .pesoAlvoAbate) ?? 420
+        rendimentoCarcaca = try c.decodeIfPresent(Double.self, forKey: .rendimentoCarcaca) ?? 0.53
+        pesoFinalMaturidade = try c.decodeIfPresent(Double.self, forKey: .pesoFinalMaturidade) ?? 430
+        diasPorPeriodo = try c.decodeIfPresent(Int.self, forKey: .diasPorPeriodo) ?? 30
+        ajusteConsumo = try c.decodeIfPresent(Double.self, forKey: .ajusteConsumo) ?? 1.0
+        modoCompra = try c.decodeIfPresent(ModoCompra.self, forKey: .modoCompra) ?? .porArroba
+        precoCompra = try c.decodeIfPresent(Double.self, forKey: .precoCompra) ?? 0
+        precoArrobaVenda = try c.decodeIfPresent(Double.self, forKey: .precoArrobaVenda) ?? 0
+        volumosoID = try c.decodeIfPresent(UUID.self, forKey: .volumosoID)
+        energeticoID = try c.decodeIfPresent(UUID.self, forKey: .energeticoID)
+        proteicoID = try c.decodeIfPresent(UUID.self, forKey: .proteicoID)
+        mineralID = try c.decodeIfPresent(UUID.self, forKey: .mineralID)
+        restricoes = try c.decodeIfPresent(RestricoesFormulacao.self, forKey: .restricoes) ?? .padrao
+        pesagens = try c.decodeIfPresent([Pesagem].self, forKey: .pesagens) ?? []
+        observacoes = try c.decodeIfPresent(String.self, forKey: .observacoes) ?? ""
     }
 
     /// Pesagens em ordem cronológica.
@@ -138,6 +188,27 @@ struct Lote: Identifiable, Codable, Hashable {
 
     /// Arrobas de carcaça previstas no abate.
     var arrobasNoAbate: Double { pesoAlvoAbate * rendimentoCarcaca / 15 }
+
+    // MARK: Compra
+
+    /// Arrobas de carcaça consideradas na compra.
+    ///
+    /// Usa o peso de **entrada**, não o de hoje: é o peso pelo qual o animal
+    /// foi pago. O rendimento é o mesmo cadastrado para o abate - na prática o
+    /// rendimento do magro é menor, então quem negocia com rendimentos
+    /// diferentes deve informar o preço já por cabeça.
+    var arrobasCompra: Double { pesoMedioInicial * rendimentoCarcaca / 15 }
+
+    /// O que cada animal custou na entrada, seja qual for o modo de compra.
+    var custoCompraPorAnimal: Double {
+        guard precoCompra > 0 else { return 0 }
+        switch modoCompra {
+        case .porArroba: return precoCompra * arrobasCompra
+        case .porCabeca: return precoCompra
+        }
+    }
+
+    var custoCompraLote: Double { custoCompraPorAnimal * Double(quantidadeAnimais) }
 
     var estaPronto: Bool { pesoAtual >= pesoAlvoAbate }
 

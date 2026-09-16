@@ -120,10 +120,21 @@ function comoLista(valor: unknown): Bruto[] {
   return Array.isArray(valor) ? (valor as Bruto[]) : [];
 }
 
+/** Número gravado, ou o padrão quando o campo não existe no arquivo. */
+function lerNumero(valor: unknown, padrao: number): number {
+  return typeof valor === "number" && Number.isFinite(valor) ? valor : padrao;
+}
+
 function lerLote(bruto: Bruto): Lote {
   return {
     ...(bruto as unknown as Lote),
     dataEntrada: paraData(bruto["dataEntrada"], "lote.dataEntrada"),
+    // Campos de compra e venda: chegaram depois, e um arquivo antigo não os
+    // tem. Sem estes padrões eles voltariam como undefined e as contas de
+    // resultado dariam NaN em vez de zero.
+    modoCompra: bruto["modoCompra"] === "porCabeca" ? "porCabeca" : "porArroba",
+    precoCompra: lerNumero(bruto["precoCompra"], 0),
+    precoArrobaVenda: lerNumero(bruto["precoArrobaVenda"], 0),
     restricoes: { ...RESTRICOES_PADRAO, ...(bruto["restricoes"] as object | undefined) },
     pesagens: comoLista(bruto["pesagens"]).map((p) => ({
       ...(p as unknown as Lote["pesagens"][number]),

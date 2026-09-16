@@ -66,6 +66,43 @@ enum RelatorioTexto {
             linhas.append("")
         }
 
+        if relatorio.temPrecos {
+            let modo = lote.modoCompra
+            linhas.append("RESULTADO PREVISTO")
+            var compra = "Compra: \(Formatadores.moeda(lote.precoCompra)) \(modo.porQue)"
+            if modo == .porArroba {
+                compra += " (\(Formatadores.arroba(lote.arrobasCompra)))"
+            }
+            linhas.append(compra)
+            linhas.append("Venda: \(Formatadores.moeda(lote.precoArrobaVenda)) por arroba")
+            linhas.append("")
+            linhas.append("Compra por animal: \(Formatadores.moeda(relatorio.compraPorAnimal))")
+            linhas.append("Dieta por animal: \(Formatadores.moeda(relatorio.custoPorAnimal))")
+            linhas.append("Investido por animal: \(Formatadores.moeda(relatorio.investimentoPorAnimal))")
+            linhas.append("Venda por animal: \(Formatadores.moeda(relatorio.receitaPorAnimal))")
+            linhas.append("Lucro por animal: \(Formatadores.moeda(relatorio.lucroPorAnimal))")
+            linhas.append("")
+            linhas.append("Compra do lote: \(Formatadores.moeda(relatorio.compraTotal))")
+            linhas.append("Dieta do lote: \(Formatadores.moeda(relatorio.custoTotal))")
+            linhas.append("Investido no lote: \(Formatadores.moeda(relatorio.investimentoTotal))")
+            linhas.append("Venda do lote: \(Formatadores.moeda(relatorio.receitaTotal))")
+            linhas.append("Lucro do lote: \(Formatadores.moeda(relatorio.lucroTotal))")
+            linhas.append("")
+            linhas.append("Margem sobre a venda: \(Formatadores.percentual(relatorio.margemSobreReceita))")
+            linhas.append("Retorno sobre o investido: \(Formatadores.percentual(relatorio.retornoSobreInvestimento))")
+            linhas.append("Lucro por arroba produzida: \(Formatadores.moeda(relatorio.lucroPorArrobaProduzida))")
+            linhas.append("Arroba de equilíbrio: \(Formatadores.moeda(relatorio.precoArrobaEquilibrio))")
+            linhas.append("Resultado só da engorda: \(Formatadores.moeda(relatorio.margemDaEngorda))")
+            if lote.precoCompra <= 0 {
+                linhas.append("Sem preço de compra informado: o resultado conta apenas a dieta.")
+            }
+            if relatorio.custoTotal <= 0 {
+                linhas.append("Nenhum alimento do lote tem preço cadastrado: a dieta entra como custo zero.")
+            }
+            linhas.append("Não entram sanidade, transporte, pastagem, mão de obra nem impostos.")
+            linhas.append("")
+        }
+
         linhas.append("PERÍODOS")
         for periodo in relatorio.periodos {
             linhas.append("\(periodo.titulo): \(Formatadores.data(periodo.dataInicio)) a \(Formatadores.data(periodo.dataFim)) (\(Formatadores.numero(periodo.dias, casas: 0)) dias)")

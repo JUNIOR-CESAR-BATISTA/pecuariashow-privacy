@@ -85,6 +85,70 @@ struct RelatorioPlanejamento {
     var custoPorKgGanho: Double {
         ganhoTotalLote > 0 ? custoTotal / ganhoTotalLote : 0
     }
+    // MARK: Previsão de resultado
+    //
+    // A conta é a do pecuarista: o que saiu do bolso na compra, mais o que a
+    // dieta vai custar até o abate, contra o que o animal vale na venda. Nada
+    // além disso entra aqui - sanidade, transporte, pastagem, mão de obra e
+    // impostos ficam de fora, e é por isso que o resultado se chama previsto.
+
+    /// Se dá para projetar resultado: sem preço de venda não há receita.
+    var temPrecos: Bool { lote.precoArrobaVenda > 0 }
+
+    /// O que foi pago por animal na entrada do lote.
+    var compraPorAnimal: Double { lote.custoCompraPorAnimal }
+    var compraTotal: Double { lote.custoCompraPorAnimal * Double(animais) }
+
+    /// Compra mais dieta: o dinheiro investido no animal até o abate.
+    var investimentoPorAnimal: Double { compraPorAnimal + custoPorAnimal }
+    var investimentoTotal: Double { compraTotal + custoTotal }
+
+    /// Receita da venda, pelo preço de arroba informado no lote.
+    var receitaPorAnimal: Double { arrobasFinais * lote.precoArrobaVenda }
+    var receitaTotal: Double { receitaPorAnimal * Double(animais) }
+
+    var lucroPorAnimal: Double { receitaPorAnimal - investimentoPorAnimal }
+    var lucroTotal: Double { receitaTotal - investimentoTotal }
+
+    /// Lucro como fatia da venda (%).
+    var margemSobreReceita: Double {
+        receitaTotal > 0 ? lucroTotal / receitaTotal * 100 : 0
+    }
+
+    /// Lucro sobre o dinheiro investido (%), que é o retorno do ciclo.
+    var retornoSobreInvestimento: Double {
+        investimentoTotal > 0 ? lucroTotal / investimentoTotal * 100 : 0
+    }
+
+    var lucroPorArrobaProduzida: Double {
+        arrobasProduzidasLote > 0 ? lucroTotal / arrobasProduzidasLote : 0
+    }
+
+    /// Preço de arroba em que o ciclo empata.
+    ///
+    /// Abaixo dele a venda não paga a compra mais a dieta. É o número que
+    /// decide se vale segurar o lote ou vender antes.
+    var precoArrobaEquilibrio: Double {
+        arrobasTotaisLote > 0 ? investimentoTotal / arrobasTotaisLote : 0
+    }
+
+    /// Resultado só da engorda: as arrobas que a dieta produziu, ao preço de
+    /// venda, menos o que a dieta custou.
+    ///
+    /// Separa o mérito da ração do mérito da compra. Pode dar positivo num
+    /// lote que perde dinheiro no todo (compra cara) e negativo num que ganha
+    /// (compra barata), e é o número que responde se a dieta se paga.
+    var receitaDaEngorda: Double { arrobasProduzidasLote * lote.precoArrobaVenda }
+    var margemDaEngorda: Double { receitaDaEngorda - custoTotal }
+    var margemDaEngordaPorAnimal: Double {
+        animais > 0 ? margemDaEngorda / Double(animais) : 0
+    }
+
+    /// Preço de arroba em que a dieta apenas se paga, ignorando a compra.
+    var precoArrobaEquilibrioEngorda: Double {
+        arrobasProduzidasLote > 0 ? custoTotal / arrobasProduzidasLote : 0
+    }
+
     /// Quilos de matéria seca por quilo de peso vivo ganho.
     var conversaoAlimentar: Double {
         ganhoTotalLote > 0 ? materiaSecaTotal / ganhoTotalLote : 0

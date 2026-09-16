@@ -18,7 +18,14 @@ import {
   type ComposicaoRacao,
   type SelecaoInsumos,
 } from "./formuladorRacao.js";
-import { dataReferencia, perfilParaPeso, pesoAtual, type Lote } from "./lote.js";
+import {
+  custoCompraLote as compraDoLote,
+  custoCompraPorAnimal as compraPorCabeca,
+  dataReferencia,
+  perfilParaPeso,
+  pesoAtual,
+  type Lote,
+} from "./lote.js";
 import { calcular, type ExigenciaDiaria } from "./motorExigencias.js";
 
 /** Quantidade de um insumo consumida em um período. */
@@ -117,6 +124,84 @@ export function custoPorArroba(r: RelatorioPlanejamento): number {
 export function custoPorKgGanho(r: RelatorioPlanejamento): number {
   const ganho = ganhoTotalLote(r);
   return ganho > 0 ? custoTotal(r) / ganho : 0;
+}
+
+// ------------------------------------------------- previsão de resultado
+//
+// A conta é a do pecuarista: o que saiu do bolso na compra, mais o que a
+// dieta vai custar até o abate, contra o que o animal vale na venda. Nada
+// além disso entra aqui - sanidade, transporte, pastagem, mão de obra e
+// impostos ficam de fora, e é por isso que o resultado se chama previsto.
+
+/** Se dá para projetar resultado: sem preço de venda não há receita. */
+export const temPrecos = (r: RelatorioPlanejamento) => r.lote.precoArrobaVenda > 0;
+
+/** O que foi pago por animal na entrada do lote. */
+export const compraPorAnimal = (r: RelatorioPlanejamento) => compraPorCabeca(r.lote);
+export const compraTotal = (r: RelatorioPlanejamento) => compraDoLote(r.lote);
+
+/** Compra mais dieta: o dinheiro investido no animal até o abate. */
+export const investimentoPorAnimal = (r: RelatorioPlanejamento) =>
+  compraPorAnimal(r) + custoPorAnimal(r);
+export const investimentoTotal = (r: RelatorioPlanejamento) => compraTotal(r) + custoTotal(r);
+
+/** Receita da venda, pelo preço de arroba informado no lote. */
+export const receitaPorAnimal = (r: RelatorioPlanejamento) =>
+  arrobasFinais(r) * r.lote.precoArrobaVenda;
+export const receitaTotal = (r: RelatorioPlanejamento) => receitaPorAnimal(r) * r.animais;
+
+export const lucroPorAnimal = (r: RelatorioPlanejamento) =>
+  receitaPorAnimal(r) - investimentoPorAnimal(r);
+export const lucroTotal = (r: RelatorioPlanejamento) => receitaTotal(r) - investimentoTotal(r);
+
+/** Lucro como fatia da venda (%). */
+export function margemSobreReceita(r: RelatorioPlanejamento): number {
+  const receita = receitaTotal(r);
+  return receita > 0 ? (lucroTotal(r) / receita) * 100 : 0;
+}
+
+/** Lucro sobre o dinheiro investido (%), que é o retorno do ciclo. */
+export function retornoSobreInvestimento(r: RelatorioPlanejamento): number {
+  const investido = investimentoTotal(r);
+  return investido > 0 ? (lucroTotal(r) / investido) * 100 : 0;
+}
+
+export function lucroPorArrobaProduzida(r: RelatorioPlanejamento): number {
+  const arrobas = arrobasProduzidasLote(r);
+  return arrobas > 0 ? lucroTotal(r) / arrobas : 0;
+}
+
+/**
+ * Preço de arroba em que o ciclo empata.
+ *
+ * Abaixo dele a venda não paga a compra mais a dieta. É o número que decide
+ * se vale segurar o lote ou vender antes.
+ */
+export function precoArrobaEquilibrio(r: RelatorioPlanejamento): number {
+  const arrobas = arrobasTotaisLote(r);
+  return arrobas > 0 ? investimentoTotal(r) / arrobas : 0;
+}
+
+/**
+ * Resultado só da engorda: as arrobas que a dieta produziu, ao preço de
+ * venda, menos o que a dieta custou.
+ *
+ * Separa o mérito da ração do mérito da compra. Pode dar positivo num lote
+ * que perde dinheiro no todo (compra cara) e negativo num que ganha (compra
+ * barata), e é o número que responde se a dieta se paga.
+ */
+export const receitaDaEngorda = (r: RelatorioPlanejamento) =>
+  arrobasProduzidasLote(r) * r.lote.precoArrobaVenda;
+export const margemDaEngorda = (r: RelatorioPlanejamento) =>
+  receitaDaEngorda(r) - custoTotal(r);
+export function margemDaEngordaPorAnimal(r: RelatorioPlanejamento): number {
+  return r.animais > 0 ? margemDaEngorda(r) / r.animais : 0;
+}
+
+/** Preço de arroba em que a dieta apenas se paga, ignorando a compra. */
+export function precoArrobaEquilibrioEngorda(r: RelatorioPlanejamento): number {
+  const arrobas = arrobasProduzidasLote(r);
+  return arrobas > 0 ? custoTotal(r) / arrobas : 0;
 }
 
 /** Quilos de matéria seca por quilo de peso vivo ganho. */

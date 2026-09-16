@@ -15,9 +15,11 @@ import {
   CATEGORIAS,
   FASES,
   GRUPOS,
+  MODOS_COMPRA,
   SISTEMAS,
   TODAS_AS_FASES,
   TODOS_OS_GRUPOS,
+  TODOS_OS_MODOS_COMPRA,
   TODOS_OS_SISTEMAS,
   type CategoriaInsumo,
 } from "../nucleo/classificacoes.js";
@@ -36,7 +38,13 @@ import {
   resumoBromatologico,
   type Insumo,
 } from "../nucleo/insumo.js";
-import { pesoAtual, criarPesagem, type Lote } from "../nucleo/lote.js";
+import {
+  arrobasCompra,
+  criarPesagem,
+  custoCompraPorAnimal,
+  pesoAtual,
+  type Lote,
+} from "../nucleo/lote.js";
 import {
   Aviso,
   Campo,
@@ -225,6 +233,42 @@ function EditorLote({
           aoMudar={(v) => mudar("sistema", v)}
           opcoes={TODOS_OS_SISTEMAS.map((s) => ({ valor: s, texto: SISTEMAS[s].nome }))}
         />
+      </div>
+
+      <div className="cartao space-y-3">
+        <TituloSecao texto="Compra e venda" />
+        <Selecao
+          rotulo="Como o animal foi comprado"
+          valor={rascunho.modoCompra}
+          aoMudar={(v) => mudar("modoCompra", v)}
+          opcoes={TODOS_OS_MODOS_COMPRA.map((m) => ({ valor: m, texto: MODOS_COMPRA[m].nome }))}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <Campo
+            rotulo="Preço pago"
+            sufixo={MODOS_COMPRA[rascunho.modoCompra].unidade}
+            passo={10}
+            valor={rascunho.precoCompra}
+            aoMudar={(v) => mudar("precoCompra", Math.max(0, numeroOu(v, 0)))}
+          />
+          <Campo
+            rotulo="Arroba na venda"
+            sufixo="R$/@"
+            passo={10}
+            valor={rascunho.precoArrobaVenda}
+            aoMudar={(v) => mudar("precoArrobaVenda", Math.max(0, numeroOu(v, 0)))}
+          />
+        </div>
+        <p className="text-xs text-textoSuave">
+          {MODOS_COMPRA[rascunho.modoCompra].descricao}
+          {rascunho.modoCompra === "porArroba" && rascunho.precoCompra > 0
+            ? ` São ${arroba(arrobasCompra(rascunho))} de carcaça na entrada, ` +
+              `${moeda(custoCompraPorAnimal(rascunho))} por animal.`
+            : ""}
+        </p>
+        <p className="text-xs text-textoTenue">
+          Com os dois preços preenchidos, a aba Abate mostra o lucro previsto do ciclo.
+        </p>
       </div>
 
       <div className="cartao space-y-3">
