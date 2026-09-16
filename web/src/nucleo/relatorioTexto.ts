@@ -1,7 +1,7 @@
 /**
  * Gera a versão em texto do planejamento, para compartilhar ou imprimir.
  *
- * Porte de `Core/Calculo/RelatorioTexto.swift`.
+ * Porte de `Core/Calculo/RelatorioTexto.swift`, do antigo aplicativo de iPhone.
  */
 import { FASES, GRUPOS, MODOS_COMPRA, SISTEMAS } from "./classificacoes.js";
 import { descricao as descricaoConversao, descricaoCompra } from "./conversorSacas.js";

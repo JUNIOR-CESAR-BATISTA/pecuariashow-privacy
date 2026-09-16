@@ -1,4 +1,4 @@
-/** Porte de `NovilhaNutriTests/ConversorSacasTests.swift`. */
+/** Porte de `NovilhaNutriTests/ConversorSacasTests.swift`, do antigo aplicativo de iPhone. */
 import { describe, expect, it } from "vitest";
 
 import {

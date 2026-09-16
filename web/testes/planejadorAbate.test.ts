@@ -1,4 +1,4 @@
-/** Porte de `NovilhaNutriTests/PlanejadorAbateTests.swift`. */
+/** Porte de `NovilhaNutriTests/PlanejadorAbateTests.swift`, do antigo aplicativo de iPhone. */
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { SelecaoInsumos } from "../src/nucleo/formuladorRacao.js";

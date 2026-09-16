@@ -1,7 +1,8 @@
 /**
  * Formatação numérica e de datas no padrão brasileiro.
  *
- * Porte de `Core/Formatadores.swift`. O `Intl` do navegador ocupa o lugar do
+ * Porte de `Core/Formatadores.swift`, do antigo aplicativo de iPhone. O
+ * `Intl` do navegador ocupa o lugar do
  * `NumberFormatter`, com a mesma localidade, para os textos saírem idênticos
  * aos do aplicativo de iPhone.
  */

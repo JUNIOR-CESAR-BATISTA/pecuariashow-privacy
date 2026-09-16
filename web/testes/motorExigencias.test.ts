@@ -1,5 +1,5 @@
 /**
- * Porte de `NovilhaNutriTests/MotorExigenciasTests.swift`.
+ * Porte de `NovilhaNutriTests/MotorExigenciasTests.swift`, do antigo aplicativo de iPhone.
  *
  * Os números esperados são os mesmos da versão Swift, que por sua vez foram
  * conferidos contra uma implementação independente das mesmas equações. Se o

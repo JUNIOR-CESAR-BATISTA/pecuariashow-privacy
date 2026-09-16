@@ -1,7 +1,8 @@
 /**
  * Classificações do domínio.
  *
- * Porte de `Core/Modelos/Classificacoes.swift`. Onde o Swift usa `enum` com
+ * Porte de `Core/Modelos/Classificacoes.swift`, do antigo aplicativo de
+ * iPhone. Onde o Swift usa `enum` com
  * propriedades calculadas, aqui há um tipo de união e uma tabela de dados: os
  * valores gravados em disco continuam sendo as mesmas cadeias de texto, então
  * um backup do aplicativo de iPhone é lido por esta versão sem conversão.

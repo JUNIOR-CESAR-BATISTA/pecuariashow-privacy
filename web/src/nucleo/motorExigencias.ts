@@ -1,7 +1,8 @@
 /**
  * Motor de exigências nutricionais para novilhas em crescimento.
  *
- * Porte de `Core/Calculo/MotorExigencias.swift`, equação por equação. Segue o
+ * Porte de `Core/Calculo/MotorExigencias.swift`, do antigo aplicativo de
+ * iPhone, equação por equação. Segue o
  * sistema de energia líquida e proteína metabolizável do NRC (Nutrient
  * Requirements of Beef Cattle), com ajustes de grupo genético e de atividade
  * usuais em condições brasileiras.

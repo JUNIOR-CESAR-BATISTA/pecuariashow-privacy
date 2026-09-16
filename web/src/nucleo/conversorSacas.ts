@@ -1,7 +1,7 @@
 /**
  * Converte quantidades de insumo em quilos para sacas ou toneladas.
  *
- * Porte de `Core/Calculo/ConversorSacas.swift`.
+ * Porte de `Core/Calculo/ConversorSacas.swift`, do antigo aplicativo de iPhone.
  */
 import { numero } from "./formatadores.js";
 import {

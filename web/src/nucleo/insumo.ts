@@ -1,7 +1,8 @@
 /**
  * Alimento disponível na propriedade e a forma como ele é comprado.
  *
- * Porte de `Core/Modelos/Insumo.swift`. Teores de PB e NDT são sempre
+ * Porte de `Core/Modelos/Insumo.swift`, do antigo aplicativo de iPhone.
+ * Teores de PB e NDT são sempre
  * percentuais da matéria seca.
  */
 import type { CategoriaInsumo } from "./classificacoes.js";
