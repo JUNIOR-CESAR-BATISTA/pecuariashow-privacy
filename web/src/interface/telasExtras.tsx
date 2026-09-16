@@ -21,7 +21,7 @@ export function TelaConversor() {
       </div>
 
       <div className="cartao divide-y divide-borda">
-        <p className="pb-2 text-xs uppercase tracking-widest text-ouroEscuro">
+        <p className="rotulo-secao pb-3 text-ouroEscuro">
           Equivalência nos tamanhos de mercado
         </p>
         {equivalencias(quilos).map((c) => (
@@ -58,7 +58,7 @@ function Metodo({ titulo, corpo }: { titulo: string; corpo: string }) {
 function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section className="space-y-1">
-      <p className="text-xs uppercase tracking-widest text-ouroEscuro">{titulo}</p>
+      <p className="rotulo-secao text-ouroEscuro">{titulo}</p>
       <div className="cartao divide-y divide-borda py-1">{children}</div>
     </section>
   );
