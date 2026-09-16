@@ -1,7 +1,8 @@
 /**
  * Lê os ciclos encerrados e transforma em calibração e recomendações.
  *
- * Porte de `Core/Calculo/AnalisadorHistorico.swift`. É o que faz a fazenda
+ * Porte de `Core/Calculo/AnalisadorHistorico.swift`, do antigo aplicativo de
+ * iPhone. É o que faz a fazenda
  * aprender com ela mesma: cada lote abatido corrige a previsão do próximo.
  */
 import { GRUPOS, faseSugerida, type CategoriaInsumo } from "./classificacoes.js";

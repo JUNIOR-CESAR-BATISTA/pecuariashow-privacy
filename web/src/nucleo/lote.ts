@@ -1,7 +1,8 @@
 /**
  * Lote de novilhas em semiconfinamento.
  *
- * Porte de `Core/Modelos/Lote.swift`. As datas viajam como texto ISO no
+ * Porte de `Core/Modelos/Lote.swift`, do antigo aplicativo de iPhone. As
+ * datas viajam como texto ISO no
  * arquivo gravado, para o backup continuar legível e para não depender de
  * fuso na leitura; dentro do programa circulam como `Date`.
  */

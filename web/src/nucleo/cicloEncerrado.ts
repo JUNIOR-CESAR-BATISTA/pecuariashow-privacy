@@ -1,7 +1,8 @@
 /**
  * Um lote que já foi abatido, com o que foi planejado e o que de fato aconteceu.
  *
- * Porte de `Core/Modelos/CicloEncerrado.swift`. É a memória da fazenda: cada
+ * Porte de `Core/Modelos/CicloEncerrado.swift`, do antigo aplicativo de
+ * iPhone. É a memória da fazenda: cada
  * ciclo encerrado vira base de comparação e calibração para os lotes seguintes.
  */
 import type { GrupoGenetico, SistemaCriacao } from "./classificacoes.js";

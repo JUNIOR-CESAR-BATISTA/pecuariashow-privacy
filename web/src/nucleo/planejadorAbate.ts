@@ -1,7 +1,7 @@
 /**
  * Projeta o consumo de insumos e a data de abate, período a período.
  *
- * Porte de `Core/Calculo/PlanejadorAbate.swift`.
+ * Porte de `Core/Calculo/PlanejadorAbate.swift`, do antigo aplicativo de iPhone.
  *
  * A cada período o peso médio avança conforme a meta de ganho, as exigências
  * são recalculadas no peso médio do intervalo e a ração é reformulada - por

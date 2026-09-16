@@ -1,4 +1,4 @@
-/** Porte de `NovilhaNutriTests/FormuladorRacaoTests.swift`. */
+/** Porte de `NovilhaNutriTests/FormuladorRacaoTests.swift`, do antigo aplicativo de iPhone. */
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {

@@ -699,8 +699,8 @@ export function TelaDados() {
       <div className="cartao space-y-3">
         <TituloSecao texto="Backup manual" />
         <p className="text-sm text-textoSuave">
-          O arquivo é o mesmo do aplicativo de iPhone: dá para exportar lá e restaurar aqui, e o
-          contrário também.
+          Um arquivo JSON com tudo o que está aqui. Serve para guardar por fora, levar para outro
+          aparelho ou voltar atrás depois de um engano.
         </p>
         <button className="botao-verde w-full" onClick={baixar}>
           Gerar arquivo de backup

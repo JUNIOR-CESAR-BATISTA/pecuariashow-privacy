@@ -1,4 +1,4 @@
-/** Porte de `NovilhaNutriTests/AnalisadorHistoricoTests.swift`. */
+/** Porte de `NovilhaNutriTests/AnalisadorHistoricoTests.swift`, do antigo aplicativo de iPhone. */
 import { describe, expect, it } from "vitest";
 
 import {

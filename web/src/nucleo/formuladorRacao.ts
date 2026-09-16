@@ -1,7 +1,7 @@
 /**
  * Calcula quanto de cada alimento entra na ração diária.
  *
- * Porte de `Core/Calculo/FormuladorRacao.swift`.
+ * Porte de `Core/Calculo/FormuladorRacao.swift`, do antigo aplicativo de iPhone.
  *
  * No modo automático resolve o sistema linear de três equações (matéria seca
  * total, proteína bruta e NDT) com três alimentos. Quando a solução exige uma

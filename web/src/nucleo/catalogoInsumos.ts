@@ -1,7 +1,7 @@
 /**
  * Tabela inicial de alimentos, com valores de referência de composição.
  *
- * Porte de `Core/Dados/CatalogoInsumos.swift`.
+ * Porte de `Core/Dados/CatalogoInsumos.swift`, do antigo aplicativo de iPhone.
  *
  * Os teores são médias de tabelas brasileiras de composição de alimentos e
  * servem apenas como ponto de partida: o produtor deve ajustar cada insumo

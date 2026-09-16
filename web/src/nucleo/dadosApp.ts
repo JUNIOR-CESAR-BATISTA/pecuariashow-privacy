@@ -1,7 +1,8 @@
 /**
  * O conteúdo completo guardado pelo aplicativo, e a tradução dele para JSON.
  *
- * Porte de `Persistencia/BancoLocal.swift`, com uma exigência a mais: o
+ * Porte de `Persistencia/BancoLocal.swift`, do antigo aplicativo de iPhone,
+ * com uma exigência a mais: o
  * arquivo tem de ser o mesmo dos dois lados. Um backup exportado no iPhone
  * precisa abrir aqui, e um exportado aqui precisa abrir lá.
  *
