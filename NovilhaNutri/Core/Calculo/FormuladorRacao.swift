@@ -29,6 +29,22 @@ struct RestricoesFormulacao: Codable, Hashable {
         self.volumosoFixo = volumosoFixo
     }
 
+    /// Leitura tolerante, pelo mesmo motivo que a do `Lote`: um campo que
+    /// venha a ser acrescentado aqui não pode impedir que um arquivo gravado
+    /// antes dele volte a abrir. A versão web já lê assim, mesclando o que
+    /// veio no arquivo sobre os valores padrão.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let padrao = RestricoesFormulacao()
+        volumosoMinimo = try c.decodeIfPresent(Double.self, forKey: .volumosoMinimo)
+            ?? padrao.volumosoMinimo
+        volumosoMaximo = try c.decodeIfPresent(Double.self, forKey: .volumosoMaximo)
+            ?? padrao.volumosoMaximo
+        mineralGramasDia = try c.decodeIfPresent(Double.self, forKey: .mineralGramasDia)
+            ?? padrao.mineralGramasDia
+        volumosoFixo = try c.decodeIfPresent(Double.self, forKey: .volumosoFixo)
+    }
+
     static let padrao = RestricoesFormulacao()
 }
 

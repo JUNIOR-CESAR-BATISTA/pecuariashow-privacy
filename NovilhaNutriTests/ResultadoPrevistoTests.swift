@@ -230,6 +230,15 @@ final class ResultadoPrevistoTests: XCTestCase {
         XCTAssertEqual(lote.precoArrobaVenda, 0)
         XCTAssertEqual(lote.custoCompraPorAnimal, 0)
         XCTAssertTrue(lote.custoCompraPorAnimal.isFinite)
+
+        // O "restricoes": {} do arquivo tem de cair nos limites padrão. Era
+        // aqui que a leitura quebrava: o Codable sintetizado exigia as chaves
+        // de dentro do objeto, então bastava um campo novo ali para o arquivo
+        // inteiro deixar de abrir.
+        XCTAssertEqual(lote.restricoes.volumosoMinimo, RestricoesFormulacao.padrao.volumosoMinimo)
+        XCTAssertEqual(lote.restricoes.volumosoMaximo, RestricoesFormulacao.padrao.volumosoMaximo)
+        XCTAssertEqual(lote.restricoes.mineralGramasDia, RestricoesFormulacao.padrao.mineralGramasDia)
+        XCTAssertNil(lote.restricoes.volumosoFixo)
     }
 
     func testCamposNovosSobrevivemAExportarERestaurar() throws {
