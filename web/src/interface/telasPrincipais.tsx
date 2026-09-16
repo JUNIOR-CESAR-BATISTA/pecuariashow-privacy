@@ -63,7 +63,7 @@ import {
   CartaoIndicador,
   Chip,
   CORES_CATEGORIA,
-  CORES_FUNDO_CATEGORIA,
+  CORES_CATEGORIA_CREME,
   Etiqueta,
   EstadoVazio,
   LinhaAtalho,
@@ -114,7 +114,7 @@ function useCalculo(lote: Lote | undefined) {
 
 // ------------------------------------------------------------------- Início
 
-/** "Bom dia!", "Boa tarde!" ou "Boa noite!". */
+/** "Bom dia", "Boa tarde" ou "Boa noite". */
 function saudacao(agora = new Date()): string {
   const hora = agora.getHours();
   if (hora < 12) return "Bom dia";
@@ -122,159 +122,192 @@ function saudacao(agora = new Date()): string {
   return "Boa noite";
 }
 
-function Cabecalho({ irPara }: { irPara: (destino: string) => void }) {
+/**
+ * A capa: a fotografia do rebanho com o lote ativo escrito por cima.
+ *
+ * A imagem sai da margem dos dois lados e é coberta por um véu em degradê,
+ * fechado no alto e embaixo. Sem o véu o nome do lote brigava com o capim, e
+ * o degradê é o que deixa o texto sempre sobre a parte escura da foto.
+ */
+function Capa({
+  lote,
+  irPara,
+}: {
+  lote: Lote | undefined;
+  irPara: (destino: string) => void;
+}) {
   return (
-    <header className="flex items-center gap-3.5">
+    <div className="relative -mx-5 -mt-6 h-[264px] overflow-hidden">
       <img
-        src="/pecuariashow-privacy/icone-192.png"
+        src="/pecuariashow-privacy/capa.webp"
         alt=""
         aria-hidden="true"
-        className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-ouro/30"
+        className="h-full w-full select-none object-cover"
       />
-      <div className="min-w-0 flex-1">
-        <p className="rotulo-secao text-[10px] text-textoTenue">{saudacao()}</p>
-        <h1 className="mt-1 whitespace-nowrap font-display text-[26px] leading-none text-texto">
-          NovilhaNutri
-        </h1>
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(11,20,15,.86) 0%, rgba(11,20,15,.30) 34%, rgba(11,20,15,.86) 72%, #0B140F 100%)",
+        }}
+      />
+      {/* Fio dourado fechando a capa, que é o que a liga ao resto da tela. */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(228,192,83,.55) 30%, rgba(228,192,83,.15) 70%, transparent)",
+        }}
+      />
+
+      <header className="absolute inset-x-0 top-0 flex items-center gap-3 px-5 pt-5">
+        <div className="min-w-0 flex-1">
+          <p className="rotulo-secao text-[10px] text-[#C7D3CA]">{saudacao()}</p>
+          <h1 className="metal mt-1 whitespace-nowrap font-display text-[25px] leading-none">
+            NovilhaNutri
+          </h1>
+        </div>
+        <BotaoCircular
+          rotulo="Análise"
+          icone={<IconeTendencia className="h-[18px] w-[18px]" />}
+          aoTocar={() => irPara("analise")}
+        />
+        <BotaoCircular
+          rotulo="Dados"
+          icone={<IconeEscudo className="h-[18px] w-[18px]" />}
+          aoTocar={() => irPara("dados")}
+        />
+      </header>
+
+      {lote ? (
+        <div className="absolute inset-x-0 bottom-12 px-5">
+          <p className="rotulo-secao flex items-center gap-2 text-[10px] text-[#9FD9BB]">
+            <span className="h-1.5 w-1.5 rounded-full bg-verdeClaro" aria-hidden="true" />
+            Lote ativo
+          </p>
+          <p
+            className="mt-2 truncate font-display text-[30px] leading-tight"
+            style={{ textShadow: "0 2px 18px rgba(0,0,0,.65)" }}
+          >
+            {lote.nome}
+          </p>
+          <p className="mt-1 truncate text-xs text-[#C7D3CA]">
+            {lote.quantidadeAnimais} novilhas · {FASES[lote.fase].nome} ·{" "}
+            {numero(lote.ganhoMetaDiario, 3)} kg/d
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** A faixa das três exigências, flutuando sobre a borda da capa. */
+function FaixaExigencias({ exigencia }: { exigencia: ReturnType<typeof calcular> }) {
+  const celula = "flex-1 border-r border-realce px-2 py-4 text-center last:border-r-0";
+  return (
+    <div
+      className="relative z-10 -mt-8 flex overflow-hidden rounded-[20px] border border-realce"
+      style={{
+        backgroundImage: "linear-gradient(170deg,#1A2820 0%,#0E1813 100%)",
+        boxShadow: "0 24px 46px -22px rgba(0,0,0,.95)",
+      }}
+    >
+      <div className={celula}>
+        <p className="rotulo-secao text-[9px]">PB</p>
+        <p className="mt-2 font-display text-lg leading-none tabular-nums text-azul">
+          {gramas(exigencia.proteinaBrutaGramas)}
+        </p>
       </div>
-      <BotaoCircular rotulo="Análise" icone={<IconeTendencia className="h-[18px] w-[18px]" />} aoTocar={() => irPara("analise")} />
-      <BotaoCircular rotulo="Dados" icone={<IconeEscudo className="h-[18px] w-[18px]" />} aoTocar={() => irPara("dados")} />
-    </header>
+      <div className={celula}>
+        <p className="rotulo-secao text-[9px]">NDT</p>
+        <p className="metal mt-2 font-display text-lg leading-none tabular-nums">
+          {formatarKg(exigencia.ndtKg)}
+        </p>
+      </div>
+      <div className={celula}>
+        <p className="rotulo-secao text-[9px]">Mat. seca</p>
+        <p className="mt-2 font-display text-lg leading-none tabular-nums text-verdeClaro">
+          {formatarKg(exigencia.consumoMateriaSeca)}
+        </p>
+      </div>
+    </div>
   );
 }
 
 /**
- * O lote ativo, num cartão só.
+ * A régua do caminho até o abate.
  *
- * Antes o mesmo lote aparecia duas vezes no painel: numa faixa fina no alto e
- * de novo no cartão "Em destaque", com os mesmos números. Repetir não é
- * riqueza, é ruído - juntar os dois deixa um bloco com peso de verdade e abre
- * espaço em volta, que é o que faz uma tela parecer cara.
+ * Nove pixels de altura, com sulco e escala embaixo. O fio fino de antes
+ * sumia da tela no primeiro dia do lote, quando o preenchimento é zero - e
+ * uma régua que desaparece justo no começo não serve de régua.
  */
-/**
- * O lote ativo.
- *
- * Um cartão só, com as três exigências, o caminho até o abate e a data
- * prevista. Antes a data só aparecia na aba Abate - mas é ela que o
- * pecuarista quer saber de relance, mais que o peso de hoje.
- */
-function CartaoLoteAtivo({
+function ReguaAbate({
   lote,
-  exigencia,
   relatorio,
-  aoTocar,
 }: {
   lote: Lote;
-  exigencia: ReturnType<typeof calcular>;
   relatorio: RelatorioPlanejamento | null;
-  aoTocar: () => void;
 }) {
-  const total = lote.pesoAlvoAbate - lote.pesoMedioInicial;
-  const progresso =
-    total > 0 ? Math.min(Math.max((pesoAtual(lote) - lote.pesoMedioInicial) / total, 0), 1) : 1;
+  const inicio = lote.pesoMedioInicial;
+  const alvo = lote.pesoAlvoAbate;
+  const total = alvo - inicio;
+  const fracao = total > 0 ? Math.min(Math.max((pesoAtual(lote) - inicio) / total, 0), 1) : 1;
   const temPrazo = relatorio !== null && viavel(relatorio);
 
   return (
-    <button onClick={aoTocar} className="cartao relative w-full overflow-hidden p-6 text-left">
-      {/*
-        Um claro dourado no canto de cima. É degradê radial, não imagem: não
-        tem borda para ficar dura nem textura para embolar com os números.
-        Uma fotografia aqui, por mais apagada, virava mancha atrás do texto.
-      */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(228,192,83,0.16) 0%, rgba(228,192,83,0.05) 45%, transparent 70%)",
-        }}
-      />
-      {/* Fio dourado que nasce à esquerda e some à direita, no lugar do
-          contorno branco de sempre: marca o cartão principal sem cercá-lo. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(228,192,83,0.5) 22%, rgba(228,192,83,0.12) 62%, transparent 100%)",
-        }}
-      />
-
-      <div className="relative space-y-6">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="rotulo-secao flex items-center gap-2 text-[10px]">
-            <span className="h-1.5 w-1.5 rounded-full bg-verdeClaro" aria-hidden="true" />
-            Lote ativo
-          </p>
-          <p className="mt-2.5 truncate font-display text-[26px] leading-tight text-texto">
-            {lote.nome}
-          </p>
-          <p className="mt-1.5 text-xs text-textoTenue">
-            {lote.quantidadeAnimais} novilhas · {FASES[lote.fase].nome}
-          </p>
-        </div>
-        <Etiqueta texto={`${numero(lote.ganhoMetaDiario, 3)} kg/d`} />
+    <div className="mt-7">
+      <div className="flex items-baseline gap-2.5">
+        <span className="font-display text-[22px] leading-none tabular-nums">
+          {numero(pesoAtual(lote), 0)} kg
+        </span>
+        <span className="text-xs text-textoTenue">
+          de {numero(inicio, 0)} a {numero(alvo, 0)} kg
+        </span>
+        <span className="metal ml-auto font-display text-sm tabular-nums">
+          {percentual(fracao * 100, 0)}
+        </span>
       </div>
 
-      <div className="flex gap-4 border-t border-realce pt-5">
-        <MiniIndicador titulo="PB" valor={gramas(exigencia.proteinaBrutaGramas)} cor="text-azul" />
-        <MiniIndicador titulo="NDT" valor={formatarKg(exigencia.ndtKg)} cor="text-ouro" />
-        <MiniIndicador
-          titulo="Matéria seca"
-          valor={formatarKg(exigencia.consumoMateriaSeca)}
-          cor="text-verdeClaro"
+      <div
+        className="relative mt-3 h-[9px] overflow-hidden rounded-full bg-white/[0.07]"
+        style={{ boxShadow: "inset 0 1px 2px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.04)" }}
+      >
+        <span className="absolute inset-y-0 left-1/2 w-px bg-white/15" aria-hidden="true" />
+        <div
+          className="relative h-full rounded-full"
+          style={{
+            width: `max(6px, ${fracao * 100}%)`,
+            backgroundImage: "linear-gradient(90deg,#8A6B1F 0%,#E4C053 55%,#F7E6A8 100%)",
+            boxShadow: "0 0 12px rgba(228,192,83,.35)",
+          }}
         />
       </div>
 
-      <div className="space-y-3 border-t border-realce pt-5">
-        <div className="flex items-end justify-between">
-          <span className="font-display text-lg leading-none tabular-nums text-texto">
-            {numero(pesoAtual(lote), 0)} kg
-          </span>
-          <span className="text-xs tabular-nums text-textoTenue">
-            alvo {numero(lote.pesoAlvoAbate, 0)} kg
-          </span>
-        </div>
-
-        {/* Fio de 2 px: mede a mesma coisa que a barra grossa e não disputa
-            atenção com os números. O mínimo de 3 px existe porque no primeiro
-            dia o progresso é zero, e uma barra de largura zero não se vê -
-            some a régua inteira junto. */}
-        <div className="h-0.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
-          <div
-            className="h-full rounded-full bg-ouro"
-            style={{ width: `max(3px, ${progresso * 100}%)` }}
-          />
-        </div>
-
-        {temPrazo ? (
-          <div className="flex items-baseline justify-between gap-3 text-xs">
-            <span className="text-textoTenue">Abate previsto</span>
-            <span className="tabular-nums text-textoSuave">
-              {formatarData(relatorio.dataAbate)} · {numero(relatorio.diasTotais, 0)} dias
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-baseline justify-between gap-3 text-xs">
-            <span className="text-textoTenue">Falta ganhar</span>
-            <span className="tabular-nums text-textoSuave">
-              {numero(ganhoRestante(lote), 0)} kg
-            </span>
-          </div>
-        )}
+      <div className="mt-1.5 flex justify-between text-[10px] tabular-nums text-textoTenue">
+        <span>{numero(inicio, 0)} kg</span>
+        <span>{numero(inicio + total / 2, 0)} kg</span>
+        <span>{numero(alvo, 0)} kg</span>
       </div>
+
+      <div className="mt-3.5 flex items-baseline justify-between gap-3 text-xs">
+        <span className="text-textoTenue">{temPrazo ? "Abate previsto" : "Falta ganhar"}</span>
+        <span className="tabular-nums text-textoSuave">
+          {temPrazo
+            ? `${formatarData(relatorio.dataAbate)} · ${numero(relatorio.diasTotais, 0)} dias`
+            : `${numero(ganhoRestante(lote), 0)} kg`}
+        </span>
       </div>
-    </button>
+    </div>
   );
 }
 
 /**
  * O que vai no cocho hoje, por animal.
  *
- * Isto é o que se abre o aplicativo para ver. Estava a duas telas de
- * distância, atrás da aba Ração, enquanto o painel gastava espaço com blocos
- * de categoria que só repetiam a barra de abas.
+ * É o único cartão claro da tela, de propósito: é a informação que se lê de
+ * manhã, no curral, com sol na tela - e creme com verde profundo tem muito
+ * mais contraste ao sol que texto claro sobre fundo escuro. De quebra, sendo
+ * a única peça clara, ela vira o destaque do painel sem precisar de ouro.
  */
 function CochoHoje({
   racao,
@@ -288,33 +321,34 @@ function CochoHoje({
   return (
     <section className="space-y-4">
       <TituloSecao texto="No cocho hoje" textoAcao="Ver ração" aoAgir={aoTocar} />
-      <div className="cartao divide-y divide-realce py-1">
-        {racao.itens.map((item) => {
+      <div className="cartao-creme">
+        {racao.itens.map((item, indice) => {
           const porAnimal = itemMateriaNatural(item);
           return (
-            <div key={item.insumo.id} className="space-y-2 py-3.5">
+            <div
+              key={item.insumo.id}
+              className={`py-4 ${indice > 0 ? "border-t border-cremeFio" : ""}`}
+            >
               <div className="flex items-baseline gap-3">
                 <span
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${CORES_FUNDO_CATEGORIA[item.insumo.categoria]}`}
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${CORES_CATEGORIA_CREME[item.insumo.categoria]}`}
                   aria-hidden="true"
                 />
-                <span className="min-w-0 flex-1 truncate text-sm text-texto">
+                <span className="min-w-0 flex-1 truncate text-sm text-cremeTexto">
                   {item.insumo.nome}
                 </span>
                 <span className="shrink-0 text-right">
-                  <span className="block font-display text-base leading-none tabular-nums text-texto">
+                  <span className="block font-display text-[17px] leading-none tabular-nums text-cremeTexto">
                     {formatarKg(porAnimal)}
                   </span>
-                  <span className="mt-1 block text-[11px] tabular-nums text-textoTenue">
+                  <span className="mt-1 block text-[11px] tabular-nums text-cremeSuave">
                     {numero(porAnimal * animais, 0)} kg no lote
                   </span>
                 </span>
               </div>
-              {/* A fatia de cada alimento na matéria seca. Dá ritmo à lista e
-                  mostra de relance quem é volumoso e quem é acerto fino. */}
-              <div className="ml-[18px] h-0.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="ml-[17px] mt-2.5 h-[3px] overflow-hidden rounded-full bg-cremeTexto/[0.09]">
                 <div
-                  className={`h-full rounded-full ${CORES_FUNDO_CATEGORIA[item.insumo.categoria]} opacity-70`}
+                  className={`h-full rounded-full ${CORES_CATEGORIA_CREME[item.insumo.categoria]} opacity-90`}
                   style={{ width: `max(3px, ${participacaoMS(racao, item)}%)` }}
                 />
               </div>
@@ -332,34 +366,30 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
   const lote = loteSelecionado;
 
   return (
-    <div className="space-y-9 pb-4">
-      <div className="entra">
-        <Cabecalho irPara={irPara} />
-      </div>
+    <div className="pb-4">
+      <Capa lote={lote} irPara={irPara} />
 
-      <div className="entra" style={{ animationDelay: "60ms" }}>
       {lote && calculo ? (
-        <CartaoLoteAtivo
-          lote={lote}
-          exigencia={calculo.exigencia}
-          relatorio={calculo.relatorio}
-          aoTocar={() => irPara("abate")}
-        />
+        <div className="entra">
+          <FaixaExigencias exigencia={calculo.exigencia} />
+          <ReguaAbate lote={lote} relatorio={calculo.relatorio} />
+        </div>
       ) : (
-        <EstadoVazio
-          titulo="Nenhum lote por aqui ainda"
-          mensagem="Cadastre o primeiro lote de novilhas e o aplicativo calcula PB, NDT e a ração diária."
-          acao={
-            <button className="botao-ouro" onClick={() => irPara("novo-lote")}>
-              Cadastrar lote
-            </button>
-          }
-        />
+        <div className="mt-8">
+          <EstadoVazio
+            titulo="Nenhum lote por aqui ainda"
+            mensagem="Cadastre o primeiro lote de novilhas e o aplicativo calcula PB, NDT e a ração diária."
+            acao={
+              <button className="botao-ouro" onClick={() => irPara("novo-lote")}>
+                Cadastrar lote
+              </button>
+            }
+          />
+        </div>
       )}
-      </div>
 
       {lote && calculo?.racao ? (
-        <div className="entra" style={{ animationDelay: "120ms" }}>
+        <div className="entra mt-9" style={{ animationDelay: "90ms" }}>
           <CochoHoje
             racao={calculo.racao}
             animais={lote.quantidadeAnimais}
@@ -368,7 +398,7 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
         </div>
       ) : null}
 
-      <section className="entra space-y-1" style={{ animationDelay: "180ms" }}>
+      <section className="entra mt-9 space-y-1" style={{ animationDelay: "150ms" }}>
         <TituloSecao texto="Atalhos" />
         <div className="divide-y divide-realce">
           <LinhaAtalho

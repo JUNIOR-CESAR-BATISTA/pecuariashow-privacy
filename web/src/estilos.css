@@ -74,6 +74,32 @@
     @apply text-[11px] font-semibold uppercase tracking-rotulo text-textoSuave;
   }
 
+  /*
+   * Ouro escovado. Só em texto grande: o degradê recortado na letra reduz o
+   * contraste, e em corpo pequeno o texto some. Nunca sobre fundo claro.
+   */
+  .metal {
+    background-image: linear-gradient(
+      135deg,
+      #fbefc0 0%,
+      #e4c053 30%,
+      #a8842a 54%,
+      #f2dc9c 76%,
+      #d4b14a 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* O cartão claro do cocho, dentro da tela escura. */
+  .cartao-creme {
+    @apply rounded-[20px] bg-creme px-5;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 18px 38px -20px rgba(0, 0, 0, 0.9);
+  }
+
   /* Fio de separação mais discreto que uma borda inteira. */
   .fio {
     @apply h-px w-full bg-realce;
