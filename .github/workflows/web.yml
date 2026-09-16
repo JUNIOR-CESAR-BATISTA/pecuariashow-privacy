@@ -71,6 +71,10 @@ jobs:
   publicar:
     name: Publicar
     needs: construir
+    # Só a partir da main. O ambiente github-pages não aceita publicação de
+    # outro ramo, então nos ramos de trabalho este passo falhava sempre e
+    # deixava o teste vermelho sem nada de errado no código.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
