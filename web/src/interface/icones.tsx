@@ -144,8 +144,9 @@ export function IconeSubida(p: Props) {
 export function IconeFuncao(p: Props) {
   return (
     <Base {...p}>
-      <path d="M14 4h-1.5A2.5 2.5 0 0 0 10 6.5V20" />
-      <path d="M7 11h7" />
+      <path d="M4 20V4" />
+      <path d="M4 20h16" />
+      <path d="M7 17c3.5 0 4-10 7.5-10 2 0 3 2 3.5 4" />
     </Base>
   );
 }

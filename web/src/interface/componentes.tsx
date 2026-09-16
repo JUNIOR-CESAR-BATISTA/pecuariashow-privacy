@@ -20,25 +20,25 @@ export function TituloSecao({
 }: {
   texto: string;
   acao?: ReactNode;
-  /** Atalho para a pílula "Ver todos →" do aplicativo de iPhone. */
+  /** Atalho para o "Ver todos" do painel inicial. */
   textoAcao?: string;
   aoAgir?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h2 className="flex items-center gap-2.5 text-lg font-bold">
-        <span className="h-5 w-1 rounded-full bg-ouro" aria-hidden="true" />
-        {texto}
-      </h2>
+    <div className="flex items-center gap-3">
+      <h2 className="rotulo-secao shrink-0">{texto}</h2>
+      {/* O fio ocupa o espaço que sobra: separa sem pesar, e é ele que faz o
+          título parecer uma seção em vez de mais uma linha de texto. */}
+      <span className="fio min-w-4 flex-1" aria-hidden="true" />
       {acao ??
         (textoAcao && aoAgir ? (
           <button
             onClick={aoAgir}
-            className="flex shrink-0 items-center gap-1 rounded-full border border-ouro/45
-                       px-3 py-1.5 text-xs font-bold text-ouro transition hover:bg-ouro/10"
+            className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase
+                       tracking-rotulo text-ouro transition hover:text-ouroClaro"
           >
             {textoAcao}
-            <IconeSeta className="h-3.5 w-3.5" />
+            <IconeSeta className="h-3 w-3" />
           </button>
         ) : null)}
     </div>
@@ -60,16 +60,16 @@ export function CartaoIndicador({
   compacto?: boolean;
 }) {
   return (
-    <div className={compacto ? "cartao p-3" : "cartao"}>
-      <p className="text-xs text-textoSuave">{titulo}</p>
+    <div className={compacto ? "cartao p-4" : "cartao"}>
+      <p className="rotulo-secao text-[10px]">{titulo}</p>
       <p
-        className={`mt-1 font-bold tabular-nums ${cor} ${
-          compacto ? "whitespace-nowrap text-lg" : "text-xl"
+        className={`mt-2 font-display leading-none tabular-nums ${cor} ${
+          compacto ? "whitespace-nowrap text-[22px]" : "text-[26px]"
         }`}
       >
         {valor}
       </p>
-      {detalhe ? <p className="mt-0.5 text-xs text-textoTenue">{detalhe}</p> : null}
+      {detalhe ? <p className="mt-2 text-xs text-textoTenue">{detalhe}</p> : null}
     </div>
   );
 }
@@ -221,7 +221,12 @@ export function Barra({ fracao, cor = "bg-verdeClaro" }: { fracao: number; cor?:
 
 // ------------------------------------------- Peças copiadas do Tema do iPhone
 
-/** Pílula de ação com borda dourada, das "Ações rápidas". */
+/**
+ * Pílula de ação.
+ *
+ * O contorno dourado saiu. Cinco pílulas douradas em fila faziam o ouro
+ * deixar de ser destaque e virar cor de fundo; agora ele fica só no ícone.
+ */
 export function Chip({
   texto,
   icone,
@@ -234,11 +239,11 @@ export function Chip({
   return (
     <button
       onClick={aoTocar}
-      className="flex shrink-0 items-center gap-2 rounded-full border border-ouro/55 bg-ouro/[0.08]
-                 px-4 py-2.5 text-sm font-semibold text-ouro transition active:scale-[0.98]
-                 hover:bg-ouro/15"
+      className="flex shrink-0 items-center gap-2 rounded-full border border-realce
+                 bg-superficie px-4 py-2.5 text-[13px] font-medium text-texto transition
+                 active:scale-[0.98] hover:border-ouro/25"
     >
-      {icone}
+      <span className="text-ouro">{icone}</span>
       {texto}
     </button>
   );
@@ -259,36 +264,50 @@ export function BotaoCircular({
       aria-label={rotulo}
       onClick={aoTocar}
       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border
-                 border-ouro/50 bg-superficie text-ouro transition active:scale-95 hover:bg-superficieAlta"
+                 border-realce bg-superficie text-ouro transition active:scale-95
+                 hover:border-ouro/25"
     >
       {icone}
     </button>
   );
 }
 
-/** Bloco quadrado de categoria com emoji. */
+/**
+ * Bloco de categoria.
+ *
+ * Antes era emoji. Emoji é desenhado pelo sistema, muda de aparelho para
+ * aparelho e vem em cores que não são as daqui - o boi do Android é malhado,
+ * e o nosso gado é nelore. Ícone de traço em dourado fica sob nosso controle
+ * e combina com o resto.
+ */
 export function CartaoCategoria({
-  emoji,
+  icone,
   titulo,
   aoTocar,
 }: {
-  emoji: string;
+  icone: ReactNode;
   titulo: string;
   aoTocar: () => void;
 }) {
   return (
     <button
       onClick={aoTocar}
-      className="flex flex-col items-center gap-2 rounded-2xl border border-borda bg-superficie
-                 py-4 transition active:scale-[0.98] hover:border-ouro/40"
+      className="cartao flex flex-col items-center gap-3 px-1 py-4 transition
+                 active:scale-[0.97] hover:border-ouro/25"
     >
-      <span className="text-[30px] leading-none">{emoji}</span>
-      <span className="text-xs font-bold">{titulo}</span>
+      <span
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-ouro/20
+                   bg-ouro/[0.07] text-ouro"
+        aria-hidden="true"
+      >
+        {icone}
+      </span>
+      <span className="text-[11px] font-medium tracking-wide text-textoSuave">{titulo}</span>
     </button>
   );
 }
 
-/** Linha de atalho com ícone dourado, título e descrição. */
+/** Linha de atalho: uma lista com fios, não três caixas empilhadas. */
 export function LinhaAtalho({
   icone,
   titulo,
@@ -303,19 +322,14 @@ export function LinhaAtalho({
   return (
     <button
       onClick={aoTocar}
-      className="flex w-full items-center gap-3 rounded-2xl border border-borda bg-superficie
-                 p-3 text-left transition active:scale-[0.99] hover:border-ouro/40"
+      className="flex w-full items-center gap-4 py-3.5 text-left transition active:opacity-70"
     >
-      <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-ouro/[0.12] text-ouro">
-        {icone}
-      </span>
+      <span className="shrink-0 text-ouro">{icone}</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold">{titulo}</span>
-        <span className="block truncate text-xs text-textoSuave">{detalhe}</span>
+        <span className="block text-sm text-texto">{titulo}</span>
+        <span className="mt-0.5 block truncate text-xs text-textoTenue">{detalhe}</span>
       </span>
-      <span className="shrink-0 text-textoTenue" aria-hidden="true">
-        ›
-      </span>
+      <IconeSeta className="h-3.5 w-3.5 shrink-0 text-textoTenue" />
     </button>
   );
 }
@@ -332,8 +346,10 @@ export function MiniIndicador({
 }) {
   return (
     <div className="min-w-0 flex-1">
-      <p className="truncate text-[11px] text-textoSuave">{titulo}</p>
-      <p className={`truncate text-sm font-bold tabular-nums ${cor}`}>{valor}</p>
+      <p className="rotulo-secao text-[9px] text-textoTenue">{titulo}</p>
+      <p className={`mt-1.5 truncate font-display text-lg leading-none tabular-nums ${cor}`}>
+        {valor}
+      </p>
     </div>
   );
 }
@@ -341,24 +357,30 @@ export function MiniIndicador({
 /** Etiqueta discreta, como a da fase no cartão em destaque. */
 export function Etiqueta({ texto }: { texto: string }) {
   return (
-    <span className="shrink-0 rounded-full border border-ouroEscuro bg-ouro/10 px-2.5 py-0.5 text-[11px] font-semibold text-ouro">
+    <span className="shrink-0 rounded-full border border-ouro/25 px-3 py-1 text-[11px] font-medium tracking-wide text-ouro">
       {texto}
     </span>
   );
 }
 
-/** Botão flutuante de ação principal, com o rótulo embaixo. */
+/**
+ * Botão flutuante de ação principal.
+ *
+ * Sem o rótulo embaixo: um "+" já diz o que faz, e o texto solto sobre o
+ * conteúdo que rola sujava a tela. O nome fica no `aria-label`, para quem usa
+ * leitor de tela.
+ */
 export function BotaoFlutuante({ titulo, aoTocar }: { titulo: string; aoTocar: () => void }) {
   return (
     <button
       onClick={aoTocar}
-      className="flex flex-col items-center gap-1.5 transition active:scale-95"
       aria-label={titulo}
+      title={titulo}
+      className="flex h-14 w-14 items-center justify-center rounded-full bg-verde text-white
+                 ring-1 ring-ouro/25 transition active:scale-95"
+      style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.45)" }}
     >
-      <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-verde text-white shadow-lg shadow-black/35">
-        <IconeMais className="h-7 w-7" />
-      </span>
-      <span className="text-xs font-bold text-ouro">{titulo}</span>
+      <IconeMais className="h-6 w-6" />
     </button>
   );
 }

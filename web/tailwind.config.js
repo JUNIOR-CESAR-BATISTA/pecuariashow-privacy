@@ -3,26 +3,35 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      // Os mesmos valores do Tema.swift, para as duas versões do aplicativo
-      // ficarem com a mesma cara.
       colors: {
-        fundo: "#0F1A13",
-        superficie: "#18271C",
-        superficieAlta: "#1F3025",
-        borda: "#2C3E31",
+        // Fundo mais fechado que a superfície, para o cartão ter onde pousar.
+        fundo: "#0B140F",
+        superficie: "#16221A",
+        superficieAlta: "#1E2C23",
+        borda: "#26362C",
+        // Fio de luz no alto do cartão e contorno quase invisível: é o que dá
+        // relevo sem sombra pesada.
+        realce: "rgba(255,255,255,0.055)",
         ouro: "#E4C053",
+        ouroClaro: "#F0DCA0",
         ouroEscuro: "#B79A3E",
         verde: "#2E7D57",
         verdeClaro: "#5FBF8A",
         vermelho: "#E2564A",
         laranja: "#E0904A",
         azul: "#6E9BE8",
-        texto: "#F2F5F1",
-        textoSuave: "#8DA394",
-        textoTenue: "#62786B",
+        texto: "#F4F6F2",
+        textoSuave: "#93A89A",
+        textoTenue: "#64796C",
       },
       fontFamily: {
         sans: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "system-ui", "sans-serif"],
+        // Só para o nome do aplicativo, títulos e números grandes. Os dados de
+        // leitura continuam em sans, que é o que se lê no sol.
+        display: ["Fraunces", "Georgia", "serif"],
+      },
+      letterSpacing: {
+        rotulo: "0.14em",
       },
     },
   },

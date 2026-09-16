@@ -567,8 +567,8 @@ export function TelaAnalise() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs uppercase tracking-widest text-ouroEscuro">Memória da fazenda</p>
-        <h1 className="mt-1 text-2xl font-bold">{analise.ciclos.length} ciclos encerrados</h1>
+        <p className="rotulo-secao text-ouroEscuro">Memória da fazenda</p>
+        <h1 className="mt-2 font-display text-[26px] leading-tight text-texto">{analise.ciclos.length} ciclos encerrados</h1>
         <p className="text-sm text-textoSuave">
           {DADOS_CONFIANCA[confianca].nome} · {DADOS_CONFIANCA[confianca].explicacao}
         </p>
@@ -660,8 +660,8 @@ export function TelaDados() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs uppercase tracking-widest text-ouroEscuro">Dados e privacidade</p>
-        <h1 className="mt-1 text-2xl font-bold">Tudo fica neste aparelho</h1>
+        <p className="rotulo-secao text-ouroEscuro">Dados e privacidade</p>
+        <h1 className="mt-2 font-display text-[26px] leading-tight text-texto">Tudo fica neste aparelho</h1>
       </header>
 
       <div className="cartao space-y-2">

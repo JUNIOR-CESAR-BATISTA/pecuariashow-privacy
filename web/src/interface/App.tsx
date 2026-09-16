@@ -125,12 +125,12 @@ export function App() {
         <div className="shrink-0 bg-fundo" style={{ height: "env(safe-area-inset-top, 0px)" }} />
       )}
 
-      <main className="flex-1 overflow-y-auto px-4 pb-6 pt-5">
+      <main className="flex-1 overflow-y-auto px-5 pb-8 pt-6">
         {aberta ? aberta() : tela()}
       </main>
 
       <nav
-        className="flex shrink-0 border-t border-borda bg-superficie px-0.5 pt-2.5"
+        className="flex shrink-0 border-t border-realce bg-superficie px-0.5 pt-3"
         style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom, 0px))" }}
       >
         {ABAS.map(({ id, nome, Icone }) => {
@@ -140,22 +140,26 @@ export function App() {
               key={id}
               onClick={() => irPara(id)}
               aria-current={ativa ? "page" : undefined}
-              className="flex flex-1 flex-col items-center gap-1 py-0.5"
+              className="flex flex-1 flex-col items-center gap-1.5 py-0.5"
             >
               <span
-                className={`flex h-[30px] w-[42px] items-center justify-center rounded-[11px] transition ${
-                  ativa ? "bg-ouro text-fundo" : "text-textoSuave"
+                className={`flex h-[26px] w-[42px] items-center justify-center transition ${
+                  ativa ? "text-ouro" : "text-textoTenue"
                 }`}
               >
-                <Icone className="h-4 w-4" />
+                <Icone className="h-[18px] w-[18px]" />
               </span>
               <span
-                className={`text-[10px] leading-none ${
-                  ativa ? "font-bold text-ouro" : "font-medium text-textoSuave"
+                className={`text-[10px] leading-none transition ${
+                  ativa ? "font-semibold text-ouro" : "font-medium text-textoTenue"
                 }`}
               >
                 {nome}
               </span>
+              <span
+                aria-hidden="true"
+                className={`h-0.5 w-5 rounded-full transition ${ativa ? "bg-ouro" : "bg-transparent"}`}
+              />
             </button>
           );
         })}
