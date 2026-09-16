@@ -16,7 +16,6 @@ const pagina = await contexto.newPage();
 
 await pagina.goto(base, { waitUntil: "networkidle" });
 await pagina.getByRole("button", { name: "Cadastrar lote" }).click();
-await pagina.getByRole("button", { name: "Cadastrar o primeiro" }).click();
 await pagina.getByRole("button", { name: "Salvar" }).click();
 await pagina.waitForTimeout(800);
 
@@ -33,7 +32,7 @@ await pagina.reload({ waitUntil: "domcontentloaded" });
 await pagina.waitForTimeout(1500);
 
 const texto = await pagina.innerText("body");
-const abriu = texto.includes("EXIGÊNCIA DE HOJE");
+const abriu = texto.includes("LOTE ATIVO");
 const manteveDados = texto.includes("Lote 1");
 
 console.log("abriu sem internet:", abriu ? "sim" : "NÃO");

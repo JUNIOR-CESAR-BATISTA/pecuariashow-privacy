@@ -45,12 +45,31 @@ import { gerar as gerarTexto } from "../nucleo/relatorioTexto.js";
 import {
   Aviso,
   Barra,
+  BotaoCircular,
+  BotaoFlutuante,
+  CartaoCategoria,
   CartaoIndicador,
+  Chip,
   CORES_CATEGORIA,
+  Etiqueta,
   EstadoVazio,
+  LinhaAtalho,
   LinhaDado,
+  MiniIndicador,
   TituloSecao,
 } from "./componentes.js";
+import {
+  IconeBarras,
+  IconeCaixa,
+  IconeDocumento,
+  IconeEscudo,
+  IconeFolha,
+  IconeFuncao,
+  IconeMais,
+  IconeSubida,
+  IconeTendencia,
+  IconeTroca,
+} from "./icones.js";
 import { selecaoDoLote, useApp } from "./estado.js";
 
 function SemLote({ ir }: { ir: () => void }) {
@@ -82,88 +101,231 @@ function useCalculo(lote: Lote | undefined) {
 
 // ------------------------------------------------------------------- Início
 
-export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
-  const { dados, loteSelecionado } = useApp();
-  const calculo = useCalculo(loteSelecionado);
+/** "Bom dia!", "Boa tarde!" ou "Boa noite!", igual ao aplicativo de iPhone. */
+function saudacao(agora = new Date()): string {
+  const hora = agora.getHours();
+  if (hora < 12) return "Bom dia!";
+  if (hora < 18) return "Boa tarde!";
+  return "Boa noite!";
+}
 
-  if (!loteSelecionado || !calculo) return <SemLote ir={() => irPara("rebanho")} />;
+function Cabecalho({ irPara }: { irPara: (destino: string) => void }) {
+  return (
+    <header className="flex items-center gap-3">
+      <span
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full
+                   border border-ouro/55 bg-ouro/[0.12] text-ouro"
+        aria-hidden="true"
+      >
+        <IconeFolha className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm text-textoSuave">{saudacao()}</p>
+        {/* Sem quebra no meio da palavra: no iPhone o título aparecia como
+            "NovilhaNu-tri" quando o espaço apertava. */}
+        <h1 className="whitespace-nowrap text-2xl font-bold">NovilhaNutri</h1>
+      </div>
+      <BotaoCircular
+        rotulo="Análise"
+        icone={<IconeTendencia />}
+        aoTocar={() => irPara("analise")}
+      />
+      <BotaoCircular rotulo="Dados" icone={<IconeEscudo />} aoTocar={() => irPara("dados")} />
+    </header>
+  );
+}
 
-  const lote = loteSelecionado;
-  const { exigencia } = calculo;
-  const atual = pesoAtual(lote);
-  const faltam = ganhoRestante(lote);
-  const percorrido = lote.pesoAlvoAbate > lote.pesoMedioInicial
-    ? (atual - lote.pesoMedioInicial) / (lote.pesoAlvoAbate - lote.pesoMedioInicial)
-    : 1;
+function FaixaLoteAtivo({ lote, materiaSeca }: { lote?: Lote; materiaSeca?: number }) {
+  // Os espaços são curtos de propósito: a 390 px de largura, cada folga a mais
+  // some com o nome do lote, que é o único item da faixa que pode encolher.
+  return (
+    <div className="flex items-center gap-1.5 rounded-2xl border border-borda bg-superficie px-3 py-3">
+      <span
+        className={`h-[7px] w-[7px] shrink-0 rounded-full ${lote ? "bg-verdeClaro" : "bg-textoTenue"}`}
+        aria-hidden="true"
+      />
+      <span className="shrink-0 text-[10px] font-bold tracking-[0.08em] text-textoSuave">
+        {lote ? "LOTE ATIVO" : "SEM LOTE"}
+      </span>
+      <span className="h-[18px] w-px shrink-0 bg-borda" aria-hidden="true" />
+      {lote ? (
+        <>
+          <span className="shrink-0 text-xs" aria-hidden="true">
+            🐄
+          </span>
+          {/* flex-auto, não flex-1: com base zero e a faixa já cheia, não sobra
+              espaço para crescer e o nome sumia. Partindo do tamanho do texto,
+              ele ocupa o que houver e corta com reticências, como no iPhone. */}
+          <span className="min-w-0 flex-auto truncate text-xs text-textoSuave">{lote.nome}</span>
+          <span className="shrink-0 text-xs font-bold text-ouro">
+            {formatarKg(materiaSeca ?? 0)} MS
+          </span>
+          <span className="flex shrink-0 items-center gap-0.5 text-xs font-bold text-verdeClaro">
+            <IconeSubida className="h-3 w-3" />
+            {numero(lote.ganhoMetaDiario, 3)} kg/d
+          </span>
+        </>
+      ) : (
+        <span className="text-[13px] text-textoSuave">Cadastre o primeiro lote para começar</span>
+      )}
+    </div>
+  );
+}
+
+function CartaoLoteDestaque({
+  lote,
+  exigencia,
+  aoTocar,
+}: {
+  lote: Lote;
+  exigencia: ReturnType<typeof calcular>;
+  aoTocar: () => void;
+}) {
+  const total = lote.pesoAlvoAbate - lote.pesoMedioInicial;
+  const progresso =
+    total > 0 ? Math.min(Math.max((pesoAtual(lote) - lote.pesoMedioInicial) / total, 0), 1) : 1;
 
   return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-xs uppercase tracking-widest text-ouroEscuro">Exigência de hoje</p>
-        <h1 className="mt-1 text-2xl font-bold">{lote.nome}</h1>
-        <p className="text-sm text-textoSuave">
-          {lote.quantidadeAnimais} novilhas · {FASES[lote.fase].nome} · {formatarKg(atual)}
-        </p>
-      </header>
+    <button onClick={aoTocar} className="cartao w-full space-y-3.5 text-left transition hover:border-ouro/40">
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 truncate font-bold">{lote.nome}</span>
+        <Etiqueta texto={FASES[lote.fase].nome} />
+      </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <CartaoIndicador
-          compacto
+      <div className="flex gap-4">
+        <MiniIndicador
           titulo="PB"
           valor={gramas(exigencia.proteinaBrutaGramas)}
-          detalhe={percentual(exigencia.proteinaBrutaPercentualDieta)}
           cor="text-azul"
         />
-        <CartaoIndicador
-          compacto
-          titulo="NDT"
-          valor={formatarKg(exigencia.ndtKg)}
-          detalhe={percentual(exigencia.ndtPercentualDieta)}
-          cor="text-ouro"
-        />
-        <CartaoIndicador
-          compacto
+        <MiniIndicador titulo="NDT" valor={formatarKg(exigencia.ndtKg)} cor="text-ouro" />
+        <MiniIndicador
           titulo="Matéria seca"
           valor={formatarKg(exigencia.consumoMateriaSeca)}
-          detalhe={`${percentual(exigencia.consumoPercentualPeso)} do peso`}
           cor="text-verdeClaro"
         />
       </div>
 
-      <div className="cartao space-y-3">
-        <TituloSecao texto="Caminho até o abate" />
-        <Barra fracao={percorrido} />
-        <div className="flex justify-between text-sm text-textoSuave">
-          <span>{formatarKg(atual)} hoje</span>
-          <span>faltam {formatarKg(faltam)}</span>
+      <div className="space-y-1.5">
+        <Barra fracao={progresso} />
+        <div className="flex justify-between text-xs text-textoSuave">
+          <span>{numero(pesoAtual(lote), 0)} kg hoje</span>
+          <span>faltam {numero(ganhoRestante(lote), 0)} kg</span>
         </div>
-        <LinhaDado rotulo="Meta de ganho" valor={`${numero(lote.ganhoMetaDiario, 3)} kg/dia`} />
-        <LinhaDado rotulo="Peso de abate" valor={formatarKg(lote.pesoAlvoAbate)} />
-        {calculo.relatorio && viavel(calculo.relatorio) ? (
-          <LinhaDado
-            rotulo="Abate previsto"
-            valor={formatarData(calculo.relatorio.dataAbate)}
+      </div>
+    </button>
+  );
+}
+
+export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
+  const { loteSelecionado } = useApp();
+  const calculo = useCalculo(loteSelecionado);
+  const lote = loteSelecionado;
+
+  return (
+    <div className="space-y-7 pb-24">
+      <Cabecalho irPara={irPara} />
+
+      <FaixaLoteAtivo lote={lote} materiaSeca={calculo?.exigencia.consumoMateriaSeca} />
+
+      <section className="space-y-3.5">
+        <TituloSecao texto="Categorias" />
+        <div className="grid grid-cols-4 gap-2.5">
+          <CartaoCategoria emoji="🐄" titulo="Rebanho" aoTocar={() => irPara("rebanho")} />
+          <CartaoCategoria emoji="🌾" titulo="Ração" aoTocar={() => irPara("racao")} />
+          <CartaoCategoria emoji="📦" titulo="Insumos" aoTocar={() => irPara("insumos")} />
+          <CartaoCategoria emoji="📊" titulo="Abate" aoTocar={() => irPara("abate")} />
+        </div>
+      </section>
+
+      <section className="space-y-3.5">
+        <TituloSecao texto="Ações rápidas" />
+        {/* Rola de lado como no iPhone; as margens negativas deixam a primeira
+            pílula encostar na margem da tela sem cortar a sombra do foco. */}
+        <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max gap-2.5">
+            <Chip
+              texto="Novo lote"
+              icone={<IconeMais className="h-4 w-4" />}
+              aoTocar={() => irPara("novo-lote")}
+            />
+            <Chip
+              texto="Conversor de sacas"
+              icone={<IconeTroca className="h-4 w-4" />}
+              aoTocar={() => irPara("conversor")}
+            />
+            <Chip
+              texto="Cadastrar insumo"
+              icone={<IconeCaixa className="h-4 w-4" />}
+              aoTocar={() => irPara("insumos")}
+            />
+            <Chip
+              texto="Planejar abate"
+              icone={<IconeDocumento className="h-4 w-4" />}
+              aoTocar={() => irPara("abate")}
+            />
+            <Chip
+              texto="Análise do histórico"
+              icone={<IconeBarras className="h-4 w-4" />}
+              aoTocar={() => irPara("analise")}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3.5">
+        {lote ? (
+          <TituloSecao texto="Em destaque" textoAcao="Ver todos" aoAgir={() => irPara("rebanho")} />
+        ) : (
+          <TituloSecao texto="Em destaque" />
+        )}
+
+        {lote && calculo ? (
+          <CartaoLoteDestaque
+            lote={lote}
+            exigencia={calculo.exigencia}
+            aoTocar={() => irPara("racao")}
           />
-        ) : null}
+        ) : (
+          <EstadoVazio
+            titulo="Nenhum lote por aqui ainda"
+            mensagem="Cadastre o primeiro lote de novilhas e o aplicativo calcula PB, NDT e a ração diária."
+            acao={
+              <button className="botao-ouro" onClick={() => irPara("novo-lote")}>
+                Cadastrar lote
+              </button>
+            }
+          />
+        )}
+      </section>
+
+      <section className="space-y-3.5">
+        <TituloSecao texto="Acesso rápido" />
+        <div className="space-y-2.5">
+          <LinhaAtalho
+            icone={<IconeFuncao className="h-4 w-4" />}
+            titulo="Como os cálculos são feitos"
+            detalhe="Equações de PB, NDT e formulação"
+            aoTocar={() => irPara("metodologia")}
+          />
+          <LinhaAtalho
+            icone={<IconeEscudo className="h-4 w-4" />}
+            titulo="Dados e privacidade"
+            detalhe="Tudo gravado só neste aparelho"
+            aoTocar={() => irPara("dados")}
+          />
+          <LinhaAtalho
+            icone={<IconeTroca className="h-4 w-4" />}
+            titulo="Conversor de quilos e sacas"
+            detalhe="60, 50, 40, 30, 25 e 20 kg"
+            aoTocar={() => irPara("conversor")}
+          />
+        </div>
+      </section>
+
+      <div className="fixed right-5 z-20" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
+        <BotaoFlutuante titulo="Novo lote" aoTocar={() => irPara("novo-lote")} />
       </div>
-
-      {exigencia.alertas.map((a) => (
-        <Aviso key={a} texto={a} />
-      ))}
-
-      <div className="grid grid-cols-2 gap-3">
-        <button className="botao-ouro" onClick={() => irPara("racao")}>
-          Ver a ração
-        </button>
-        <button className="botao-ouro" onClick={() => irPara("abate")}>
-          Planejar o abate
-        </button>
-      </div>
-
-      <p className="text-center text-xs text-textoTenue">
-        {dados.lotes.length} {dados.lotes.length === 1 ? "lote" : "lotes"} ·{" "}
-        {dados.ciclos.length} {dados.ciclos.length === 1 ? "ciclo encerrado" : "ciclos encerrados"}
-      </p>
     </div>
   );
 }
@@ -270,7 +432,7 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
         </div>
       </div>
 
-      {racao.alertas.map((a) => (
+      {[...calculo.exigencia.alertas, ...racao.alertas].map((a) => (
         <Aviso key={a} texto={a} />
       ))}
     </div>
