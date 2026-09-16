@@ -2,21 +2,21 @@
 import { useState } from "react";
 
 import { descricao, descricaoCompra, equivalencias } from "../nucleo/conversorSacas.js";
-import { numero } from "../nucleo/formatadores.js";
+import { numero, paraNumero } from "../nucleo/formatadores.js";
 import { Campo, LinhaDado, TituloSecao } from "./componentes.js";
 
 // ----------------------------------------------------------------- Conversor
 
 export function TelaConversor() {
   const [texto, setTexto] = useState("1000");
-  const quilos = Math.max(0, Number(texto.replace(",", ".")) || 0);
+  const quilos = Math.max(0, paraNumero(texto, 0));
 
   return (
     <div className="space-y-5">
       <TituloSecao texto="Conversor de sacas" />
 
       <div className="cartao space-y-3">
-        <Campo rotulo="Total" valor={texto} aoMudar={setTexto} sufixo="kg" passo={10} />
+        <Campo rotulo="Total" valor={texto} aoMudar={setTexto} sufixo="kg" />
         <LinhaDado rotulo="Em toneladas" valor={`${numero(quilos / 1000, 3)} t`} />
       </div>
 

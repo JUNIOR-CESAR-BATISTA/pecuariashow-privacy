@@ -74,3 +74,27 @@ export function duracao(dias: number): string {
   if (resto === 0) return plurializar(meses, "mês", "meses");
   return `${plurializar(meses, "mês", "meses")} e ${plurializar(resto, "dia", "dias")}`;
 }
+
+/**
+ * Lê um número escrito à mão, do jeito brasileiro.
+ *
+ * Aceita vírgula ou ponto como separador decimal, e o ponto de milhar quando
+ * a vírgula também aparece ("1.500,50"). Um ponto sozinho vale como decimal,
+ * que é o que o teclado de computador manda: quem quer mil e quinhentos
+ * escreve "1500" ou "1.500,00", não "1.500".
+ *
+ * Texto vazio ou ilegível devolve `padrao`, e não zero: no campo de entrada
+ * um zero silencioso viraria um dado errado sem ninguém perceber.
+ */
+export function paraNumero(texto: string, padrao = 0): number {
+  const limpo = texto.replace(/[^\d,.-]/g, "").trim();
+  if (limpo === "" || limpo === "-") return padrao;
+
+  const temVirgula = limpo.includes(",");
+  const normalizado = temVirgula
+    ? limpo.replace(/\./g, "").replace(",", ".")
+    : limpo;
+
+  const valor = Number(normalizado);
+  return Number.isFinite(valor) ? valor : padrao;
+}

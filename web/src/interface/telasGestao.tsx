@@ -29,6 +29,7 @@ import {
   kg as formatarKg,
   moeda,
   numero,
+  paraNumero,
   percentual,
 } from "../nucleo/formatadores.js";
 import {
@@ -173,11 +174,6 @@ function EditorLote({
   const mudar = <C extends keyof Lote>(campo: C, valor: Lote[C]) =>
     setRascunho((r) => ({ ...r, [campo]: valor }));
 
-  const numeroOu = (texto: string, padrao: number) => {
-    const v = Number(texto.replace(",", "."));
-    return Number.isFinite(v) ? v : padrao;
-  };
-
   const porCategoria = (categoria: CategoriaInsumo) =>
     dados.insumos
       .filter((i) => i.categoria === categoria)
@@ -193,26 +189,26 @@ function EditorLote({
           <Campo
             rotulo="Animais"
             valor={rascunho.quantidadeAnimais}
-            aoMudar={(v) => mudar("quantidadeAnimais", Math.max(0, Math.round(numeroOu(v, 0))))}
+            aoMudar={(v) => mudar("quantidadeAnimais", Math.max(0, Math.round(paraNumero(v, 0))))}
           />
           <Campo
             rotulo="Peso médio de entrada"
             sufixo="kg"
             valor={rascunho.pesoMedioInicial}
-            aoMudar={(v) => mudar("pesoMedioInicial", numeroOu(v, 0))}
+            aoMudar={(v) => mudar("pesoMedioInicial", paraNumero(v, 0))}
           />
           <Campo
             rotulo="Meta de ganho"
             sufixo="kg/dia"
-            passo={0.05}
+           
             valor={rascunho.ganhoMetaDiario}
-            aoMudar={(v) => mudar("ganhoMetaDiario", numeroOu(v, 0))}
+            aoMudar={(v) => mudar("ganhoMetaDiario", paraNumero(v, 0))}
           />
           <Campo
             rotulo="Peso de abate"
             sufixo="kg"
             valor={rascunho.pesoAlvoAbate}
-            aoMudar={(v) => mudar("pesoAlvoAbate", numeroOu(v, 0))}
+            aoMudar={(v) => mudar("pesoAlvoAbate", paraNumero(v, 0))}
           />
         </div>
         <Selecao
@@ -247,16 +243,16 @@ function EditorLote({
           <Campo
             rotulo="Preço pago"
             sufixo={MODOS_COMPRA[rascunho.modoCompra].unidade}
-            passo={10}
+           
             valor={rascunho.precoCompra}
-            aoMudar={(v) => mudar("precoCompra", Math.max(0, numeroOu(v, 0)))}
+            aoMudar={(v) => mudar("precoCompra", Math.max(0, paraNumero(v, 0)))}
           />
           <Campo
             rotulo="Arroba na venda"
             sufixo="R$/@"
-            passo={10}
+           
             valor={rascunho.precoArrobaVenda}
-            aoMudar={(v) => mudar("precoArrobaVenda", Math.max(0, numeroOu(v, 0)))}
+            aoMudar={(v) => mudar("precoArrobaVenda", Math.max(0, paraNumero(v, 0)))}
           />
         </div>
         <p className="text-xs text-textoSuave">
@@ -321,11 +317,11 @@ function EditorLote({
           </div>
           <button
             className="botao-ouro mt-5 shrink-0"
-            disabled={numeroOu(pesoNovo, 0) <= 0}
+            disabled={paraNumero(pesoNovo, 0) <= 0}
             onClick={() => {
               setRascunho((r) => ({
                 ...r,
-                pesagens: [...r.pesagens, criarPesagem({ pesoMedio: numeroOu(pesoNovo, 0) })],
+                pesagens: [...r.pesagens, criarPesagem({ pesoMedio: paraNumero(pesoNovo, 0) })],
               }));
               setPesoNovo("");
             }}
@@ -457,11 +453,6 @@ function EditorInsumo({
   const [rascunho, setRascunho] = useState<Insumo>(insumo);
   const mudar = <C extends keyof Insumo>(campo: C, valor: Insumo[C]) =>
     setRascunho((r) => ({ ...r, [campo]: valor }));
-  const num = (texto: string) => {
-    const v = Number(texto.replace(",", "."));
-    return Number.isFinite(v) ? v : 0;
-  };
-
   return (
     <div className="space-y-5">
       <TituloSecao texto={insumo.nome ? "Editar alimento" : "Novo alimento"} />
@@ -482,19 +473,19 @@ function EditorInsumo({
             rotulo="MS"
             sufixo="%"
             valor={rascunho.materiaSeca}
-            aoMudar={(v) => mudar("materiaSeca", num(v))}
+            aoMudar={(v) => mudar("materiaSeca", paraNumero(v))}
           />
           <Campo
             rotulo="PB"
             sufixo="%"
             valor={rascunho.proteinaBruta}
-            aoMudar={(v) => mudar("proteinaBruta", num(v))}
+            aoMudar={(v) => mudar("proteinaBruta", paraNumero(v))}
           />
           <Campo
             rotulo="NDT"
             sufixo="%"
             valor={rascunho.ndt}
-            aoMudar={(v) => mudar("ndt", num(v))}
+            aoMudar={(v) => mudar("ndt", paraNumero(v))}
           />
         </div>
         <p className="text-xs text-textoTenue">PB e NDT são percentuais da matéria seca.</p>
@@ -517,7 +508,7 @@ function EditorInsumo({
             rotulo="Quilos por saca"
             sufixo="kg"
             valor={rascunho.embalagem.kgPorSaca}
-            aoMudar={(v) => mudar("embalagem", { ...rascunho.embalagem, kgPorSaca: num(v) })}
+            aoMudar={(v) => mudar("embalagem", { ...rascunho.embalagem, kgPorSaca: paraNumero(v) })}
           />
         ) : null}
         {rascunho.embalagem.tipo !== "pastejo" ? (
@@ -525,7 +516,7 @@ function EditorInsumo({
             rotulo={rascunho.embalagem.tipo === "saca" ? "Preço da saca" : "Preço da tonelada"}
             sufixo="R$"
             valor={rascunho.precoUnitario}
-            aoMudar={(v) => mudar("precoUnitario", num(v))}
+            aoMudar={(v) => mudar("precoUnitario", paraNumero(v))}
           />
         ) : null}
       </div>
