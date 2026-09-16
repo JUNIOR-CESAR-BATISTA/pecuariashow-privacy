@@ -1,0 +1,139 @@
+/** Telas abertas por cima das abas: conversor de sacas e metodologia. */
+import { useState } from "react";
+
+import { descricao, descricaoCompra, equivalencias } from "../nucleo/conversorSacas.js";
+import { numero } from "../nucleo/formatadores.js";
+import { Campo, LinhaDado, TituloSecao } from "./componentes.js";
+
+// ----------------------------------------------------------------- Conversor
+
+export function TelaConversor() {
+  const [texto, setTexto] = useState("1000");
+  const quilos = Math.max(0, Number(texto.replace(",", ".")) || 0);
+
+  return (
+    <div className="space-y-5">
+      <TituloSecao texto="Conversor de sacas" />
+
+      <div className="cartao space-y-3">
+        <Campo rotulo="Total" valor={texto} aoMudar={setTexto} sufixo="kg" passo={10} />
+        <LinhaDado rotulo="Em toneladas" valor={`${numero(quilos / 1000, 3)} t`} />
+      </div>
+
+      <div className="cartao divide-y divide-borda">
+        <p className="pb-2 text-xs uppercase tracking-widest text-ouroEscuro">
+          Equivalência nos tamanhos de mercado
+        </p>
+        {equivalencias(quilos).map((c) => (
+          <div key={c.kgPorUnidade} className="py-2">
+            <LinhaDado
+              rotulo={`Saca de ${numero(c.kgPorUnidade, 0)} kg`}
+              valor={`${numero(c.unidadesExatas, 2)} sacas`}
+            />
+            <p className="text-xs text-textoSuave">
+              {descricao(c)} · comprar {descricaoCompra(c)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-xs text-textoTenue">
+        A linha de compra arredonda sempre para cima, porque não se compra fração de saca.
+      </p>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------- Metodologia
+
+function Metodo({ titulo, corpo }: { titulo: string; corpo: string }) {
+  return (
+    <div className="py-2">
+      <p className="text-sm font-semibold">{titulo}</p>
+      <p className="mt-0.5 text-xs leading-relaxed text-textoSuave">{corpo}</p>
+    </div>
+  );
+}
+
+function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-1">
+      <p className="text-xs uppercase tracking-widest text-ouroEscuro">{titulo}</p>
+      <div className="cartao divide-y divide-borda py-1">{children}</div>
+    </section>
+  );
+}
+
+export function TelaMetodologia() {
+  return (
+    <div className="space-y-5">
+      <TituloSecao texto="Metodologia" />
+
+      <p className="text-sm leading-relaxed text-textoSuave">
+        As exigências são calculadas pelo sistema de energia líquida e proteína metabolizável do
+        NRC para gado de corte, com ajustes de grupo genético e de atividade usuais em condições
+        brasileiras. Tudo parte de três informações: peso vivo, meta de ganho e o peso em que a
+        novilha termina.
+      </p>
+
+      <Bloco titulo="Energia">
+        <Metodo
+          titulo="Mantença"
+          corpo="ELm = 0,077 x fator do grupo genético x fator de atividade x PCJ elevado a 0,75. PCJ é o peso vivo de jejum (96% do peso vivo)."
+        />
+        <Metodo
+          titulo="Ganho"
+          corpo="ER = 0,0783 x PCVZ equivalente elevado a 0,75 x ganho de corpo vazio elevado a 1,119. São os coeficientes de fêmeas em crescimento, que depositam mais gordura por quilo ganho que os machos."
+        />
+        <Metodo
+          titulo="Peso equivalente"
+          corpo="O peso é corrigido pelo grau de maturidade: peso de jejum x 462 / peso de acabamento em jejum. Novilhas mais precoces exigem mais energia por quilo de ganho no mesmo peso."
+        />
+        <Metodo
+          titulo="NDT"
+          corpo="A densidade da dieta é encontrada procurando o teor de NDT em que o consumo necessário iguala o consumo previsto. O NDT diário é o consumo de matéria seca multiplicado por esse teor."
+        />
+      </Bloco>
+
+      <Bloco titulo="Proteína">
+        <Metodo titulo="Mantença" corpo="PM de mantença = 3,8 g por PCJ elevado a 0,75." />
+        <Metodo
+          titulo="Ganho"
+          corpo="A proteína líquida por quilo de ganho cai conforme a energia retida sobe: 268 menos 29,4 vezes a energia retida por quilo de ganho. A eficiência de uso da proteína metabolizável vai de 0,834 menos 0,00114 vezes o peso equivalente, com piso de 0,492."
+        />
+        <Metodo
+          titulo="Da PM para a PB"
+          corpo="Considera 130 g de proteína microbiana por quilo de NDT, aproveitada em 64%. O que faltar vem de proteína não degradável no rúmen, aproveitada em 80%. A soma das duas frações é a proteína bruta da dieta."
+        />
+        <Metodo
+          titulo="Piso prático"
+          corpo="Quando a conta resulta em menos proteína que o mínimo da fase (13% na desmama, 12% na recria inicial e 11% depois), o aplicativo usa o piso para não comprometer o ambiente ruminal."
+        />
+      </Bloco>
+
+      <Bloco titulo="Ração e conversões">
+        <Metodo
+          titulo="Balanceamento"
+          corpo="Com volumoso, energético e proteico o aplicativo resolve um sistema de três equações: matéria seca total, proteína bruta e NDT. Quando a solução fica fora dos limites de volumoso, o volumoso é fixado no limite e o concentrado atende a proteína, mostrando o saldo de energia."
+        />
+        <Metodo
+          titulo="Matéria natural"
+          corpo="A quantidade a fornecer no cocho é a matéria seca dividida pelo teor de matéria seca do alimento."
+        />
+        <Metodo
+          titulo="Sacas"
+          corpo="O total em quilos é dividido pelo peso da embalagem cadastrada. Tamanhos de mercado disponíveis: 60, 50, 40, 30, 25 e 20 kg, além de granel em toneladas. A linha de compra arredonda para cima."
+        />
+        <Metodo
+          titulo="Períodos"
+          corpo="O ciclo é dividido em períodos. Em cada um as exigências são recalculadas no peso médio do intervalo e a ração é refeita, por isso o consumo cresce ao longo do ciclo."
+        />
+      </Bloco>
+
+      <p className="text-xs leading-relaxed text-textoTenue">
+        Os coeficientes são médias de população. Acompanhe pesagens reais e use o ajuste de consumo
+        do lote para aproximar a previsão do que acontece no cocho.
+      </p>
+    </div>
+  );
+}

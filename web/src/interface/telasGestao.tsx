@@ -1,5 +1,5 @@
 /** Telas de cadastro e de memória: Rebanho, Insumos, Análise e Dados. */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   analisar,
@@ -51,9 +51,24 @@ import { loteNovo, useApp } from "./estado.js";
 
 // ------------------------------------------------------------------ Rebanho
 
-export function TelaRebanho() {
+export function TelaRebanho({
+  abrirNovo = false,
+  aoAbrirNovo,
+}: {
+  /** Vem do atalho "Novo lote" do Início, que troca de aba e já abre o editor. */
+  abrirNovo?: boolean;
+  aoAbrirNovo?: () => void;
+} = {}) {
   const { dados, loteSelecionado, selecionarLote, salvarLote } = useApp();
   const [editando, setEditando] = useState<Lote | null>(null);
+
+  useEffect(() => {
+    if (!abrirNovo) return;
+    setEditando(loteNovo(dados));
+    aoAbrirNovo?.();
+    // Só o pedido importa: os dados mudam a cada gravação e reabririam o editor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abrirNovo]);
 
   if (editando) {
     return (

@@ -25,20 +25,30 @@ pagina.on("console", (m) => {
 await pagina.goto(base, { waitUntil: "networkidle" });
 
 // Cadastra o primeiro lote com o que o formulário já traz preenchido.
-// O botão do Início leva para o Rebanho; é lá que o formulário abre.
+// O botão do Início troca para o Rebanho já com o formulário aberto.
 await pagina.getByRole("button", { name: "Cadastrar lote" }).click();
-await pagina.getByRole("button", { name: "Cadastrar o primeiro" }).click();
 await pagina.getByRole("button", { name: "Salvar" }).click();
 await pagina.waitForTimeout(400);
 
-const telas = ["Início", "Ração", "Abate", "Rebanho", "Insumos", "Dados"];
-for (const nome of telas) {
-  await pagina.getByRole("button", { name: nome, exact: true }).click();
+const fotografar = async (nome) => {
   await pagina.waitForTimeout(500);
   const arquivo = `${pasta}/${nome.normalize("NFD").replace(/[^a-zA-Z]/g, "").toLowerCase()}.png`;
   await pagina.screenshot({ path: arquivo, fullPage: true });
   console.log(`${nome}: ${(await pagina.innerText("main")).split("\n")[0]}`);
+};
+
+// O nome da aba se repete nos blocos de categoria do Início, por isso a busca
+// é feita dentro da barra de navegação.
+const barra = pagina.locator("nav");
+for (const nome of ["Início", "Ração", "Abate", "Rebanho", "Insumos", "Análise"]) {
+  await barra.getByRole("button", { name: nome, exact: true }).click();
+  await fotografar(nome);
 }
+
+// Dados não é aba: abre pelo botão redondo do cabeçalho, como no iPhone.
+await barra.getByRole("button", { name: "Início", exact: true }).click();
+await pagina.getByRole("button", { name: "Dados", exact: true }).click();
+await fotografar("Dados");
 
 console.log("--- problemas ---");
 console.log(problemas.length ? problemas.join("\n") : "nenhum");
