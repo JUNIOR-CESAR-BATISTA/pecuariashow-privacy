@@ -1,0 +1,337 @@
+import SwiftUI
+
+/// Formulário de cadastro e edição de um lote.
+struct LoteEditorView: View {
+    @EnvironmentObject private var estado: AppEstado
+    @Environment(\.dismiss) private var fechar
+
+    @State private var lote: Lote
+    private let novo: Bool
+    @State private var adicionandoPesagem = false
+    @State private var confirmandoExclusao = false
+
+    init(lote: Lote, novo: Bool) {
+        _lote = State(initialValue: lote)
+        self.novo = novo
+    }
+
+    /// Aviso de que os valores vieram do histórico de ciclos encerrados.
+    private var notaCalibracao: String? {
+        let fatores = estado.analise.fatores
+        guard estado.usarCalibracao, fatores.disponivel else { return nil }
+        return "Calibrado por \(fatores.ciclos) ciclo\(fatores.ciclos == 1 ? "" : "s") já abatido\(fatores.ciclos == 1 ? "" : "s"): consumo \(Formatadores.numero(fatores.ajusteConsumo, casas: 2))x, rendimento \(Formatadores.percentual(fatores.rendimentoCarcaca * 100)) e acabamento \(Formatadores.numero(fatores.pesoAcabamento, casas: 0)) kg. Base \(fatores.confianca.nome.lowercased())."
+    }
+
+    private var previa: ExigenciaDiaria {
+        MotorExigencias.calcular(perfil: lote.perfilAtual, ganhoMeta: lote.ganhoMetaDiario)
+    }
+
+    private var rendimentoPercentual: Binding<Double> {
+        Binding(get: { lote.rendimentoCarcaca * 100 },
+                set: { lote.rendimentoCarcaca = min(max($0 / 100, 0.35), 0.65) })
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                identificacao
+                animais
+                metas
+                racao
+                pesagens
+                previaSection
+                if !novo {
+                    Section {
+                        Button(role: .destructive) {
+                            confirmandoExclusao = true
+                        } label: {
+                            Label("Excluir lote", systemImage: "trash")
+                        }
+                    }
+                    .listRowBackground(Tema.superficie)
+                }
+            }
+            .navigationTitle(novo ? "Novo lote" : "Editar lote")
+            .navigationBarTitleDisplayMode(.inline)
+            .listaEscura()
+            .barraEscura()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { fechar() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Salvar") { salvar() }
+                }
+            }
+            .sheet(isPresented: $adicionandoPesagem) {
+                NovaPesagemView(pesoSugerido: lote.pesoAtual) { pesagem in
+                    lote.pesagens.append(pesagem)
+                }
+            }
+            .confirmationDialog("Excluir este lote?",
+                                isPresented: $confirmandoExclusao,
+                                titleVisibility: .visible) {
+                Button("Excluir", role: .destructive) {
+                    estado.remover(loteID: lote.id)
+                    fechar()
+                }
+                Button("Cancelar", role: .cancel) { }
+            } message: {
+                Text("Os dados deste lote serão apagados do aparelho.")
+            }
+        }
+    }
+
+    // MARK: - Seções
+
+    private var identificacao: some View {
+        Section("Identificação") {
+            TextField("Nome do lote", text: $lote.nome)
+            CampoInteiro(titulo: "Número de animais", valor: $lote.quantidadeAnimais, sufixo: "cab")
+            DatePicker("Entrada no lote", selection: $lote.dataEntrada, displayedComponents: .date)
+        }
+        .listRowBackground(Tema.superficie)
+    }
+
+    private var animais: some View {
+        Section {
+            CampoNumerico(titulo: "Peso médio de entrada", valor: $lote.pesoMedioInicial,
+                          casas: 1, sufixo: "kg")
+            Picker("Fase", selection: $lote.fase) {
+                ForEach(FaseAnimal.allCases) { fase in
+                    Text(fase.nome).tag(fase)
+                }
+            }
+            Picker("Grupo genético", selection: $lote.grupoGenetico) {
+                ForEach(GrupoGenetico.allCases) { grupo in
+                    Text(grupo.nomeCurto).tag(grupo)
+                }
+            }
+            Picker("Sistema", selection: $lote.sistema) {
+                ForEach(SistemaCriacao.allCases) { sistema in
+                    Text(sistema.nome).tag(sistema)
+                }
+            }
+        } header: {
+            Text("Dados do rebanho")
+        } footer: {
+            Text("\(lote.fase.descricao). \(lote.sistema.descricao).")
+        }
+        .listRowBackground(Tema.superficie)
+    }
+
+    private var metas: some View {
+        Section {
+            CampoNumerico(titulo: "Meta de ganho diário", valor: $lote.ganhoMetaDiario,
+                          casas: 3, sufixo: "kg/d")
+            CampoNumerico(titulo: "Peso alvo de abate", valor: $lote.pesoAlvoAbate,
+                          casas: 0, sufixo: "kg")
+            CampoNumerico(titulo: "Rendimento de carcaça", valor: rendimentoPercentual,
+                          casas: 1, sufixo: "%")
+            CampoNumerico(titulo: "Peso de acabamento", valor: $lote.pesoFinalMaturidade,
+                          casas: 0, sufixo: "kg")
+            CampoInteiro(titulo: "Dias por período", valor: $lote.diasPorPeriodo, sufixo: "dias")
+            CampoNumerico(titulo: "Ajuste de consumo", valor: $lote.ajusteConsumo,
+                          casas: 2, sufixo: "x")
+        } header: {
+            Text("Metas e abate")
+        } footer: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Ganho sugerido para a fase \(lote.fase.nome.lowercased()): \(Formatadores.numero(lote.fase.gmdSugerido, casas: 3)) kg/dia. O peso de acabamento representa o peso em que a novilha termina e ajusta a exigência de energia. O ajuste de consumo calibra a previsão de consumo ao que você observa no cocho (1,00 = previsão padrão).")
+                if let nota = notaCalibracao {
+                    Text(nota).foregroundStyle(Tema.ouro)
+                }
+            }
+        }
+        .listRowBackground(Tema.superficie)
+    }
+
+    private var racao: some View {
+        Section {
+            SeletorInsumo(titulo: "Volumoso", categoria: .volumoso, selecao: $lote.volumosoID)
+            SeletorInsumo(titulo: "Energético", categoria: .energetico, selecao: $lote.energeticoID)
+            SeletorInsumo(titulo: "Proteico", categoria: .proteico, selecao: $lote.proteicoID)
+            SeletorInsumo(titulo: "Mineral", categoria: .mineral, selecao: $lote.mineralID, permiteNenhum: true)
+            CampoNumerico(titulo: "Mineral por animal", valor: $lote.restricoes.mineralGramasDia,
+                          casas: 0, sufixo: "g/d")
+
+            Toggle("Fixar participação do volumoso", isOn: Binding(
+                get: { lote.restricoes.volumosoFixo != nil },
+                set: { ligado in
+                    lote.restricoes.volumosoFixo = ligado ? lote.fase.volumosoSugerido : nil
+                }))
+
+            if let fixo = lote.restricoes.volumosoFixo {
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text("Volumoso na matéria seca")
+                        Spacer()
+                        Text(Formatadores.percentual(fixo * 100, casas: 0))
+                            .foregroundStyle(Tema.textoSuave)
+                    }
+                    Slider(value: Binding(get: { fixo },
+                                          set: { lote.restricoes.volumosoFixo = $0 }),
+                           in: 0.2...0.95, step: 0.05)
+                        .tint(Paleta.verde)
+                }
+            } else {
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text("Volumoso mínimo")
+                        Spacer()
+                        Text(Formatadores.percentual(lote.restricoes.volumosoMinimo * 100, casas: 0))
+                            .foregroundStyle(Tema.textoSuave)
+                    }
+                    Slider(value: $lote.restricoes.volumosoMinimo, in: 0.1...0.9, step: 0.05)
+                        .tint(Paleta.verde)
+                }
+            }
+        } header: {
+            Text("Ração")
+        } footer: {
+            Text(lote.restricoes.volumosoFixo == nil
+                 ? "No modo automático o aplicativo calcula a proporção dos três alimentos que atende exatamente PB e NDT, respeitando o mínimo de volumoso."
+                 : "Com a participação do volumoso fixada, o concentrado é ajustado pela proteína e o saldo de energia é mostrado no resumo.")
+        }
+        .listRowBackground(Tema.superficie)
+    }
+
+    private var pesagens: some View {
+        Section {
+            if lote.pesagens.isEmpty {
+                Text("Nenhuma pesagem registrada. O peso de entrada está sendo usado como peso atual.")
+                    .font(.footnote)
+                    .foregroundStyle(Tema.textoSuave)
+            } else {
+                ForEach(lote.pesagensOrdenadas) { pesagem in
+                    HStack {
+                        Text(Formatadores.data(pesagem.data))
+                        Spacer()
+                        Text(Formatadores.kg(pesagem.pesoMedio))
+                            .foregroundStyle(Tema.textoSuave)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            lote.pesagens.removeAll { $0.id == pesagem.id }
+                        } label: {
+                            Label("Excluir", systemImage: "trash")
+                        }
+                    }
+                }
+            }
+            Button {
+                adicionandoPesagem = true
+            } label: {
+                Label("Registrar pesagem", systemImage: "plus.circle")
+            }
+        } header: {
+            Text("Pesagens")
+        } footer: {
+            if let real = lote.ganhoRealDiario {
+                Text("Ganho médio observado: \(Formatadores.numero(real, casas: 3)) kg/dia contra a meta de \(Formatadores.numero(lote.ganhoMetaDiario, casas: 3)) kg/dia.")
+            } else {
+                Text("Registre pesagens para acompanhar o ganho real do lote.")
+            }
+        }
+        .listRowBackground(Tema.superficie)
+    }
+
+    private var previaSection: some View {
+        Section("Prévia das exigências diárias") {
+            LinhaDado(rotulo: "Consumo de matéria seca",
+                      valor: Formatadores.kg(previa.consumoMateriaSeca))
+            LinhaDado(rotulo: "Proteína bruta",
+                      valor: "\(Formatadores.gramas(previa.proteinaBrutaGramas)) (\(Formatadores.percentual(previa.proteinaBrutaPercentualDieta)))")
+            LinhaDado(rotulo: "NDT",
+                      valor: "\(Formatadores.kg(previa.ndtKg)) (\(Formatadores.percentual(previa.ndtPercentualDieta)))")
+            if !previa.metaAtingivel {
+                Aviso(texto: "Meta acima do ganho possível neste peso. Considere \(Formatadores.numero(previa.ganhoDiario, casas: 3)) kg/dia.")
+            }
+        }
+        .listRowBackground(Tema.superficie)
+    }
+
+    // MARK: - Ações
+
+    private func salvar() {
+        var ajustado = lote
+        if ajustado.nome.trimmingCharacters(in: .whitespaces).isEmpty {
+            ajustado.nome = "Lote \(estado.lotes.count + 1)"
+        }
+        ajustado.quantidadeAnimais = max(1, ajustado.quantidadeAnimais)
+        ajustado.pesoMedioInicial = max(50, ajustado.pesoMedioInicial)
+        ajustado.pesoAlvoAbate = max(ajustado.pesoMedioInicial + 1, ajustado.pesoAlvoAbate)
+        ajustado.pesoFinalMaturidade = max(200, ajustado.pesoFinalMaturidade)
+        ajustado.ganhoMetaDiario = max(0, ajustado.ganhoMetaDiario)
+        ajustado.diasPorPeriodo = min(max(7, ajustado.diasPorPeriodo), 180)
+        ajustado.ajusteConsumo = min(max(0.7, ajustado.ajusteConsumo), 1.3)
+        ajustado.restricoes.mineralGramasDia = max(0, ajustado.restricoes.mineralGramasDia)
+        estado.salvar(lote: ajustado)
+        fechar()
+    }
+}
+
+/// Escolha de um insumo de uma categoria.
+struct SeletorInsumo: View {
+    @EnvironmentObject private var estado: AppEstado
+    let titulo: String
+    let categoria: CategoriaInsumo
+    @Binding var selecao: UUID?
+    var permiteNenhum: Bool = false
+
+    var body: some View {
+        Picker(titulo, selection: $selecao) {
+            if permiteNenhum {
+                Text("Nenhum").tag(UUID?.none)
+            }
+            ForEach(estado.insumos(da: categoria)) { insumo in
+                Text(insumo.nome).tag(UUID?.some(insumo.id))
+            }
+        }
+    }
+}
+
+/// Registro de uma nova pesagem.
+struct NovaPesagemView: View {
+    @Environment(\.dismiss) private var fechar
+    let pesoSugerido: Double
+    let aoSalvar: (Pesagem) -> Void
+
+    @State private var data = Date()
+    @State private var peso: Double
+    @State private var observacao = ""
+
+    init(pesoSugerido: Double, aoSalvar: @escaping (Pesagem) -> Void) {
+        self.pesoSugerido = pesoSugerido
+        self.aoSalvar = aoSalvar
+        _peso = State(initialValue: pesoSugerido)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    DatePicker("Data", selection: $data, displayedComponents: .date)
+                    CampoNumerico(titulo: "Peso médio", valor: $peso, casas: 1, sufixo: "kg")
+                    TextField("Observação", text: $observacao)
+                }
+                .listRowBackground(Tema.superficie)
+            }
+            .navigationTitle("Nova pesagem")
+            .navigationBarTitleDisplayMode(.inline)
+            .listaEscura()
+            .barraEscura()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { fechar() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Salvar") {
+                        aoSalvar(Pesagem(data: data, pesoMedio: max(30, peso), observacao: observacao))
+                        fechar()
+                    }
+                }
+            }
+        }
+    }
+}

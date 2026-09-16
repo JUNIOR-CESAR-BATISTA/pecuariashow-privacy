@@ -1,0 +1,266 @@
+# Envio da build para o TestFlight, rodando no runner macOS do GitHub.
+#
+# Tudo se resolve com a chave da App Store Connect: o certificado de
+# distribuição e o perfil de provisionamento são criados na hora, sem Mac e
+# sem precisar de nenhum aparelho cadastrado na conta - que é a pegadinha da
+# assinatura automática, ela exige um iPhone registrado para gerar o perfil
+# de desenvolvimento.
+#
+# Sobre revogar o certificado a cada envio: o certificado de distribuição só
+# funciona junto com a chave privada que o gerou, e essa chave nasce e morre
+# dentro do runner, que é descartado no fim do run. O certificado que fica
+# registrado na conta da Apple é, portanto, inútil no run seguinte - ele
+# apenas ocupa uma das duas vagas que a Apple permite. Por isso, antes de
+# pedir um certificado novo, apagamos os antigos: são cascas sem chave.
+# Isso não afeta nada já enviado, porque a Apple reassina com o certificado
+# dela o que está no TestFlight e na App Store.
+
+require "spaceship"
+
+default_platform(:ios)
+
+BUNDLE_ID = "br.com.novilhanutri.app".freeze
+NOME_APP = "NovilhaNutri".freeze
+SKU = "novilhanutri".freeze
+EMPRESA = "Junior Cesar Batista".freeze
+# O chaveiro é criado pelo workflow antes de chamar o fastlane, e o caminho
+# precisa ser dito explicitamente: sem isso o certificado é instalado em um
+# chaveiro e procurado em outro.
+CHAVEIRO = File.expand_path("~/Library/Keychains/build.keychain-db").freeze
+SENHA_CHAVEIRO = "ci".freeze
+
+# Abre a sessão do spaceship com a mesma chave usada pelas actions do fastlane.
+# Precisamos dela para falar direto com a API da Apple nos pontos em que as
+# actions prontas não servem.
+def autenticar(chave)
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(**chave)
+rescue StandardError => erro
+  # Caminho alternativo, caso o formato do hash mude entre versões do fastlane.
+  UI.important("Token pelo hash não funcionou (#{erro.message}); tentando pelo arquivo da chave")
+  Spaceship::ConnectAPI.auth(
+    key_id: ENV.fetch("CHAVE_ID"),
+    issuer_id: ENV.fetch("EMISSOR"),
+    filepath: ENV.fetch("CHAVE_ARQUIVO")
+  )
+end
+
+# Garante que o identificador exista no Developer Portal e que o app exista no
+# App Store Connect.
+#
+# Isto era trabalho da action 'produce', mas ela só sabe entrar com Apple ID e
+# senha: não aceita a chave da API. Como aqui só temos a chave, falamos direto
+# com a API.
+def garantir_identificador_e_app(chave)
+  autenticar(chave)
+
+  # 1. O App ID. Sem ele não existe perfil de provisionamento.
+  registrado = Spaceship::ConnectAPI::BundleId.all(filter: { identifier: BUNDLE_ID })
+                                              .find { |b| b.identifier == BUNDLE_ID }
+  if registrado
+    UI.message("Identificador #{BUNDLE_ID} já está no Developer Portal (#{registrado.id})")
+  else
+    UI.important("Registrando o identificador #{BUNDLE_ID} no Developer Portal")
+    Spaceship::ConnectAPI::BundleId.create(
+      name: NOME_APP,
+      identifier: BUNDLE_ID,
+      platform: Spaceship::ConnectAPI::BundleIdPlatform::IOS
+    )
+  end
+
+  # 2. O registro do app. Sem ele o TestFlight recusa o envio.
+  app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  if app
+    UI.success("App encontrado no App Store Connect: '#{app.name}' (#{app.bundle_id})")
+    return
+  end
+
+  # Não achou. Antes de acusar qualquer coisa, mostramos o que esta chave
+  # consegue enxergar - é o que separa "o app não foi criado" de "a chave não
+  # tem permissão para ver os apps da conta".
+  UI.important("Não encontrei nenhum app com o identificador #{BUNDLE_ID}.")
+  listar_apps_visiveis
+  criar_app_no_connect
+
+  # E seguimos assim mesmo. Esta busca é uma conveniência, não um pré-requisito:
+  # quem exige o registro do app é só o envio, lá no fim. Compilar e assinar
+  # dependem apenas do App ID, que já existe. Parar aqui seria trocar o erro
+  # real da Apple, que é preciso, por um palpite nosso.
+  UI.important("Seguindo mesmo assim - a compilação não depende deste registro.")
+  UI.important("Se o envio falhar no fim, a mensagem da Apple vai dizer o que falta.")
+end
+
+# Lista os apps que a chave da API enxerga, para o log dizer onde está o
+# problema em vez de deixar adivinhando.
+def listar_apps_visiveis
+  apps = Spaceship::ConnectAPI::App.all
+  if apps.empty?
+    UI.important("Esta chave não enxerga nenhum app na conta.")
+    UI.important("Ou o app ainda não foi criado, ou a função da chave é baixa demais.")
+    UI.important("Confira em Usuários e Acesso > Integrações: precisa ser Admin ou Gerente de Apps.")
+  else
+    UI.important("Apps que esta chave enxerga (#{apps.count}):")
+    apps.each { |a| UI.important("  - '#{a.name}' | #{a.bundle_id}") }
+    UI.important("Se o app está aí com outro identificador, foi escolhido o pacote errado no cadastro.")
+  end
+rescue StandardError => erro
+  UI.important("Não deu nem para listar os apps: #{erro.message}")
+  UI.important("Isso costuma ser função insuficiente da chave da API.")
+end
+
+# Tenta criar o registro do app.
+#
+# A Apple costuma recusar isto por chave de integração - ela responde "The
+# resource 'apps' does not allow 'CREATE'". Criar o app é justamente a etapa
+# que a API não delega. Tentamos assim mesmo, porque não custa nada e algumas
+# contas conseguem; se não der, explicamos o que fazer à mão. É uma vez só na
+# vida do app: depois disso todo envio volta a ser automático.
+def criar_app_no_connect
+  UI.important("Tentando criar o app '#{NOME_APP}' no App Store Connect")
+  Spaceship::ConnectAPI::App.create(
+    name: NOME_APP,
+    version_string: ENV.fetch("VERSAO"),
+    sku: SKU,
+    primary_locale: "pt-BR",
+    bundle_id: BUNDLE_ID,
+    platforms: [Spaceship::ConnectAPI::Platform::IOS],
+    company_name: EMPRESA
+  )
+  UI.success("App criado no App Store Connect")
+rescue StandardError => erro
+  UI.important("A API não criou o app: #{erro.message}")
+  instrucoes_para_criar_a_mao.each_line { |linha| UI.important(linha.chomp) }
+end
+
+def instrucoes_para_criar_a_mao
+  <<~TEXTO
+
+    O app precisa ser criado uma vez à mão no App Store Connect.
+
+      1. Abra appstoreconnect.apple.com e entre em "Apps"
+      2. Clique no "+" e escolha "Novo app"
+      3. Plataforma: iOS
+      4. Nome: #{NOME_APP}
+      5. Idioma principal: Português (Brasil)
+      6. ID do pacote: escolha #{BUNDLE_ID} na lista. Ele já está
+         registrado, então aparece lá.
+      7. SKU: #{SKU}
+      8. Acesso de usuário: Acesso completo
+      9. Clique em "Criar" e publique a próxima tag
+
+    Se o nome "#{NOME_APP}" estiver em uso por outra conta, escolha outro - o
+    que importa aqui é o identificador, que continua sendo #{BUNDLE_ID}.
+  TEXTO
+end
+
+# Revoga os certificados de distribuição já registrados na conta. Nenhum deles
+# tem mais serventia: a chave privada correspondente ficou no runner que os
+# criou e foi destruída junto com ele.
+def liberar_vagas_de_certificado(chave)
+  autenticar(chave)
+
+  apagados = 0
+  %w[DISTRIBUTION IOS_DISTRIBUTION].each do |tipo|
+    begin
+      certificados = Spaceship::ConnectAPI::Certificate.all(filter: { certificateType: tipo })
+    rescue StandardError => erro
+      UI.important("Não deu para listar os certificados #{tipo}: #{erro.message}")
+      next
+    end
+
+    certificados.each do |certificado|
+      next unless certificado.certificate_type.to_s.include?("DISTRIBUTION")
+
+      begin
+        UI.important("Revogando o certificado #{certificado.id} (#{certificado.certificate_type}) para liberar a vaga")
+        certificado.delete!
+        apagados += 1
+      rescue StandardError => erro
+        UI.important("Não deu para revogar #{certificado.id}: #{erro.message}")
+      end
+    end
+  end
+
+  UI.message("Certificados de distribuição revogados: #{apagados}")
+end
+
+platform :ios do
+  desc "Compila em Release, assina para distribuição e envia ao TestFlight"
+  lane :beta do
+    chave = app_store_connect_api_key(
+      key_id: ENV.fetch("CHAVE_ID"),
+      issuer_id: ENV.fetch("EMISSOR"),
+      key_filepath: ENV.fetch("CHAVE_ARQUIVO"),
+      duration: 1200,
+      in_house: false
+    )
+
+    # Apaga os certificados de distribuição órfãos antes de pedir um novo,
+    # senão a Apple recusa dizendo que o limite de dois foi atingido.
+    liberar_vagas_de_certificado(chave)
+
+    # Cria o certificado de distribuição desta build.
+    get_certificates(
+      api_key: chave,
+      development: false,
+      keychain_path: CHAVEIRO,
+      keychain_password: SENHA_CHAVEIRO
+    )
+
+    # Libera a chave privada para o codesign usar sem abrir caixa de diálogo,
+    # que em runner sem tela trava o build.
+    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: " \
+       "-s -k '#{SENHA_CHAVEIRO}' '#{CHAVEIRO}' >/dev/null 2>&1 || true")
+
+    # Mostra quais identidades ficaram utilizáveis, para o log dizer algo
+    # quando a assinatura falhar adiante.
+    sh("security find-identity -v -p codesigning '#{CHAVEIRO}' || true")
+
+    # Registra o identificador no portal e cria o app no App Store Connect.
+    # É idempotente: se já existirem, apenas segue.
+    garantir_identificador_e_app(chave)
+
+    # Cria o perfil de distribuição. Tem que ser force: true, porque qualquer
+    # perfil antigo aponta para um certificado que acabou de ser revogado.
+    get_provisioning_profile(
+      api_key: chave,
+      app_identifier: BUNDLE_ID,
+      development: false,
+      force: true
+    )
+
+    perfil = lane_context[SharedValues::SIGH_NAME]
+    UI.message("Perfil de provisionamento em uso: #{perfil}")
+
+    build_app(
+      project: "NovilhaNutri.xcodeproj",
+      scheme: "NovilhaNutri",
+      configuration: "Release",
+      export_method: "app-store",
+      export_team_id: ENV.fetch("TIME"),
+      export_options: {
+        provisioningProfiles: { BUNDLE_ID => perfil }
+      },
+      xcargs: [
+        "CODE_SIGN_STYLE=Manual",
+        # Sem isto o Xcode cai no padrão do projeto, que é de desenvolvimento,
+        # e procura um certificado "iOS Development" que aqui nunca vai existir:
+        # o runner só tem o de distribuição. Manual sem identidade declarada é
+        # meio caminho, e meio caminho não assina.
+        "CODE_SIGN_IDENTITY='Apple Distribution'",
+        "DEVELOPMENT_TEAM=#{ENV.fetch('TIME')}",
+        "PROVISIONING_PROFILE_SPECIFIER='#{perfil}'",
+        "MARKETING_VERSION=#{ENV.fetch('VERSAO')}",
+        "CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD')}",
+        "OTHER_CODE_SIGN_FLAGS='--keychain #{CHAVEIRO}'"
+      ].join(" "),
+      output_directory: "build",
+      output_name: "NovilhaNutri.ipa"
+    )
+
+    upload_to_testflight(
+      api_key: chave,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
+  end
+end

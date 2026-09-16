@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.next/
+dev-dist/

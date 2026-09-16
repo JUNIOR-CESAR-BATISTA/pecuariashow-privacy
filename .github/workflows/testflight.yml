@@ -1,0 +1,160 @@
+name: TestFlight
+
+# Gera a build assinada e envia para o TestFlight, sem precisar de Mac.
+# Dispara ao publicar uma tag "v..." (pelo site do GitHub, em Releases) ou
+# pelo botão manual quando o workflow estiver na branch padrão.
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: "Versão exibida no TestFlight (ex.: 1.0.0)"
+        required: false
+        default: "1.0.0"
+  push:
+    tags:
+      - "v*"
+      - "V*"
+
+jobs:
+  testflight:
+    name: Enviar para o TestFlight
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Conferir e limpar os segredos
+        env:
+          CHAVE_ID_BRUTO: ${{ secrets.APPSTORE_KEY_ID }}
+          EMISSOR_BRUTO: ${{ secrets.APPSTORE_ISSUER_ID }}
+          TIME_BRUTO: ${{ secrets.APPLE_TEAM_ID }}
+          CHAVE: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          # Espaços e quebras de linha coladas junto do valor quebram tudo
+          # mais adiante, então os identificadores são limpos aqui.
+          CHAVE_ID=$(printf '%s' "$CHAVE_ID_BRUTO" | tr -d '[:space:]')
+          EMISSOR=$(printf '%s' "$EMISSOR_BRUTO" | tr -d '[:space:]')
+          TIME=$(printf '%s' "$TIME_BRUTO" | tr -d '[:space:]')
+
+          erros=""
+          if ! printf '%s' "$CHAVE_ID" | grep -qE '^[A-Za-z0-9]{10}$'; then
+            erros="$erros%0A- APPSTORE_KEY_ID: precisa ser o Key ID da chave, 10 letras e números, algo como 2X9R4KJ8AB. Está com ${#CHAVE_ID} caracteres."
+          fi
+          if ! printf '%s' "$EMISSOR" | grep -qE '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'; then
+            erros="$erros%0A- APPSTORE_ISSUER_ID: precisa ser o Issuer ID, um UUID com traços, algo como 69a6de70-1a2b-47e3-e053-5b8c7c11a4d1. Está com ${#EMISSOR} caracteres."
+          fi
+          if ! printf '%s' "$TIME" | grep -qE '^[A-Za-z0-9]{10}$'; then
+            erros="$erros%0A- APPLE_TEAM_ID: precisa ser o Team ID, 10 letras e números, algo como A1B2C3D4E5. Está com ${#TIME} caracteres."
+          fi
+          if ! printf '%s' "$CHAVE" | grep -q 'BEGIN PRIVATE KEY'; then
+            erros="$erros%0A- APPSTORE_PRIVATE_KEY: precisa ser o conteúdo inteiro do arquivo AuthKey_XXXXXXXXXX.p8, começando com -----BEGIN PRIVATE KEY-----."
+          fi
+          if [ -n "$erros" ]; then
+            echo "::error::Os segredos abaixo não estão com o valor certo:$erros"
+            echo "Nenhum valor é exibido aqui por segurança, só o tamanho."
+            exit 1
+          fi
+          echo "Os quatro segredos estão no formato esperado."
+
+          {
+            echo "CHAVE_ID=$CHAVE_ID"
+            echo "EMISSOR=$EMISSOR"
+            echo "TIME=$TIME"
+            echo "CHAVE_ARQUIVO=$HOME/private_keys/AuthKey_$CHAVE_ID.p8"
+          } >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Escolher o Xcode mais novo do runner
+        run: |
+          XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Definir a versão da build
+        id: versao
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            BRUTA="${GITHUB_REF_NAME}"
+          else
+            BRUTA="${{ github.event.inputs.versao }}"
+          fi
+          VERSAO="${BRUTA#[vV]}"   # o v da frente é opcional
+
+          # Sem tolerância a formato torto, e de propósito. A tag "V.10.14"
+          # já passou por aqui uma vez: o ponto solto era descartado em
+          # silêncio e a build saiu como versão 10.14 no aparelho. Parar aqui
+          # custa dez segundos; publicar a versão errada custa bem mais.
+          if ! echo "$VERSAO" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::A tag '${BRUTA}' não é uma versão válida."
+            echo "::error::Use três números separados por ponto, com um v opcional na frente. Exemplo: v1.0.15"
+            exit 1
+          fi
+          echo "Versão $VERSAO, build ${GITHUB_RUN_NUMBER}"
+          echo "marketing=$VERSAO" >> "$GITHUB_OUTPUT"
+
+      - name: Guardar a chave do App Store Connect
+        env:
+          CHAVE: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$HOME/private_keys" "$HOME/.appstoreconnect/private_keys"
+          # tr remove o retorno de carro que vem quando o .p8 é colado no Windows
+          printf '%s\n' "$CHAVE" | tr -d '\r' > "$CHAVE_ARQUIVO"
+          chmod 600 "$CHAVE_ARQUIVO"
+          cp "$CHAVE_ARQUIVO" "$HOME/.appstoreconnect/private_keys/"
+          if ! grep -q "BEGIN PRIVATE KEY" "$CHAVE_ARQUIVO"; then
+            echo "::error::A chave .p8 parece incompleta. Cole o arquivo inteiro no segredo, incluindo as linhas BEGIN e END."
+            exit 1
+          fi
+          echo "Chave gravada em $CHAVE_ARQUIVO ($(wc -l < "$CHAVE_ARQUIVO") linhas)."
+
+      - name: Preparar o chaveiro do runner
+        run: |
+          # O chaveiro padrão do runner não serve: o certificado precisa ir
+          # para um chaveiro destravado e que não bloqueie no meio do build.
+          security create-keychain -p "ci" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "ci" build.keychain
+          security set-keychain-settings build.keychain
+          security list-keychains -d user -s build.keychain login.keychain-db
+          echo "Chaveiro pronto:"
+          security list-keychains -d user
+
+      - name: Compilar, assinar e enviar
+        env:
+          VERSAO: ${{ steps.versao.outputs.marketing }}
+          BUILD: ${{ github.run_number }}
+          FASTLANE_SKIP_UPDATE_CHECK: "1"
+          FASTLANE_HIDE_CHANGELOG: "1"
+          FASTLANE_DISABLE_COLORS: "1"
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+        run: |
+          set -o pipefail
+          fastlane beta 2>&1 | tee fastlane.log
+
+      - name: Resumir na página do run
+        if: always()
+        run: |
+          {
+            echo "## Envio para o TestFlight"
+            echo "- Versão: ${{ steps.versao.outputs.marketing }}"
+            echo "- Build: ${GITHUB_RUN_NUMBER}"
+            echo ""
+            echo "### Erros"
+            echo '```'
+            grep -E "error:|error |Error Domain|\[!\]|\*\* .* FAILED \*\*" fastlane.log 2>/dev/null | sort -u | head -40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar os logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-testflight
+          path: |
+            fastlane.log
+            build/*.ipa
+          if-no-files-found: ignore
+          retention-days: 14

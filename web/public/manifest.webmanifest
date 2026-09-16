@@ -1,0 +1,17 @@
+{
+  "name": "NovilhaNutri",
+  "short_name": "NovilhaNutri",
+  "description": "Controle nutricional de novilhas em semiconfinamento. Os dados ficam no seu aparelho.",
+  "lang": "pt-BR",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1A13",
+  "theme_color": "#0F1A13",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icone-mascara.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
