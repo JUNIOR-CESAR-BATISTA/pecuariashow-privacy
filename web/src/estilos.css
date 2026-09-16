@@ -92,14 +92,6 @@
     color: transparent;
   }
 
-  /* O cartão claro do cocho, dentro da tela escura. */
-  .cartao-creme {
-    @apply rounded-[20px] bg-creme px-5;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 18px 38px -20px rgba(0, 0, 0, 0.9);
-  }
-
   /* Fio de separação mais discreto que uma borda inteira. */
   .fio {
     @apply h-px w-full bg-realce;
