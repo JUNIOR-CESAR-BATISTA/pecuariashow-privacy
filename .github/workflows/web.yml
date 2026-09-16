@@ -1,0 +1,81 @@
+name: Web
+
+# Compila a versão web, roda os testes e publica no GitHub Pages.
+#
+# Para o endereço ficar no ar, o repositório precisa estar com Pages ligado em
+# Settings > Pages > Source: GitHub Actions. Sem isso o passo de publicação
+# falha dizendo que o ambiente não existe.
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "web/**"
+      - ".github/workflows/web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação por vez, e a mais recente ganha.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    name: Compilar e testar
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Instalar as dependências
+        run: npm ci
+
+      - name: Rodar os testes
+        run: npm run teste
+
+      - name: Compilar
+        run: npm run build
+
+      - name: Resumir na página do run
+        if: always()
+        run: |
+          {
+            echo "## Versão web"
+            echo "- Commit: \`${GITHUB_SHA:0:7}\`"
+            echo "- Arquivos gerados:"
+            echo '```'
+            ls -lh dist 2>/dev/null | tail -n +2 || echo "nada gerado"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preparar para o Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  publicar:
+    name: Publicar
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    steps:
+      - name: Publicar no GitHub Pages
+        id: publicacao
+        uses: actions/deploy-pages@v4

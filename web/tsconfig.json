@@ -15,7 +15,8 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
     "types": [
-      "vite/client"
+      "vite/client",
+      "vite-plugin-pwa/client"
     ]
   },
   "include": [
