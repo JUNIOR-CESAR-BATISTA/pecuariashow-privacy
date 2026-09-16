@@ -13,6 +13,16 @@ export default {
         // relevo sem sombra pesada.
         realce: "rgba(255,255,255,0.055)",
         ouro: "#E4C053",
+        // O cartão claro do cocho: é a peça que se lê no sol do curral.
+        creme: "#F4F0E6",
+        cremeFio: "rgba(22,35,26,0.10)",
+        cremeTexto: "#16231A",
+        cremeSuave: "#7A8A7C",
+        // As mesmas famílias de cor dos alimentos, fechadas para o creme.
+        volumosoEscuro: "#1F5B41",
+        energeticoEscuro: "#C2792B",
+        proteicoEscuro: "#2C5AA8",
+        mineralEscuro: "#8A9A8C",
         ouroClaro: "#F0DCA0",
         ouroEscuro: "#B79A3E",
         verde: "#2E7D57",

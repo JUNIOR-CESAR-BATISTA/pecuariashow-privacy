@@ -20,7 +20,7 @@ export default defineConfig({
       manifest: false,
       registerType: "autoUpdate",
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,webmanifest,woff2}"],
+        globPatterns: ["**/*.{js,css,html,png,webp,webmanifest,woff2}"],
         // Qualquer endereço desconhecido dentro do aplicativo cai no index:
         // é uma tela só, e sem isto recarregar a página daria 404.
         navigateFallback: "/pecuariashow-privacy/index.html",
