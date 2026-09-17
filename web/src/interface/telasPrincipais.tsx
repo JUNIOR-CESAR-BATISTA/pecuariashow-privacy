@@ -353,8 +353,14 @@ function CochoHoje({
                   {item.insumo.nome}
                 </span>
                 <span className="shrink-0 text-right">
+                  {/*
+                   * Três casas aqui, e não as duas de formatarKg: por animal
+                   * o mineral pesa gramas (0,120 kg), e duas casas arredondam
+                   * para o múltiplo de 10 g mais próximo - escondendo o
+                   * quanto realmente vai no cocho.
+                   */}
                   <span className="block font-display text-[17px] leading-none tabular-nums text-texto">
-                    {formatarKg(porAnimal)}
+                    {numero(porAnimal, 3)} kg
                   </span>
                   <span className="mt-1 block text-[11px] tabular-nums text-textoTenue">
                     {numero(porAnimal * animais, 0)} kg no lote
