@@ -42,7 +42,9 @@ import {
   precoArrobaEquilibrio,
   receitaPorAnimal,
   receitaTotal,
+  resumosPorEtapa,
   retornoSobreInvestimento,
+  temDuasEtapas,
   temPrecos,
   tituloPeriodo,
   viavel,
@@ -98,6 +100,24 @@ export function gerar(relatorio: RelatorioPlanejamento): string {
     `Conversão alimentar: ${numero(conversaoAlimentar(relatorio))} kg MS por kg de ganho`,
   );
   linhas.push("");
+
+  if (temDuasEtapas(relatorio)) {
+    linhas.push("ETAPAS DA DIETA");
+    for (const etapa of resumosPorEtapa(relatorio)) {
+      linhas.push(
+        `${etapa.nome}: ${formatarKg(etapa.pesoInicial)} a ${formatarKg(etapa.pesoFinal)}, ` +
+          `${numero(etapa.ganhoDiario, 3)} kg/dia, ${numero(etapa.dias, 0)} dias`,
+      );
+      for (const total of etapa.totais) {
+        const conversao = consumoConversao(total);
+        let texto = `  - ${total.insumo.nome}: ${numero(total.kgMateriaNatural, 0)} kg`;
+        if (conversao) texto += ` = ${descricaoCompra(conversao)}`;
+        linhas.push(texto);
+      }
+      if (etapa.custo > 0) linhas.push(`  Custo da etapa: ${moeda(etapa.custo)}`);
+    }
+    linhas.push("");
+  }
 
   linhas.push("INSUMOS DO CICLO COMPLETO");
   for (const total of relatorio.totais) {

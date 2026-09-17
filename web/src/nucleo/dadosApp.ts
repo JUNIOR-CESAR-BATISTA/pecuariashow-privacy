@@ -20,7 +20,9 @@
  */
 import { CATALOGO_PADRAO } from "./catalogoInsumos.js";
 import type { CicloEncerrado } from "./cicloEncerrado.js";
+import type { CategoriaAnimal } from "./classificacoes.js";
 import { RESTRICOES_PADRAO } from "./formuladorRacao.js";
+import { RESTRICOES_ENGORDA, type DietaEtapa, type PlanoEtapas } from "./lote.js";
 import type { Insumo } from "./insumo.js";
 import type { Lote } from "./lote.js";
 
@@ -126,6 +128,28 @@ function lerNumero(valor: unknown, padrao: number): number {
   return typeof valor === "number" && Number.isFinite(valor) ? valor : padrao;
 }
 
+function lerPlano(bruto: Bruto): PlanoEtapas {
+  const valor = bruto["planoEtapas"];
+  if (valor === "automatico" || valor === "duas" || valor === "soCrescimento" || valor === "soEngorda") {
+    return valor;
+  }
+  // Versão anterior gravava um booleano; antes dela, não havia campo nenhum.
+  return bruto["duasEtapas"] === true ? "duas" : "soCrescimento";
+}
+
+function lerCategoriaAnimal(valor: unknown): CategoriaAnimal {
+  return valor === "machoCastrado" || valor === "machoInteiro" ? valor : "femea";
+}
+
+function lerEngorda(valor: unknown): DietaEtapa {
+  const bruto = (typeof valor === "object" && valor !== null ? valor : {}) as Bruto;
+  return {
+    ...(bruto as unknown as DietaEtapa),
+    ganhoMetaDiario: lerNumero(bruto["ganhoMetaDiario"], 1.1),
+    restricoes: { ...RESTRICOES_ENGORDA, ...(bruto["restricoes"] as object | undefined) },
+  };
+}
+
 function lerLote(bruto: Bruto): Lote {
   return {
     ...(bruto as unknown as Lote),
@@ -133,7 +157,16 @@ function lerLote(bruto: Bruto): Lote {
     // Campos de compra e venda: chegaram depois, e um arquivo antigo não os
     // tem. Sem estes padrões eles voltariam como undefined e as contas de
     // resultado dariam NaN em vez de zero.
+    // Antes da categoria, tudo era calculado como fêmea - é o padrão que
+    // reproduz o que o arquivo antigo mostrava.
+    categoriaAnimal: lerCategoriaAnimal(bruto["categoriaAnimal"]),
     modoCompra: bruto["modoCompra"] === "porCabeca" ? "porCabeca" : "porArroba",
+    // Arquivo antigo abre com o plano que ele de fato tinha, nunca no
+    // automático: um lote de recria gravado antes desta versão viraria de
+    // uma dieta para duas sozinho, e a projeção dele mudaria do nada.
+    planoEtapas: lerPlano(bruto),
+    pesoTrocaEtapa: lerNumero(bruto["pesoTrocaEtapa"], 330),
+    engorda: lerEngorda(bruto["engorda"]),
     precoCompra: lerNumero(bruto["precoCompra"], 0),
     precoArrobaVenda: lerNumero(bruto["precoArrobaVenda"], 0),
     restricoes: { ...RESTRICOES_PADRAO, ...(bruto["restricoes"] as object | undefined) },

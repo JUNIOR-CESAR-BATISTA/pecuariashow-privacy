@@ -15,7 +15,7 @@ import type { CicloEncerrado } from "../nucleo/cicloEncerrado.js";
 import { dadosIniciais, type DadosApp } from "../nucleo/dadosApp.js";
 import { RESTRICOES_PADRAO, type SelecaoInsumos } from "../nucleo/formuladorRacao.js";
 import type { Insumo } from "../nucleo/insumo.js";
-import { criarLote, type Lote } from "../nucleo/lote.js";
+import { criarLote, dietaAtual, selecaoDaDieta, type Lote } from "../nucleo/lote.js";
 
 const { deposito, persistente } = depositoPadrao();
 const repositorio = new Repositorio(deposito);
@@ -161,12 +161,13 @@ export function loteNovo(dados: DadosApp): Lote {
   });
 }
 
-/** Os alimentos escolhidos no lote, se todos os obrigatórios existirem. */
+/**
+ * Os alimentos da dieta que vale hoje.
+ *
+ * Com a segunda etapa ligada, um lote que já passou do peso de virada come a
+ * dieta de engorda - então a tela de hoje tem de perguntar pela etapa, e não
+ * pelos campos de crescimento do lote.
+ */
 export function selecaoDoLote(lote: Lote, insumos: readonly Insumo[]): SelecaoInsumos | null {
-  const achar = (id?: string) => insumos.find((i) => i.id === id);
-  const volumoso = achar(lote.volumosoID);
-  const energetico = achar(lote.energeticoID);
-  const proteico = achar(lote.proteicoID);
-  if (!volumoso || !energetico || !proteico) return null;
-  return { volumoso, energetico, proteico, mineral: achar(lote.mineralID) };
+  return selecaoDaDieta(dietaAtual(lote), insumos);
 }

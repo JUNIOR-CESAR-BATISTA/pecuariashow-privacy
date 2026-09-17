@@ -13,10 +13,12 @@ import {
 } from "../nucleo/analisadorHistorico.js";
 import {
   CATEGORIAS,
+  CATEGORIAS_ANIMAL,
   FASES,
   GRUPOS,
   MODOS_COMPRA,
   SISTEMAS,
+  TODAS_AS_CATEGORIAS_ANIMAL,
   TODAS_AS_FASES,
   TODOS_OS_GRUPOS,
   TODOS_OS_MODOS_COMPRA,
@@ -43,9 +45,14 @@ import {
   arrobasCompra,
   criarPesagem,
   custoCompraPorAnimal,
+  NOME_PLANO,
   pesoAtual,
+  planoResolvido,
+  TODOS_OS_PLANOS,
+  type DietaEtapa,
   type Lote,
 } from "../nucleo/lote.js";
+import type { RestricoesFormulacao } from "../nucleo/formuladorRacao.js";
 import {
   Aviso,
   Campo,
@@ -174,6 +181,28 @@ function EditorLote({
   const mudar = <C extends keyof Lote>(campo: C, valor: Lote[C]) =>
     setRascunho((r) => ({ ...r, [campo]: valor }));
 
+  const mudarEngorda = <C extends keyof DietaEtapa>(campo: C, valor: DietaEtapa[C]) =>
+    setRascunho((r) => ({ ...r, engorda: { ...r.engorda, [campo]: valor } }));
+
+  const mudarRestricaoEngorda = (campo: keyof RestricoesFormulacao, valor: number) =>
+    setRascunho((r) => ({
+      ...r,
+      engorda: { ...r.engorda, restricoes: { ...r.engorda.restricoes, [campo]: valor } },
+    }));
+
+  /** Percentual digitado vira fração, presa entre 0 e 1. */
+  const limitarFracao = (percentual: number) => Math.min(Math.max(percentual / 100, 0), 1);
+
+  const viradaValida =
+    rascunho.pesoTrocaEtapa > rascunho.pesoMedioInicial &&
+    rascunho.pesoTrocaEtapa < rascunho.pesoAlvoAbate;
+
+  const plano = planoResolvido(rascunho);
+  const duasEtapas = plano === "duas";
+  const temEngorda = plano !== "soCrescimento";
+  /** Sem etapa de crescimento, o que se herda vem do cadastro do lote. */
+  const textoHeranca = duasEtapas ? "O mesmo do crescimento" : "O mesmo do cadastro";
+
   const porCategoria = (categoria: CategoriaInsumo) =>
     dados.insumos
       .filter((i) => i.categoria === categoria)
@@ -218,6 +247,19 @@ function EditorLote({
           opcoes={TODAS_AS_FASES.map((f) => ({ valor: f, texto: FASES[f].nome }))}
         />
         <Selecao
+          rotulo="Categoria"
+          valor={rascunho.categoriaAnimal}
+          aoMudar={(v) => mudar("categoriaAnimal", v)}
+          opcoes={TODAS_AS_CATEGORIAS_ANIMAL.map((c) => ({
+            valor: c,
+            texto: CATEGORIAS_ANIMAL[c].nome,
+          }))}
+        />
+        <p className="-mt-1 text-xs text-textoSuave">
+          {CATEGORIAS_ANIMAL[rascunho.categoriaAnimal].descricao} O NRC usa equações de energia
+          diferentes para cada uma, então isto muda o NDT e a PB da dieta.
+        </p>
+        <Selecao
           rotulo="Grupo genético"
           valor={rascunho.grupoGenetico}
           aoMudar={(v) => mudar("grupoGenetico", v)}
@@ -229,6 +271,118 @@ function EditorLote({
           aoMudar={(v) => mudar("sistema", v)}
           opcoes={TODOS_OS_SISTEMAS.map((s) => ({ valor: s, texto: SISTEMAS[s].nome }))}
         />
+      </div>
+
+      <div className="cartao space-y-3">
+        <TituloSecao texto="Etapas da dieta" />
+        <Selecao
+          rotulo="Plano do ciclo"
+          valor={rascunho.planoEtapas}
+          aoMudar={(v) => mudar("planoEtapas", v)}
+          opcoes={TODOS_OS_PLANOS.map((pl) => ({ valor: pl, texto: NOME_PLANO[pl] }))}
+        />
+        <p className="-mt-1 text-xs text-textoSuave">
+          {rascunho.planoEtapas === "automatico"
+            ? rascunho.fase === "terminacao"
+              ? "Lote em terminação: só engorda daqui ao abate."
+              : `Lote em ${FASES[rascunho.fase].nome.toLowerCase()}: ainda cresce, então faz recria e depois engorda.`
+            : NOME_PLANO[rascunho.planoEtapas] + "."}
+        </p>
+
+        {duasEtapas ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Campo
+                rotulo="Vira a dieta em"
+                sufixo="kg"
+                valor={rascunho.pesoTrocaEtapa}
+                aoMudar={(v) => mudar("pesoTrocaEtapa", Math.max(0, paraNumero(v, 0)))}
+              />
+              <Campo
+                rotulo="Ganho na engorda"
+                sufixo="kg/dia"
+                valor={rascunho.engorda.ganhoMetaDiario}
+                aoMudar={(v) => mudarEngorda("ganhoMetaDiario", Math.max(0, paraNumero(v, 0)))}
+              />
+            </div>
+
+            <p className="text-xs text-textoSuave">
+              {viradaValida
+                ? `Crescimento de ${formatarKg(rascunho.pesoMedioInicial)} a ` +
+                  `${formatarKg(rascunho.pesoTrocaEtapa)} a ${numero(rascunho.ganhoMetaDiario, 3)} kg/dia, ` +
+                  `depois engorda até ${formatarKg(rascunho.pesoAlvoAbate)} a ` +
+                  `${numero(rascunho.engorda.ganhoMetaDiario, 3)} kg/dia.`
+                : "O peso de virada está fora do intervalo do ciclo, então o lote faz uma etapa só."}
+            </p>
+          </>
+        ) : null}
+
+        {/*
+         * Os limites da engorda aparecem sempre que existe engorda, inclusive
+         * no ciclo que só tem ela. São eles que formulam a ração: escondidos,
+         * seriam números decidindo a dieta sem ninguém poder ver nem mudar.
+         */}
+        {temEngorda ? (
+          <>
+            {duasEtapas ? null : (
+              <p className="text-xs text-textoSuave">
+                {`Engorda de ${formatarKg(rascunho.pesoMedioInicial)} a ` +
+                  `${formatarKg(rascunho.pesoAlvoAbate)} a ` +
+                  `${numero(rascunho.ganhoMetaDiario, 3)} kg/dia, na meta de ganho do lote.`}
+              </p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <Campo
+                rotulo="Volumoso mín. na engorda"
+                sufixo="%"
+                valor={numero(rascunho.engorda.restricoes.volumosoMinimo * 100, 0)}
+                aoMudar={(v) =>
+                  mudarRestricaoEngorda("volumosoMinimo", limitarFracao(paraNumero(v, 25)))
+                }
+              />
+              <Campo
+                rotulo="Volumoso máx. na engorda"
+                sufixo="%"
+                valor={numero(rascunho.engorda.restricoes.volumosoMaximo * 100, 0)}
+                aoMudar={(v) =>
+                  mudarRestricaoEngorda("volumosoMaximo", limitarFracao(paraNumero(v, 55)))
+                }
+              />
+            </div>
+
+            <Campo
+              rotulo="Mineral por animal na engorda"
+              sufixo="g/dia"
+              valor={rascunho.engorda.restricoes.mineralGramasDia}
+              aoMudar={(v) =>
+                mudarRestricaoEngorda("mineralGramasDia", Math.max(0, paraNumero(v, 0)))
+              }
+            />
+
+            <p className="rotulo-secao pt-1">Alimentos da engorda</p>
+            <p className="text-xs text-textoSuave">
+              O que ficar em &quot;{textoHeranca}&quot; é herdado. Troque só o que muda — quem passa
+              o pasto para silagem, por exemplo.
+            </p>
+            {(
+              [
+                ["volumosoID", "Volumoso", "volumoso"],
+                ["energeticoID", "Energético", "energetico"],
+                ["proteicoID", "Proteico", "proteico"],
+                ["mineralID", "Mineral", "mineral"],
+              ] as const
+            ).map(([campo, rotulo, categoria]) => (
+              <Selecao
+                key={campo}
+                rotulo={rotulo}
+                valor={rascunho.engorda[campo] ?? ""}
+                aoMudar={(v) => mudarEngorda(campo, v === "" ? undefined : v)}
+                opcoes={[{ valor: "", texto: textoHeranca }, ...porCategoria(categoria)]}
+              />
+            ))}
+          </>
+        ) : null}
       </div>
 
       <div className="cartao space-y-3">

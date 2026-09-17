@@ -1,5 +1,5 @@
 /**
- * Motor de exigências nutricionais para novilhas em crescimento.
+ * Motor de exigências nutricionais para bovinos em crescimento.
  *
  * Porte de `Core/Calculo/MotorExigencias.swift`, do antigo aplicativo de
  * iPhone, equação por equação. Segue o
@@ -7,13 +7,19 @@
  * Requirements of Beef Cattle), com ajustes de grupo genético e de atividade
  * usuais em condições brasileiras.
  *
+ * As equações de energia retida e o peso de referência vêm da categoria de
+ * sexo do lote, em `CATEGORIAS_ANIMAL`: o NRC publica fórmulas distintas para
+ * fêmea e para macho, não um fator de correção sobre uma delas.
+ *
  * As constantes ficam reunidas em `CONSTANTES` para facilitar auditoria e
  * calibração, e os testes fixam os mesmos números esperados da versão Swift.
  */
 import {
+  CATEGORIAS_ANIMAL,
   FASES,
   GRUPOS,
   SISTEMAS,
+  type CategoriaAnimal,
   type FaseAnimal,
   type GrupoGenetico,
   type SistemaCriacao,
@@ -25,6 +31,8 @@ export interface PerfilAnimal {
   fase: FaseAnimal;
   grupoGenetico: GrupoGenetico;
   sistema: SistemaCriacao;
+  /** Fêmea, macho castrado ou macho inteiro. Muda as equações de energia. */
+  categoria: CategoriaAnimal;
   /** Peso vivo em que o animal atinge o acabamento. */
   pesoFinal: number;
   /** Calibração do consumo previsto (1,0 = previsão padrão). */
@@ -35,6 +43,7 @@ export function perfilAnimal(entrada: Partial<PerfilAnimal> & { pesoVivo: number
   return {
     grupoGenetico: "zebuino",
     sistema: "semiconfinamento",
+    categoria: "femea",
     pesoFinal: 430,
     ajusteConsumo: 1.0,
     ...entrada,
@@ -87,10 +96,11 @@ export const CONSTANTES = {
   fatorGanhoCorpoVazio: 0.956,
   /** Exigência basal de energia líquida de mantença (Mcal/kg PCJ^0,75). */
   energiaMantencaBase: 0.077,
-  /** Coeficientes de energia retida para fêmeas em crescimento. */
-  energiaRetidaA: 0.0783,
-  energiaRetidaB: 1.119,
-  /** Peso de referência do animal padrão com 28% de gordura corporal. */
+  /**
+   * Peso do animal de referência, para o grau de maturidade. Não muda por
+   * sexo: o tamanho adulto de cada categoria entra pelo peso de acabamento
+   * informado no lote, e ajustar os dois contaria a diferença duas vezes.
+   */
   pesoReferencia: 462.0,
   /** Proteína metabolizável de mantença (g/kg PCJ^0,75). */
   proteinaMantenca: 3.8,
@@ -154,6 +164,7 @@ export function energiaMantenca(perfil: PerfilAnimal): number {
   return (
     CONSTANTES.energiaMantencaBase *
     GRUPOS[perfil.grupoGenetico].fatorMantenca *
+    CATEGORIAS_ANIMAL[perfil.categoria].fatorMantenca *
     SISTEMAS[perfil.sistema].fatorAtividade *
     pesoJejum(perfil) ** 0.75
   );
@@ -164,9 +175,9 @@ export function energiaRetida(perfil: PerfilAnimal, ganhoDiario: number): number
   const ganhoCorpoVazio = CONSTANTES.fatorGanhoCorpoVazio * Math.max(ganhoDiario, 0);
   if (ganhoCorpoVazio <= 0) return 0;
   return (
-    CONSTANTES.energiaRetidaA *
+    CATEGORIAS_ANIMAL[perfil.categoria].energiaRetidaA *
     corpoVazioEquivalente(perfil) ** 0.75 *
-    ganhoCorpoVazio ** CONSTANTES.energiaRetidaB
+    ganhoCorpoVazio ** CATEGORIAS_ANIMAL[perfil.categoria].energiaRetidaB
   );
 }
 
@@ -223,9 +234,11 @@ export function densidadeAlvo(perfil: PerfilAnimal, ganhoDiario: number): number
 /** Inverte a equação de energia retida para obter o ganho de peso vivo. */
 export function ganhoAPartirDaEnergiaRetida(perfil: PerfilAnimal, energia: number): number {
   if (energia <= 0) return 0;
-  const base = CONSTANTES.energiaRetidaA * corpoVazioEquivalente(perfil) ** 0.75;
+  const base =
+    CATEGORIAS_ANIMAL[perfil.categoria].energiaRetidaA * corpoVazioEquivalente(perfil) ** 0.75;
   if (base <= 0) return 0;
-  const ganhoCorpoVazio = (energia / base) ** (1 / CONSTANTES.energiaRetidaB);
+  const ganhoCorpoVazio =
+    (energia / base) ** (1 / CATEGORIAS_ANIMAL[perfil.categoria].energiaRetidaB);
   return ganhoCorpoVazio / CONSTANTES.fatorGanhoCorpoVazio;
 }
 

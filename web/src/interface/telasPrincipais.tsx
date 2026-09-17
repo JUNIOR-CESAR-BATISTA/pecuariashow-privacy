@@ -30,7 +30,18 @@ import {
   type ComposicaoRacao,
 } from "../nucleo/formuladorRacao.js";
 import { converterPelaEmbalagem } from "../nucleo/conversorSacas.js";
-import { ganhoRestante, perfilAtual, pesoAtual, type Lote } from "../nucleo/lote.js";
+import {
+  dietaAtual,
+  dietaDaEtapa,
+  etapaNoPeso,
+  ganhoRestante,
+  NOME_ETAPA,
+  perfilAtual,
+  planoResolvido,
+  pesoAtual,
+  selecaoDaDieta,
+  type Lote,
+} from "../nucleo/lote.js";
 import { calcular } from "../nucleo/motorExigencias.js";
 import {
   arrobasProduzidasPorAnimal,
@@ -48,6 +59,8 @@ import {
   margemSobreReceita,
   precoArrobaEquilibrio,
   projetar,
+  resumosPorEtapa,
+  temDuasEtapas,
   receitaTotal,
   retornoSobreInvestimento,
   temPrecos,
@@ -102,11 +115,16 @@ function useCalculo(lote: Lote | undefined) {
   const { dados } = useApp();
   return useMemo(() => {
     if (!lote) return null;
-    const exigencia = calcular(perfilAtual(lote), lote.ganhoMetaDiario);
-    const selecao = selecaoDoLote(lote, dados.insumos);
-    const racao = selecao ? formular(exigencia, selecao, lote.restricoes) : null;
-    const relatorio = selecao ? projetar(lote, selecao) : null;
-    return { exigencia, selecao, racao, relatorio };
+    // Tudo sai da etapa em que o lote está hoje: meta de ganho, alimentos e
+    // limites de volumoso mudam da recria para a engorda.
+    const dieta = dietaAtual(lote);
+    const exigencia = calcular(perfilAtual(lote), dieta.ganhoMetaDiario);
+    const selecao = selecaoDaDieta(dieta, dados.insumos);
+    const racao = selecao ? formular(exigencia, selecao, dieta.restricoes) : null;
+    const daEngorda = selecaoDaDieta(dietaDaEtapa(lote, "engorda"), dados.insumos);
+    const relatorio =
+      selecao !== null ? projetar(lote, selecao, daEngorda ?? selecao) : null;
+    return { exigencia, selecao, racao, relatorio, etapa: etapaNoPeso(lote, pesoAtual(lote)) };
   }, [lote, dados.insumos]);
 }
 
@@ -190,8 +208,11 @@ function Capa({
             {lote.nome}
           </p>
           <p className="mt-1 truncate text-xs text-[#C7D3CA]">
-            {lote.quantidadeAnimais} novilhas · {FASES[lote.fase].nome} ·{" "}
-            {numero(lote.ganhoMetaDiario, 3)} kg/d
+            {lote.quantidadeAnimais} novilhas · {FASES[lote.fase].nome}
+            {planoResolvido(lote) === "duas"
+              ? ` · ${NOME_ETAPA[etapaNoPeso(lote, pesoAtual(lote))]}`
+              : ""} ·{" "}
+            {numero(dietaAtual(lote).ganhoMetaDiario, 3)} kg/d
           </p>
         </div>
       ) : null}
@@ -552,6 +573,67 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
 // -------------------------------------------------------------------- Abate
 
 /**
+ * As duas etapas do ciclo, lado a lado.
+ *
+ * Só aparece quando a virada cai mesmo dentro deste ciclo. Cada etapa mostra
+ * o que ela consome de cada produto, porque é assim que se compra: a silagem
+ * da engorda não entra na mesma nota que o pasto da recria.
+ */
+function EtapasDoCiclo({ relatorio }: { relatorio: RelatorioPlanejamento }) {
+  if (!temDuasEtapas(relatorio)) return null;
+
+  return (
+    <section className="space-y-4">
+      <TituloSecao texto="Etapas do ciclo" />
+      {resumosPorEtapa(relatorio).map((etapa) => (
+        <div key={etapa.etapa} className="cartao space-y-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-display text-lg leading-none">{etapa.nome}</p>
+            <Etiqueta texto={`${numero(etapa.ganhoDiario, 3)} kg/d`} />
+          </div>
+          <p className="text-xs text-textoSuave">
+            {formatarKg(etapa.pesoInicial)} a {formatarKg(etapa.pesoFinal)} ·{" "}
+            {numero(etapa.dias, 0)} dias · {duracao(etapa.dias)}
+          </p>
+
+          <div className="border-t border-realce pt-3">
+            {etapa.totais.map((total) => {
+              const conversao = consumoConversao(total);
+              return (
+                <div key={total.insumo.id} className="py-1.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span
+                      className={`min-w-0 flex-1 truncate text-sm ${CORES_CATEGORIA[total.insumo.categoria]}`}
+                    >
+                      {total.insumo.nome}
+                    </span>
+                    <span className="shrink-0 text-sm font-bold tabular-nums">
+                      {numero(total.kgMateriaNatural, 0)} kg
+                    </span>
+                  </div>
+                  <p className="text-xs text-textoTenue">
+                    {conversao
+                      ? `${descricaoSacas(conversao)} · comprar ${descricaoCompra(conversao)}`
+                      : "fornecido no pastejo"}
+                    {total.custo > 0 ? ` · ${moeda(total.custo)}` : ""}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {etapa.custo > 0 ? (
+            <div className="border-t border-realce pt-2">
+              <LinhaDado rotulo="Custo da etapa" valor={moeda(etapa.custo)} />
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/**
  * Previsão de resultado do ciclo: compra, dieta e venda.
  *
  * Fica junto do planejamento porque depende dele - é a projeção que responde
@@ -769,6 +851,8 @@ export function TelaAbate({ irPara }: { irPara: (aba: string) => void }) {
       ) : null}
 
       <ResultadoPrevisto relatorio={relatorio} irPara={irPara} />
+
+      <EtapasDoCiclo relatorio={relatorio} />
 
       <div className="cartao space-y-3">
         <TituloSecao texto="Períodos" />

@@ -50,7 +50,8 @@ cima das abas, a partir do cabeçalho do início e dos atalhos.
 
 **Exigências nutricionais.** Sistema de energia líquida e proteína metabolizável
 (NRC para gado de corte), com coeficientes de fêmeas em crescimento e ajustes de
-grupo genético (zebuíno, cruzado, taurino) e de atividade (confinamento,
+grupo genético (zebuíno, cruzado, taurino), de categoria de sexo (fêmea, macho castrado,
+macho inteiro) e de atividade (confinamento,
 semiconfinamento, pasto). O peso equivalente corrige o grau de maturidade: uma
 novilha precoce exige mais energia por quilo ganho no mesmo peso.
 

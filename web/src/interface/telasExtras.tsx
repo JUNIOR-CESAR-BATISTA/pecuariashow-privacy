@@ -79,15 +79,15 @@ export function TelaMetodologia() {
       <Bloco titulo="Energia">
         <Metodo
           titulo="Mantença"
-          corpo="ELm = 0,077 x fator do grupo genético x fator de atividade x PCJ elevado a 0,75. PCJ é o peso vivo de jejum (96% do peso vivo)."
+          corpo="ELm = 0,077 x fator do grupo genético x fator da categoria x fator de atividade x PCJ elevado a 0,75. PCJ é o peso vivo de jejum (96% do peso vivo). O fator da categoria é 1,00 para fêmea e macho castrado e 1,15 para macho inteiro."
         />
         <Metodo
           titulo="Ganho"
-          corpo="ER = 0,0783 x PCVZ equivalente elevado a 0,75 x ganho de corpo vazio elevado a 1,119. São os coeficientes de fêmeas em crescimento, que depositam mais gordura por quilo ganho que os machos."
+          corpo="ER = a x PCVZ equivalente elevado a 0,75 x ganho de corpo vazio elevado a b. O NRC publica um par de coeficientes por sexo, não um fator de correção: fêmea usa a = 0,0783 e b = 1,119; macho, castrado ou inteiro, usa a = 0,0635 e b = 1,097. A fêmea deposita mais gordura por quilo ganho no mesmo grau de maturidade, e por isso exige mais energia."
         />
         <Metodo
           titulo="Peso equivalente"
-          corpo="O peso é corrigido pelo grau de maturidade: peso de jejum x 462 / peso de acabamento em jejum. Novilhas mais precoces exigem mais energia por quilo de ganho no mesmo peso."
+          corpo="O peso é corrigido pelo grau de maturidade: peso de jejum x 462 / peso de acabamento em jejum. O peso de referência é o mesmo para as três categorias de propósito - o tamanho adulto de cada uma já entra pelo peso de acabamento que você informa no lote, e ajustar os dois contaria a mesma diferença duas vezes."
         />
         <Metodo
           titulo="NDT"
@@ -100,6 +100,10 @@ export function TelaMetodologia() {
         <Metodo
           titulo="Ganho"
           corpo="A proteína líquida por quilo de ganho cai conforme a energia retida sobe: 268 menos 29,4 vezes a energia retida por quilo de ganho. A eficiência de uso da proteína metabolizável vai de 0,834 menos 0,00114 vezes o peso equivalente, com piso de 0,492."
+        />
+        <Metodo
+          titulo="Efeito da categoria"
+          corpo="A proteína líquida por quilo de ganho cai conforme a energia retida sobe. Como o macho retém menos energia que a fêmea no mesmo ganho, ele pede menos NDT e mais proteína - o erro de rodar um garrote como fêmea vai para os dois lados ao mesmo tempo."
         />
         <Metodo
           titulo="Da PM para a PB"
@@ -127,6 +131,21 @@ export function TelaMetodologia() {
         <Metodo
           titulo="Períodos"
           corpo="O ciclo é dividido em períodos. Em cada um as exigências são recalculadas no peso médio do intervalo e a ração é refeita, por isso o consumo cresce ao longo do ciclo."
+        />
+      </Bloco>
+
+      <Bloco titulo="Etapas da dieta">
+        <Metodo
+          titulo="Quem tem duas etapas"
+          corpo="No plano automático a fase do lote decide. Desmama, recria inicial e recria final ainda têm crescimento pela frente: fazem uma dieta de crescimento até o peso de virada e uma de engorda daí ao abate. Lote que entra em terminação só tem engorda, e faz o ciclo inteiro numa dieta só."
+        />
+        <Metodo
+          titulo="Onde a virada cai"
+          corpo="A virada vale quando o peso de troca está entre o peso de hoje e o peso de abate. Abaixo dele o lote já entrou em engorda; acima, a engorda não chega a começar. Nos dois casos o ciclo tem uma etapa só, e nenhum período atravessa a virada: ele é cortado exatamente no peso de troca."
+        />
+        <Metodo
+          titulo="O que muda de uma para a outra"
+          corpo="A meta de ganho, os limites de volumoso e, se você quiser, os alimentos. O que ficar em branco na engorda é herdado do crescimento. Os produtos de cada etapa são somados separados, porque é assim que se compra."
         />
       </Bloco>
 

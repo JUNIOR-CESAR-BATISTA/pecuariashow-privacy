@@ -22,8 +22,14 @@ import {
   custoCompraLote as compraDoLote,
   custoCompraPorAnimal as compraPorCabeca,
   dataReferencia,
+  dietaDaEtapa,
+  etapaNoPeso,
+  NOME_ETAPA,
   perfilParaPeso,
   pesoAtual,
+  planoResolvido,
+  trocaDentroDoCiclo,
+  type EtapaDieta,
   type Lote,
 } from "./lote.js";
 import { calcular, type ExigenciaDiaria } from "./motorExigencias.js";
@@ -54,6 +60,10 @@ export interface PeriodoPlano {
   composicao: ComposicaoRacao;
   consumos: ConsumoInsumo[];
   animais: number;
+  /** Qual dieta valeu neste período. */
+  etapa: EtapaDieta;
+  /** A meta de ganho da etapa, que muda da recria para a engorda. */
+  ganhoDiario: number;
 }
 
 export const tituloPeriodo = (p: PeriodoPlano) => `Período ${p.id}`;
@@ -125,6 +135,63 @@ export function custoPorKgGanho(r: RelatorioPlanejamento): number {
   const ganho = ganhoTotalLote(r);
   return ganho > 0 ? custoTotal(r) / ganho : 0;
 }
+
+// ------------------------------------------------------- resumo por etapa
+
+/** O que aconteceu numa etapa de dieta do ciclo. */
+export interface ResumoEtapa {
+  etapa: EtapaDieta;
+  nome: string;
+  dias: number;
+  pesoInicial: number;
+  pesoFinal: number;
+  ganhoDiario: number;
+  periodos: PeriodoPlano[];
+  /** Os produtos consumidos nesta etapa, insumo a insumo. */
+  totais: ConsumoInsumo[];
+  custo: number;
+  materiaSeca: number;
+  materiaNatural: number;
+}
+
+/**
+ * Agrupa os períodos por etapa de dieta.
+ *
+ * Sai de `periodos`, não de campo guardado: assim os totais por etapa nunca
+ * podem discordar dos totais do ciclo, porque são a mesma soma feita em
+ * pedaços. Um ciclo de etapa única devolve uma entrada só.
+ */
+export function resumosPorEtapa(r: RelatorioPlanejamento): ResumoEtapa[] {
+  const ordem: EtapaDieta[] = ["crescimento", "engorda"];
+  return ordem.flatMap((etapa) => {
+    const periodos = r.periodos.filter((p) => p.etapa === etapa);
+    if (periodos.length === 0) return [];
+
+    const primeiro = periodos[0]!;
+    const ultimo = periodos[periodos.length - 1]!;
+    const dias = periodos.reduce((soma, p) => soma + p.dias, 0);
+    const ganho = ultimo.pesoFinal - primeiro.pesoInicial;
+
+    return [
+      {
+        etapa,
+        nome: NOME_ETAPA[etapa],
+        dias,
+        pesoInicial: primeiro.pesoInicial,
+        pesoFinal: ultimo.pesoFinal,
+        ganhoDiario: dias > 0 ? ganho / dias : 0,
+        periodos,
+        totais: consolidarTotais(periodos),
+        custo: periodos.reduce((soma, p) => soma + custoPeriodo(p), 0),
+        materiaSeca: periodos.reduce((soma, p) => soma + materiaSecaPeriodo(p), 0),
+        materiaNatural: periodos.reduce((soma, p) => soma + materiaNaturalPeriodo(p), 0),
+      },
+    ];
+  });
+}
+
+/** Se o ciclo projetado chegou a ter as duas etapas. */
+export const temDuasEtapas = (r: RelatorioPlanejamento) => resumosPorEtapa(r).length > 1;
 
 // ------------------------------------------------- previsão de resultado
 //
@@ -292,25 +359,65 @@ export function consolidarTotais(periodos: readonly PeriodoPlano[]): ConsumoInsu
   });
 }
 
-export function projetar(lote: Lote, selecao: SelecaoInsumos): RelatorioPlanejamento {
+/**
+ * Projeta o ciclo até o abate.
+ *
+ * `selecaoEngorda` só é usada quando o lote tem a segunda etapa ligada e a
+ * virada cai dentro deste ciclo; sem ela, a engorda come os mesmos alimentos
+ * do crescimento, que é o padrão de quem só muda a proporção.
+ */
+export function projetar(
+  lote: Lote,
+  selecao: SelecaoInsumos,
+  selecaoEngorda: SelecaoInsumos = selecao,
+): RelatorioPlanejamento {
   const alertas: string[] = [];
 
   if (!(lote.quantidadeAnimais > 0)) {
     return relatorioVazio(lote, ["Informe a quantidade de animais do lote."]);
   }
-  if (!(lote.ganhoMetaDiario > 0)) {
-    return relatorioVazio(lote, [
-      "Defina uma meta de ganho maior que zero para projetar o abate.",
-    ]);
-  }
-
   const pesoInicial = pesoAtual(lote);
   if (!(lote.pesoAlvoAbate > pesoInicial)) {
     return relatorioVazio(lote, ["O lote já atingiu o peso alvo de abate."]);
   }
 
-  const ganho = lote.ganhoMetaDiario;
-  const diasTotais = (lote.pesoAlvoAbate - pesoInicial) / ganho;
+  const dietaDe = (etapa: EtapaDieta) => dietaDaEtapa(lote, etapa);
+  const troca = trocaDentroDoCiclo(lote, pesoInicial);
+
+  /**
+   * A meta de ganho é conferida na etapa que o ciclo de fato usa. Um lote em
+   * terminação anda pela meta da engorda, então cobrar a do crescimento dele
+   * barraria uma projeção correta - e deixaria passar a que divide por zero.
+   */
+  for (const etapa of troca
+    ? (["crescimento", "engorda"] as const)
+    : ([etapaNoPeso(lote, pesoInicial)] as const)) {
+    if (!(dietaDe(etapa).ganhoMetaDiario > 0)) {
+      // Nomeia o campo que está vazio: "da engorda" só quando é mesmo o campo
+      // da segunda etapa, que só existe no ciclo de duas.
+      const daSegunda = etapa === "engorda" && planoResolvido(lote) === "duas";
+      return relatorioVazio(lote, [
+        `Defina a meta de ganho ${daSegunda ? "da engorda" : "do lote"} para projetar o abate.`,
+      ]);
+    }
+  }
+
+  const selecaoDe = (etapa: EtapaDieta) => (etapa === "engorda" ? selecaoEngorda : selecao);
+
+  /**
+   * Os dias de cada trecho, contados na meta de ganho da própria etapa. Não dá
+   * para dividir a diferença de peso por um ganho só: são duas velocidades.
+   */
+  const pesoVirada = troca ? lote.pesoTrocaEtapa : pesoInicial;
+  const diasCrescimento = troca
+    ? (pesoVirada - pesoInicial) / dietaDe("crescimento").ganhoMetaDiario
+    : 0;
+  const etapaFinal = etapaNoPeso(lote, troca ? pesoVirada : pesoInicial);
+  const diasRestantes =
+    (lote.pesoAlvoAbate - Math.max(pesoInicial, troca ? pesoVirada : pesoInicial)) /
+    dietaDe(etapaFinal).ganhoMetaDiario;
+  const diasTotais = diasCrescimento + diasRestantes;
+
   const diasPorPeriodo = Math.max(1, lote.diasPorPeriodo);
   const dataInicio = dataReferencia(lote);
 
@@ -319,14 +426,25 @@ export function projetar(lote: Lote, selecao: SelecaoInsumos): RelatorioPlanejam
   let diasAcumulados = 0;
   let indice = 1;
 
-  while (diasAcumulados < diasTotais - 0.001 && indice <= MAXIMO_PERIODOS) {
-    const dias = Math.min(diasPorPeriodo, diasTotais - diasAcumulados);
+  while (peso < lote.pesoAlvoAbate - 1e-6 && indice <= MAXIMO_PERIODOS) {
+    const etapa = etapaNoPeso(lote, peso);
+    const dieta = dietaDe(etapa);
+    const ganho = dieta.ganhoMetaDiario;
+
+    /**
+     * O período nunca atravessa a virada de etapa: se a troca cai no meio
+     * dele, ele termina ali e o próximo começa já na dieta nova. Deixar um
+     * período de trinta dias a cavalo das duas dietas faria o consumo daquele
+     * mês inteiro sair na proporção errada.
+     */
+    const limite = troca && peso < pesoVirada ? pesoVirada : lote.pesoAlvoAbate;
+    const dias = Math.min(diasPorPeriodo, (limite - peso) / ganho);
     const pesoFinal = peso + ganho * dias;
     const pesoMedio = peso + (ganho * dias) / 2;
 
     const perfil = perfilParaPeso(lote, pesoMedio, true);
     const exigencia = calcular(perfil, ganho);
-    const composicao = formular(exigencia, selecao, lote.restricoes);
+    const composicao = formular(exigencia, selecaoDe(etapa), dieta.restricoes);
 
     const fator = dias * lote.quantidadeAnimais;
     const consumos: ConsumoInsumo[] = composicao.itens.map((item) => ({
@@ -348,6 +466,8 @@ export function projetar(lote: Lote, selecao: SelecaoInsumos): RelatorioPlanejam
       composicao,
       consumos,
       animais: lote.quantidadeAnimais,
+      etapa,
+      ganhoDiario: ganho,
     });
 
     if (!exigencia.metaAtingivel) {
@@ -362,7 +482,7 @@ export function projetar(lote: Lote, selecao: SelecaoInsumos): RelatorioPlanejam
     indice += 1;
   }
 
-  if (indice > MAXIMO_PERIODOS && diasAcumulados < diasTotais - 0.001) {
+  if (indice > MAXIMO_PERIODOS && peso < lote.pesoAlvoAbate - 1e-6) {
     alertas.push(
       `Projeção limitada a ${MAXIMO_PERIODOS} períodos. ` +
         "Aumente os dias por período para ver o ciclo completo.",

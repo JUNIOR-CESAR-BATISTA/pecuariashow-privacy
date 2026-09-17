@@ -201,3 +201,67 @@ export const MODOS_COMPRA: Record<
 };
 
 export const TODOS_OS_MODOS_COMPRA: readonly ModoCompra[] = ["porArroba", "porCabeca"];
+
+// ------------------------------------------------------- categoria animal
+
+/**
+ * Categoria de sexo do lote.
+ *
+ * O NRC não corrige o sexo por um fator: publica equações de energia retida
+ * diferentes para fêmea e para macho. Fêmea deposita mais gordura por quilo
+ * ganho no mesmo grau de maturidade, e por isso exige mais energia; o macho
+ * inteiro ainda gasta 15% a mais em mantença.
+ *
+ * O peso de referência **não** muda aqui, de propósito. O tamanho adulto de
+ * cada categoria já entra pelo peso de acabamento que o usuário informa no
+ * lote, e é ele que o peso equivalente usa; um segundo ajuste por sexo em
+ * cima disso contaria a mesma diferença duas vezes.
+ */
+export type CategoriaAnimal = "femea" | "machoCastrado" | "machoInteiro";
+
+export interface DadosCategoriaAnimal {
+  readonly nome: string;
+  readonly nomeCurto: string;
+  readonly descricao: string;
+  /** Coeficientes de energia retida: ER = a x PCVZ^0,75 x GPCVZ^b. */
+  readonly energiaRetidaA: number;
+  readonly energiaRetidaB: number;
+  /** Multiplicador da energia líquida de mantença. */
+  readonly fatorMantenca: number;
+}
+
+export const CATEGORIAS_ANIMAL: Record<CategoriaAnimal, DadosCategoriaAnimal> = {
+  femea: {
+    nome: "Fêmea",
+    nomeCurto: "Fêmea",
+    descricao: "Novilha ou bezerra. Deposita mais gordura por quilo ganho.",
+    energiaRetidaA: 0.0783,
+    energiaRetidaB: 1.119,
+    fatorMantenca: 1.0,
+  },
+  machoCastrado: {
+    nome: "Macho castrado",
+    nomeCurto: "Castrado",
+    descricao: "Garrote ou novilho castrado. Ganho mais magro que o da fêmea.",
+    energiaRetidaA: 0.0635,
+    energiaRetidaB: 1.097,
+    fatorMantenca: 1.0,
+  },
+  machoInteiro: {
+    nome: "Macho inteiro",
+    nomeCurto: "Inteiro",
+    descricao:
+      "Touro jovem não castrado. Ganho mais magro e mantença 15% maior. " +
+      "Informe o peso de acabamento dele, que é bem maior que o da fêmea.",
+    energiaRetidaA: 0.0635,
+    energiaRetidaB: 1.097,
+    // O NRC acrescenta 15% à mantença do macho inteiro.
+    fatorMantenca: 1.15,
+  },
+};
+
+export const TODAS_AS_CATEGORIAS_ANIMAL: readonly CategoriaAnimal[] = [
+  "femea",
+  "machoCastrado",
+  "machoInteiro",
+];
