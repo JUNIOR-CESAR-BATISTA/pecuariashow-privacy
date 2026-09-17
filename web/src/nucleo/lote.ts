@@ -173,7 +173,7 @@ export function criarLote(entrada: Partial<Lote> = {}): Lote {
     planoEtapas: "automatico",
     pesoTrocaEtapa: 330,
     engorda: {
-      ganhoMetaDiario: 1.1,
+      ganhoMetaDiario: 1.0,
       restricoes: { ...RESTRICOES_ENGORDA },
     },
     modoCompra: "porArroba",

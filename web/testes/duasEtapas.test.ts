@@ -501,7 +501,7 @@ describe("compatibilidade do arquivo", () => {
     const lote = desserializar(antigo).lotes[0]!;
     expect(lote.planoEtapas).toBe("soCrescimento");
     expect(lote.pesoTrocaEtapa).toBe(330);
-    expect(lote.engorda.ganhoMetaDiario).toBe(1.1);
+    expect(lote.engorda.ganhoMetaDiario).toBe(1.0);
     expect(lote.engorda.restricoes.volumosoMaximo).toBe(0.55);
     expect(etapaNoPeso(lote, 400)).toBe("crescimento");
   });

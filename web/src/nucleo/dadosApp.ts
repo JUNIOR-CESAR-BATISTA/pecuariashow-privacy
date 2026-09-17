@@ -145,7 +145,7 @@ function lerEngorda(valor: unknown): DietaEtapa {
   const bruto = (typeof valor === "object" && valor !== null ? valor : {}) as Bruto;
   return {
     ...(bruto as unknown as DietaEtapa),
-    ganhoMetaDiario: lerNumero(bruto["ganhoMetaDiario"], 1.1),
+    ganhoMetaDiario: lerNumero(bruto["ganhoMetaDiario"], 1.0),
     restricoes: { ...RESTRICOES_ENGORDA, ...(bruto["restricoes"] as object | undefined) },
   };
 }
