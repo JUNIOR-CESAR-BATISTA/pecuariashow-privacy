@@ -538,7 +538,9 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
                 <span className={`text-sm font-semibold ${CORES_CATEGORIA[item.insumo.categoria]}`}>
                   {item.insumo.nome}
                 </span>
-                <span className="text-sm font-bold tabular-nums">{formatarKg(mn)}</span>
+                {/* Três casas: por animal o mineral pesa gramas, e duas
+                    casas em quilo escondem o grama exato. */}
+                <span className="text-sm font-bold tabular-nums">{numero(mn, 3)} kg</span>
               </div>
               <Barra fracao={participacaoMS(racao, item) / 100} cor="bg-ouroEscuro" />
               <p className="text-xs text-textoTenue">
@@ -660,8 +662,10 @@ function DietaDasEtapas({
                     >
                       {item.insumo.nome}
                     </span>
+                    {/* Mesmo raciocínio do cartão "No cocho hoje": três casas
+                        para o mineral não perder o grama no arredondamento. */}
                     <span className="shrink-0 text-sm font-bold tabular-nums">
-                      {formatarKg(item.kgMateriaNatural)}
+                      {numero(item.kgMateriaNatural, 3)} kg
                     </span>
                   </div>
                   <Barra fracao={item.participacao / 100} cor="bg-ouroEscuro" />
