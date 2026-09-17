@@ -10,6 +10,7 @@ import { PASTEJO, SACA_25, SACA_50, SACA_60, criarInsumo } from "../src/nucleo/i
 import {
   criarLote,
   dietaDaEtapa,
+  planoResolvido,
   etapaNoPeso,
   ganhoMetaAtual,
   trocaDentroDoCiclo,
@@ -43,6 +44,7 @@ function loteBase(extra: Partial<Lote> = {}): Lote {
     rendimentoCarcaca: 0.53,
     pesoFinalMaturidade: 440,
     diasPorPeriodo: 30,
+    planoEtapas: "soCrescimento",
     ...extra,
   });
 }
@@ -50,7 +52,7 @@ function loteBase(extra: Partial<Lote> = {}): Lote {
 /** Crescimento até 340 kg a 0,7 kg/d; engorda daí a 440 kg a 1,2 kg/d. */
 function loteDuasEtapas(extra: Partial<Lote> = {}): Lote {
   return loteBase({
-    duasEtapas: true,
+    planoEtapas: "duas",
     pesoTrocaEtapa: 340,
     engorda: {
       ganhoMetaDiario: 1.2,
@@ -115,7 +117,7 @@ beforeEach(() => {
 });
 
 describe("qual dieta vale em cada peso", () => {
-  it("com a segunda etapa desligada, é sempre crescimento", () => {
+  it("no plano de só crescimento, é sempre crescimento", () => {
     const lote = loteBase();
     expect(etapaNoPeso(lote, 240)).toBe("crescimento");
     expect(etapaNoPeso(lote, 430)).toBe("crescimento");
@@ -303,6 +305,79 @@ describe("projeção com as duas etapas", () => {
   });
 });
 
+describe("plano automático pela fase do lote", () => {
+  it("desmama, recria inicial e recria final ganham as duas dietas", () => {
+    for (const fase of ["desmama", "recriaInicial", "recriaFinal"] as const) {
+      const lote = criarLote({ fase });
+      expect(lote.planoEtapas).toBe("automatico");
+      expect(planoResolvido(lote)).toBe("duas");
+    }
+  });
+
+  it("lote adulto em terminação só tem engorda", () => {
+    const lote = criarLote({ fase: "terminacao" });
+    expect(planoResolvido(lote)).toBe("soEngorda");
+    expect(etapaNoPeso(lote, 260)).toBe("engorda");
+    expect(etapaNoPeso(lote, 460)).toBe("engorda");
+    expect(trocaDentroDoCiclo(lote)).toBe(false);
+  });
+
+  it("no automático, a virada da recria acontece no peso de troca", () => {
+    const lote = loteBase({
+      planoEtapas: "automatico",
+      pesoTrocaEtapa: 340,
+      engorda: {
+        ganhoMetaDiario: 1.2,
+        restricoes: { volumosoMinimo: 0.25, volumosoMaximo: 0.55, mineralGramasDia: 120 },
+      },
+    });
+    expect(trocaDentroDoCiclo(lote)).toBe(true);
+    expect(etapaNoPeso(lote, 339)).toBe("crescimento");
+    expect(etapaNoPeso(lote, 340)).toBe("engorda");
+    expect(temDuasEtapas(projetar(lote, selecao, silagem))).toBe(true);
+  });
+
+  it("no ciclo só de engorda, a meta que vale é a do campo do lote", () => {
+    const lote = loteBase({
+      planoEtapas: "automatico",
+      fase: "terminacao",
+      pesoMedioInicial: 360,
+      pesoTrocaEtapa: 400,
+      engorda: {
+        ganhoMetaDiario: 1.2,
+        restricoes: { volumosoMinimo: 0.25, volumosoMaximo: 0.55, mineralGramasDia: 120 },
+      },
+    });
+    const relatorio = projetar(lote, selecao, silagem);
+    expect(temDuasEtapas(relatorio)).toBe(false);
+    // Sem segunda etapa não existe campo "Ganho na engorda" na tela: quem
+    // manda é a meta do lote, e o 1,2 guardado na engorda fica dormindo.
+    expect(ganhoMetaAtual(lote)).toBe(0.7);
+    for (const p of relatorio.periodos) expect(p.etapa).toBe("engorda");
+  });
+
+  it("o ciclo só de engorda mantém os limites de volumoso da terminação", () => {
+    const lote = loteBase({ planoEtapas: "soEngorda" });
+    const dieta = dietaDaEtapa(lote, etapaNoPeso(lote, 300));
+    perto(dieta.restricoes.volumosoMinimo, 0.25);
+    perto(dieta.restricoes.volumosoMaximo, 0.55);
+    perto(dieta.restricoes.mineralGramasDia, 120);
+    // E os alimentos continuam sendo os do cadastro, que é o que o usuário vê.
+    expect(dieta.volumosoID).toBe(lote.volumosoID);
+    expect(dieta.energeticoID).toBe(lote.energeticoID);
+  });
+
+  it("escolher o plano na mão manda mais que a fase", () => {
+    expect(planoResolvido(criarLote({ fase: "terminacao", planoEtapas: "duas" }))).toBe("duas");
+    expect(planoResolvido(criarLote({ fase: "desmama", planoEtapas: "soEngorda" }))).toBe(
+      "soEngorda",
+    );
+    expect(planoResolvido(criarLote({ fase: "desmama", planoEtapas: "soCrescimento" }))).toBe(
+      "soCrescimento",
+    );
+  });
+});
+
 describe("compatibilidade do arquivo", () => {
   it("backup antigo abre com a segunda etapa desligada", () => {
     const antigo = JSON.stringify({
@@ -334,7 +409,7 @@ describe("compatibilidade do arquivo", () => {
     });
 
     const lote = desserializar(antigo).lotes[0]!;
-    expect(lote.duasEtapas).toBe(false);
+    expect(lote.planoEtapas).toBe("soCrescimento");
     expect(lote.pesoTrocaEtapa).toBe(330);
     expect(lote.engorda.ganhoMetaDiario).toBe(1.1);
     expect(lote.engorda.restricoes.volumosoMaximo).toBe(0.55);

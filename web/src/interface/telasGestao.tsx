@@ -45,7 +45,10 @@ import {
   arrobasCompra,
   criarPesagem,
   custoCompraPorAnimal,
+  NOME_PLANO,
   pesoAtual,
+  planoResolvido,
+  TODOS_OS_PLANOS,
   type DietaEtapa,
   type Lote,
 } from "../nucleo/lote.js";
@@ -194,6 +197,12 @@ function EditorLote({
     rascunho.pesoTrocaEtapa > rascunho.pesoMedioInicial &&
     rascunho.pesoTrocaEtapa < rascunho.pesoAlvoAbate;
 
+  const plano = planoResolvido(rascunho);
+  const duasEtapas = plano === "duas";
+  const temEngorda = plano !== "soCrescimento";
+  /** Sem etapa de crescimento, o que se herda vem do cadastro do lote. */
+  const textoHeranca = duasEtapas ? "O mesmo do crescimento" : "O mesmo do cadastro";
+
   const porCategoria = (categoria: CategoriaInsumo) =>
     dados.insumos
       .filter((i) => i.categoria === categoria)
@@ -266,22 +275,21 @@ function EditorLote({
 
       <div className="cartao space-y-3">
         <TituloSecao texto="Etapas da dieta" />
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 shrink-0 accent-verde"
-            checked={rascunho.duasEtapas}
-            onChange={(e) => mudar("duasEtapas", e.target.checked)}
-          />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm">Crescimento e engorda</span>
-            <span className="mt-0.5 block text-xs text-textoSuave">
-              Duas dietas no mesmo ciclo: recria até o peso de virada, engorda daí ao abate.
-            </span>
-          </span>
-        </label>
+        <Selecao
+          rotulo="Plano do ciclo"
+          valor={rascunho.planoEtapas}
+          aoMudar={(v) => mudar("planoEtapas", v)}
+          opcoes={TODOS_OS_PLANOS.map((pl) => ({ valor: pl, texto: NOME_PLANO[pl] }))}
+        />
+        <p className="-mt-1 text-xs text-textoSuave">
+          {rascunho.planoEtapas === "automatico"
+            ? rascunho.fase === "terminacao"
+              ? "Lote em terminação: só engorda daqui ao abate."
+              : `Lote em ${FASES[rascunho.fase].nome.toLowerCase()}: ainda cresce, então faz recria e depois engorda.`
+            : NOME_PLANO[rascunho.planoEtapas] + "."}
+        </p>
 
-        {rascunho.duasEtapas ? (
+        {duasEtapas ? (
           <>
             <div className="grid grid-cols-2 gap-3">
               <Campo
@@ -306,6 +314,23 @@ function EditorLote({
                   `${numero(rascunho.engorda.ganhoMetaDiario, 3)} kg/dia.`
                 : "O peso de virada está fora do intervalo do ciclo, então o lote faz uma etapa só."}
             </p>
+          </>
+        ) : null}
+
+        {/*
+         * Os limites da engorda aparecem sempre que existe engorda, inclusive
+         * no ciclo que só tem ela. São eles que formulam a ração: escondidos,
+         * seriam números decidindo a dieta sem ninguém poder ver nem mudar.
+         */}
+        {temEngorda ? (
+          <>
+            {duasEtapas ? null : (
+              <p className="text-xs text-textoSuave">
+                {`Engorda de ${formatarKg(rascunho.pesoMedioInicial)} a ` +
+                  `${formatarKg(rascunho.pesoAlvoAbate)} a ` +
+                  `${numero(rascunho.ganhoMetaDiario, 3)} kg/dia, na meta de ganho do lote.`}
+              </p>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <Campo
@@ -337,8 +362,8 @@ function EditorLote({
 
             <p className="rotulo-secao pt-1">Alimentos da engorda</p>
             <p className="text-xs text-textoSuave">
-              O que ficar em &quot;o mesmo do crescimento&quot; é herdado. Troque só o que muda —
-              quem passa o pasto para silagem, por exemplo.
+              O que ficar em &quot;{textoHeranca}&quot; é herdado. Troque só o que muda — quem passa
+              o pasto para silagem, por exemplo.
             </p>
             {(
               [
@@ -353,7 +378,7 @@ function EditorLote({
                 rotulo={rotulo}
                 valor={rascunho.engorda[campo] ?? ""}
                 aoMudar={(v) => mudarEngorda(campo, v === "" ? undefined : v)}
-                opcoes={[{ valor: "", texto: "O mesmo do crescimento" }, ...porCategoria(categoria)]}
+                opcoes={[{ valor: "", texto: textoHeranca }, ...porCategoria(categoria)]}
               />
             ))}
           </>

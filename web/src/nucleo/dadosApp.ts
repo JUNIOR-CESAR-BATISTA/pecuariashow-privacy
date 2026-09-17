@@ -22,7 +22,7 @@ import { CATALOGO_PADRAO } from "./catalogoInsumos.js";
 import type { CicloEncerrado } from "./cicloEncerrado.js";
 import type { CategoriaAnimal } from "./classificacoes.js";
 import { RESTRICOES_PADRAO } from "./formuladorRacao.js";
-import { RESTRICOES_ENGORDA, type DietaEtapa } from "./lote.js";
+import { RESTRICOES_ENGORDA, type DietaEtapa, type PlanoEtapas } from "./lote.js";
 import type { Insumo } from "./insumo.js";
 import type { Lote } from "./lote.js";
 
@@ -128,6 +128,15 @@ function lerNumero(valor: unknown, padrao: number): number {
   return typeof valor === "number" && Number.isFinite(valor) ? valor : padrao;
 }
 
+function lerPlano(bruto: Bruto): PlanoEtapas {
+  const valor = bruto["planoEtapas"];
+  if (valor === "automatico" || valor === "duas" || valor === "soCrescimento" || valor === "soEngorda") {
+    return valor;
+  }
+  // Versão anterior gravava um booleano; antes dela, não havia campo nenhum.
+  return bruto["duasEtapas"] === true ? "duas" : "soCrescimento";
+}
+
 function lerCategoriaAnimal(valor: unknown): CategoriaAnimal {
   return valor === "machoCastrado" || valor === "machoInteiro" ? valor : "femea";
 }
@@ -152,9 +161,10 @@ function lerLote(bruto: Bruto): Lote {
     // reproduz o que o arquivo antigo mostrava.
     categoriaAnimal: lerCategoriaAnimal(bruto["categoriaAnimal"]),
     modoCompra: bruto["modoCompra"] === "porCabeca" ? "porCabeca" : "porArroba",
-    // A segunda etapa de dieta chegou depois: arquivo antigo abre com ela
-    // desligada, o que reproduz exatamente o ciclo de uma dieta só.
-    duasEtapas: bruto["duasEtapas"] === true,
+    // Arquivo antigo abre com o plano que ele de fato tinha, nunca no
+    // automático: um lote de recria gravado antes desta versão viraria de
+    // uma dieta para duas sozinho, e a projeção dele mudaria do nada.
+    planoEtapas: lerPlano(bruto),
     pesoTrocaEtapa: lerNumero(bruto["pesoTrocaEtapa"], 330),
     engorda: lerEngorda(bruto["engorda"]),
     precoCompra: lerNumero(bruto["precoCompra"], 0),

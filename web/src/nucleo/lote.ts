@@ -55,6 +55,30 @@ export const NOME_ETAPA: Record<EtapaDieta, string> = {
   engorda: "Engorda",
 };
 
+/**
+ * Como o ciclo se divide em etapas.
+ *
+ * `automatico` é a regra de campo: bezerro desmamado, garrote e novilha ainda
+ * crescem, então fazem recria e depois engorda; animal que já entra em
+ * terminação só tem engorda pela frente. As outras três forçam o plano para
+ * quem quiser decidir na mão.
+ */
+export type PlanoEtapas = "automatico" | "duas" | "soCrescimento" | "soEngorda";
+
+export const NOME_PLANO: Record<PlanoEtapas, string> = {
+  automatico: "Automático, pela fase do lote",
+  duas: "Crescimento e engorda",
+  soCrescimento: "Só crescimento",
+  soEngorda: "Só engorda",
+};
+
+export const TODOS_OS_PLANOS: readonly PlanoEtapas[] = [
+  "automatico",
+  "duas",
+  "soCrescimento",
+  "soEngorda",
+];
+
 /** O que muda de uma etapa para a outra. */
 export interface DietaEtapa {
   ganhoMetaDiario: number;
@@ -99,12 +123,8 @@ export interface Lote {
   /** Calibração do consumo previsto (0,85 a 1,15). */
   ajusteConsumo: number;
 
-  /**
-   * Liga a segunda etapa: crescimento até `pesoTrocaEtapa`, engorda depois.
-   * Desligado, o ciclo inteiro usa a dieta de crescimento, que são os campos
-   * de sempre do lote.
-   */
-  duasEtapas: boolean;
+  /** Como o ciclo se divide entre crescimento e engorda. */
+  planoEtapas: PlanoEtapas;
   /** Peso vivo em que a dieta de crescimento dá lugar à de engorda. */
   pesoTrocaEtapa: number;
   /** A dieta da engorda. A de crescimento são os campos de sempre do lote. */
@@ -150,7 +170,7 @@ export function criarLote(entrada: Partial<Lote> = {}): Lote {
     pesoFinalMaturidade: 430,
     diasPorPeriodo: 30,
     ajusteConsumo: 1.0,
-    duasEtapas: false,
+    planoEtapas: "automatico",
     pesoTrocaEtapa: 330,
     engorda: {
       ganhoMetaDiario: 1.1,
@@ -240,6 +260,23 @@ export function arrobasNoAbate(lote: Lote): number {
 // ------------------------------------------------------------ etapas da dieta
 
 /**
+ * O plano de verdade, com o `automatico` já resolvido.
+ *
+ * A regra segue a fase de entrada: terminação é animal que só engorda daqui
+ * para a frente; desmama e recria ainda têm crescimento pela frente, então
+ * ganham as duas dietas.
+ */
+export function planoResolvido(lote: Lote): Exclude<PlanoEtapas, "automatico"> {
+  if (lote.planoEtapas !== "automatico") return lote.planoEtapas;
+  return lote.fase === "terminacao" ? "soEngorda" : "duas";
+}
+
+/** A etapa de um ciclo que não se divide. */
+function etapaUnica(lote: Lote): EtapaDieta {
+  return planoResolvido(lote) === "soEngorda" ? "engorda" : "crescimento";
+}
+
+/**
  * Se a virada de etapa acontece mesmo dentro deste ciclo.
  *
  * Um peso de troca abaixo do peso de entrada quer dizer que o lote já entrou
@@ -248,7 +285,7 @@ export function arrobasNoAbate(lote: Lote): number {
  */
 export function trocaDentroDoCiclo(lote: Lote, pesoPartida = pesoAtual(lote)): boolean {
   return (
-    lote.duasEtapas &&
+    planoResolvido(lote) === "duas" &&
     lote.pesoTrocaEtapa > pesoPartida &&
     lote.pesoTrocaEtapa < lote.pesoAlvoAbate
   );
@@ -256,7 +293,8 @@ export function trocaDentroDoCiclo(lote: Lote, pesoPartida = pesoAtual(lote)): b
 
 /** Qual dieta vale num dado peso vivo. */
 export function etapaNoPeso(lote: Lote, peso: number): EtapaDieta {
-  return lote.duasEtapas && peso >= lote.pesoTrocaEtapa ? "engorda" : "crescimento";
+  if (planoResolvido(lote) !== "duas") return etapaUnica(lote);
+  return peso >= lote.pesoTrocaEtapa ? "engorda" : "crescimento";
 }
 
 /**
@@ -279,7 +317,17 @@ export function dietaDaEtapa(lote: Lote, etapa: EtapaDieta): DietaEtapa {
   }
   const e = lote.engorda;
   return {
-    ganhoMetaDiario: e.ganhoMetaDiario > 0 ? e.ganhoMetaDiario : lote.ganhoMetaDiario,
+    /*
+     * Só os alimentos são herdados: em branco quer dizer "não escolhi". A meta
+     * de ganho é a da própria etapa - zero ali é erro de preenchimento, e o
+     * planejador recusa em vez de adivinhar.
+     *
+     * A exceção é o ciclo que só tem engorda: ali não existe segunda etapa, e
+     * o campo "Meta de ganho" do cadastro é o único que o usuário vê. Ler a
+     * meta escondida da engorda deixaria aquele campo sem efeito nenhum.
+     */
+    ganhoMetaDiario:
+      planoResolvido(lote) === "soEngorda" ? lote.ganhoMetaDiario : e.ganhoMetaDiario,
     volumosoID: e.volumosoID ?? lote.volumosoID,
     energeticoID: e.energeticoID ?? lote.energeticoID,
     proteicoID: e.proteicoID ?? lote.proteicoID,

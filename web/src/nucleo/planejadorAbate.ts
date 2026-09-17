@@ -27,6 +27,7 @@ import {
   NOME_ETAPA,
   perfilParaPeso,
   pesoAtual,
+  planoResolvido,
   trocaDentroDoCiclo,
   type EtapaDieta,
   type Lote,
@@ -375,25 +376,32 @@ export function projetar(
   if (!(lote.quantidadeAnimais > 0)) {
     return relatorioVazio(lote, ["Informe a quantidade de animais do lote."]);
   }
-  if (!(lote.ganhoMetaDiario > 0)) {
-    return relatorioVazio(lote, [
-      "Defina uma meta de ganho maior que zero para projetar o abate.",
-    ]);
-  }
-
   const pesoInicial = pesoAtual(lote);
   if (!(lote.pesoAlvoAbate > pesoInicial)) {
     return relatorioVazio(lote, ["O lote já atingiu o peso alvo de abate."]);
   }
 
+  const dietaDe = (etapa: EtapaDieta) => dietaDaEtapa(lote, etapa);
   const troca = trocaDentroDoCiclo(lote, pesoInicial);
-  if (troca && !(lote.engorda.ganhoMetaDiario > 0)) {
-    return relatorioVazio(lote, [
-      "Defina a meta de ganho da engorda, ou desligue a segunda etapa do lote.",
-    ]);
+
+  /**
+   * A meta de ganho é conferida na etapa que o ciclo de fato usa. Um lote em
+   * terminação anda pela meta da engorda, então cobrar a do crescimento dele
+   * barraria uma projeção correta - e deixaria passar a que divide por zero.
+   */
+  for (const etapa of troca
+    ? (["crescimento", "engorda"] as const)
+    : ([etapaNoPeso(lote, pesoInicial)] as const)) {
+    if (!(dietaDe(etapa).ganhoMetaDiario > 0)) {
+      // Nomeia o campo que está vazio: "da engorda" só quando é mesmo o campo
+      // da segunda etapa, que só existe no ciclo de duas.
+      const daSegunda = etapa === "engorda" && planoResolvido(lote) === "duas";
+      return relatorioVazio(lote, [
+        `Defina a meta de ganho ${daSegunda ? "da engorda" : "do lote"} para projetar o abate.`,
+      ]);
+    }
   }
 
-  const dietaDe = (etapa: EtapaDieta) => dietaDaEtapa(lote, etapa);
   const selecaoDe = (etapa: EtapaDieta) => (etapa === "engorda" ? selecaoEngorda : selecao);
 
   /**

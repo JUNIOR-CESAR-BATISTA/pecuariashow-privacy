@@ -37,6 +37,7 @@ import {
   ganhoRestante,
   NOME_ETAPA,
   perfilAtual,
+  planoResolvido,
   pesoAtual,
   selecaoDaDieta,
   type Lote,
@@ -208,7 +209,9 @@ function Capa({
           </p>
           <p className="mt-1 truncate text-xs text-[#C7D3CA]">
             {lote.quantidadeAnimais} novilhas · {FASES[lote.fase].nome}
-            {lote.duasEtapas ? ` · ${NOME_ETAPA[etapaNoPeso(lote, pesoAtual(lote))]}` : ""} ·{" "}
+            {planoResolvido(lote) === "duas"
+              ? ` · ${NOME_ETAPA[etapaNoPeso(lote, pesoAtual(lote))]}`
+              : ""} ·{" "}
             {numero(dietaAtual(lote).ganhoMetaDiario, 3)} kg/d
           </p>
         </div>

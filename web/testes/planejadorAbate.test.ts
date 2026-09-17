@@ -47,6 +47,9 @@ function loteBase(): Lote {
     rendimentoCarcaca: 0.53,
     pesoFinalMaturidade: 430,
     diasPorPeriodo: 30,
+    // Estes testes medem a mecânica da projeção com uma dieta só; o ciclo de
+    // duas etapas tem suíte própria.
+    planoEtapas: "soCrescimento",
   });
 }
 

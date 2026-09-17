@@ -134,6 +134,21 @@ export function TelaMetodologia() {
         />
       </Bloco>
 
+      <Bloco titulo="Etapas da dieta">
+        <Metodo
+          titulo="Quem tem duas etapas"
+          corpo="No plano automático a fase do lote decide. Desmama, recria inicial e recria final ainda têm crescimento pela frente: fazem uma dieta de crescimento até o peso de virada e uma de engorda daí ao abate. Lote que entra em terminação só tem engorda, e faz o ciclo inteiro numa dieta só."
+        />
+        <Metodo
+          titulo="Onde a virada cai"
+          corpo="A virada vale quando o peso de troca está entre o peso de hoje e o peso de abate. Abaixo dele o lote já entrou em engorda; acima, a engorda não chega a começar. Nos dois casos o ciclo tem uma etapa só, e nenhum período atravessa a virada: ele é cortado exatamente no peso de troca."
+        />
+        <Metodo
+          titulo="O que muda de uma para a outra"
+          corpo="A meta de ganho, os limites de volumoso e, se você quiser, os alimentos. O que ficar em branco na engorda é herdado do crescimento. Os produtos de cada etapa são somados separados, porque é assim que se compra."
+        />
+      </Bloco>
+
       <Bloco titulo="Resultado previsto">
         <Metodo
           titulo="Compra"
