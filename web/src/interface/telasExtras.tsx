@@ -79,15 +79,15 @@ export function TelaMetodologia() {
       <Bloco titulo="Energia">
         <Metodo
           titulo="Mantença"
-          corpo="ELm = 0,077 x fator do grupo genético x fator de atividade x PCJ elevado a 0,75. PCJ é o peso vivo de jejum (96% do peso vivo)."
+          corpo="ELm = 0,077 x fator do grupo genético x fator da categoria x fator de atividade x PCJ elevado a 0,75. PCJ é o peso vivo de jejum (96% do peso vivo). O fator da categoria é 1,00 para fêmea e macho castrado e 1,15 para macho inteiro."
         />
         <Metodo
           titulo="Ganho"
-          corpo="ER = 0,0783 x PCVZ equivalente elevado a 0,75 x ganho de corpo vazio elevado a 1,119. São os coeficientes de fêmeas em crescimento, que depositam mais gordura por quilo ganho que os machos."
+          corpo="ER = a x PCVZ equivalente elevado a 0,75 x ganho de corpo vazio elevado a b. O NRC publica um par de coeficientes por sexo, não um fator de correção: fêmea usa a = 0,0783 e b = 1,119; macho, castrado ou inteiro, usa a = 0,0635 e b = 1,097. A fêmea deposita mais gordura por quilo ganho no mesmo grau de maturidade, e por isso exige mais energia."
         />
         <Metodo
           titulo="Peso equivalente"
-          corpo="O peso é corrigido pelo grau de maturidade: peso de jejum x 462 / peso de acabamento em jejum. Novilhas mais precoces exigem mais energia por quilo de ganho no mesmo peso."
+          corpo="O peso é corrigido pelo grau de maturidade: peso de jejum x 462 / peso de acabamento em jejum. O peso de referência é o mesmo para as três categorias de propósito - o tamanho adulto de cada uma já entra pelo peso de acabamento que você informa no lote, e ajustar os dois contaria a mesma diferença duas vezes."
         />
         <Metodo
           titulo="NDT"
@@ -100,6 +100,10 @@ export function TelaMetodologia() {
         <Metodo
           titulo="Ganho"
           corpo="A proteína líquida por quilo de ganho cai conforme a energia retida sobe: 268 menos 29,4 vezes a energia retida por quilo de ganho. A eficiência de uso da proteína metabolizável vai de 0,834 menos 0,00114 vezes o peso equivalente, com piso de 0,492."
+        />
+        <Metodo
+          titulo="Efeito da categoria"
+          corpo="A proteína líquida por quilo de ganho cai conforme a energia retida sobe. Como o macho retém menos energia que a fêmea no mesmo ganho, ele pede menos NDT e mais proteína - o erro de rodar um garrote como fêmea vai para os dois lados ao mesmo tempo."
         />
         <Metodo
           titulo="Da PM para a PB"

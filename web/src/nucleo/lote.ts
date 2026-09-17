@@ -8,6 +8,7 @@
  */
 import {
   faseSugerida,
+  type CategoriaAnimal,
   type FaseAnimal,
   type GrupoGenetico,
   type ModoCompra,
@@ -84,6 +85,8 @@ export interface Lote {
   fase: FaseAnimal;
   grupoGenetico: GrupoGenetico;
   sistema: SistemaCriacao;
+  /** Fêmea, macho castrado ou macho inteiro: muda as equações de energia. */
+  categoriaAnimal: CategoriaAnimal;
   dataEntrada: Date;
 
   /** Planejamento de abate. */
@@ -140,6 +143,7 @@ export function criarLote(entrada: Partial<Lote> = {}): Lote {
     fase: "recriaInicial",
     grupoGenetico: "zebuino",
     sistema: "semiconfinamento",
+    categoriaAnimal: "femea",
     dataEntrada: new Date(),
     pesoAlvoAbate: 420,
     rendimentoCarcaca: 0.53,
@@ -203,6 +207,7 @@ export function perfilParaPeso(lote: Lote, peso: number, faseAutomatica = false)
     fase: faseAutomatica ? faseSugerida(peso) : lote.fase,
     grupoGenetico: lote.grupoGenetico,
     sistema: lote.sistema,
+    categoria: lote.categoriaAnimal,
     pesoFinal: lote.pesoFinalMaturidade,
     ajusteConsumo: lote.ajusteConsumo,
   });

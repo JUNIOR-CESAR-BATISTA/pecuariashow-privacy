@@ -20,6 +20,7 @@
  */
 import { CATALOGO_PADRAO } from "./catalogoInsumos.js";
 import type { CicloEncerrado } from "./cicloEncerrado.js";
+import type { CategoriaAnimal } from "./classificacoes.js";
 import { RESTRICOES_PADRAO } from "./formuladorRacao.js";
 import { RESTRICOES_ENGORDA, type DietaEtapa } from "./lote.js";
 import type { Insumo } from "./insumo.js";
@@ -127,6 +128,10 @@ function lerNumero(valor: unknown, padrao: number): number {
   return typeof valor === "number" && Number.isFinite(valor) ? valor : padrao;
 }
 
+function lerCategoriaAnimal(valor: unknown): CategoriaAnimal {
+  return valor === "machoCastrado" || valor === "machoInteiro" ? valor : "femea";
+}
+
 function lerEngorda(valor: unknown): DietaEtapa {
   const bruto = (typeof valor === "object" && valor !== null ? valor : {}) as Bruto;
   return {
@@ -143,6 +148,9 @@ function lerLote(bruto: Bruto): Lote {
     // Campos de compra e venda: chegaram depois, e um arquivo antigo não os
     // tem. Sem estes padrões eles voltariam como undefined e as contas de
     // resultado dariam NaN em vez de zero.
+    // Antes da categoria, tudo era calculado como fêmea - é o padrão que
+    // reproduz o que o arquivo antigo mostrava.
+    categoriaAnimal: lerCategoriaAnimal(bruto["categoriaAnimal"]),
     modoCompra: bruto["modoCompra"] === "porCabeca" ? "porCabeca" : "porArroba",
     // A segunda etapa de dieta chegou depois: arquivo antigo abre com ela
     // desligada, o que reproduz exatamente o ciclo de uma dieta só.

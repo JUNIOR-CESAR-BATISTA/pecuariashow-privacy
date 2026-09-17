@@ -13,10 +13,12 @@ import {
 } from "../nucleo/analisadorHistorico.js";
 import {
   CATEGORIAS,
+  CATEGORIAS_ANIMAL,
   FASES,
   GRUPOS,
   MODOS_COMPRA,
   SISTEMAS,
+  TODAS_AS_CATEGORIAS_ANIMAL,
   TODAS_AS_FASES,
   TODOS_OS_GRUPOS,
   TODOS_OS_MODOS_COMPRA,
@@ -235,6 +237,19 @@ function EditorLote({
           aoMudar={(v) => mudar("fase", v)}
           opcoes={TODAS_AS_FASES.map((f) => ({ valor: f, texto: FASES[f].nome }))}
         />
+        <Selecao
+          rotulo="Categoria"
+          valor={rascunho.categoriaAnimal}
+          aoMudar={(v) => mudar("categoriaAnimal", v)}
+          opcoes={TODAS_AS_CATEGORIAS_ANIMAL.map((c) => ({
+            valor: c,
+            texto: CATEGORIAS_ANIMAL[c].nome,
+          }))}
+        />
+        <p className="-mt-1 text-xs text-textoSuave">
+          {CATEGORIAS_ANIMAL[rascunho.categoriaAnimal].descricao} O NRC usa equações de energia
+          diferentes para cada uma, então isto muda o NDT e a PB da dieta.
+        </p>
         <Selecao
           rotulo="Grupo genético"
           valor={rascunho.grupoGenetico}
