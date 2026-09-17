@@ -21,6 +21,7 @@
 import { CATALOGO_PADRAO } from "./catalogoInsumos.js";
 import type { CicloEncerrado } from "./cicloEncerrado.js";
 import { RESTRICOES_PADRAO } from "./formuladorRacao.js";
+import { RESTRICOES_ENGORDA, type DietaEtapa } from "./lote.js";
 import type { Insumo } from "./insumo.js";
 import type { Lote } from "./lote.js";
 
@@ -126,6 +127,15 @@ function lerNumero(valor: unknown, padrao: number): number {
   return typeof valor === "number" && Number.isFinite(valor) ? valor : padrao;
 }
 
+function lerEngorda(valor: unknown): DietaEtapa {
+  const bruto = (typeof valor === "object" && valor !== null ? valor : {}) as Bruto;
+  return {
+    ...(bruto as unknown as DietaEtapa),
+    ganhoMetaDiario: lerNumero(bruto["ganhoMetaDiario"], 1.1),
+    restricoes: { ...RESTRICOES_ENGORDA, ...(bruto["restricoes"] as object | undefined) },
+  };
+}
+
 function lerLote(bruto: Bruto): Lote {
   return {
     ...(bruto as unknown as Lote),
@@ -134,6 +144,11 @@ function lerLote(bruto: Bruto): Lote {
     // tem. Sem estes padrões eles voltariam como undefined e as contas de
     // resultado dariam NaN em vez de zero.
     modoCompra: bruto["modoCompra"] === "porCabeca" ? "porCabeca" : "porArroba",
+    // A segunda etapa de dieta chegou depois: arquivo antigo abre com ela
+    // desligada, o que reproduz exatamente o ciclo de uma dieta só.
+    duasEtapas: bruto["duasEtapas"] === true,
+    pesoTrocaEtapa: lerNumero(bruto["pesoTrocaEtapa"], 330),
+    engorda: lerEngorda(bruto["engorda"]),
     precoCompra: lerNumero(bruto["precoCompra"], 0),
     precoArrobaVenda: lerNumero(bruto["precoArrobaVenda"], 0),
     restricoes: { ...RESTRICOES_PADRAO, ...(bruto["restricoes"] as object | undefined) },

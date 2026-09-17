@@ -44,8 +44,10 @@ import {
   criarPesagem,
   custoCompraPorAnimal,
   pesoAtual,
+  type DietaEtapa,
   type Lote,
 } from "../nucleo/lote.js";
+import type { RestricoesFormulacao } from "../nucleo/formuladorRacao.js";
 import {
   Aviso,
   Campo,
@@ -174,6 +176,22 @@ function EditorLote({
   const mudar = <C extends keyof Lote>(campo: C, valor: Lote[C]) =>
     setRascunho((r) => ({ ...r, [campo]: valor }));
 
+  const mudarEngorda = <C extends keyof DietaEtapa>(campo: C, valor: DietaEtapa[C]) =>
+    setRascunho((r) => ({ ...r, engorda: { ...r.engorda, [campo]: valor } }));
+
+  const mudarRestricaoEngorda = (campo: keyof RestricoesFormulacao, valor: number) =>
+    setRascunho((r) => ({
+      ...r,
+      engorda: { ...r.engorda, restricoes: { ...r.engorda.restricoes, [campo]: valor } },
+    }));
+
+  /** Percentual digitado vira fração, presa entre 0 e 1. */
+  const limitarFracao = (percentual: number) => Math.min(Math.max(percentual / 100, 0), 1);
+
+  const viradaValida =
+    rascunho.pesoTrocaEtapa > rascunho.pesoMedioInicial &&
+    rascunho.pesoTrocaEtapa < rascunho.pesoAlvoAbate;
+
   const porCategoria = (categoria: CategoriaInsumo) =>
     dados.insumos
       .filter((i) => i.categoria === categoria)
@@ -229,6 +247,102 @@ function EditorLote({
           aoMudar={(v) => mudar("sistema", v)}
           opcoes={TODOS_OS_SISTEMAS.map((s) => ({ valor: s, texto: SISTEMAS[s].nome }))}
         />
+      </div>
+
+      <div className="cartao space-y-3">
+        <TituloSecao texto="Etapas da dieta" />
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-verde"
+            checked={rascunho.duasEtapas}
+            onChange={(e) => mudar("duasEtapas", e.target.checked)}
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm">Crescimento e engorda</span>
+            <span className="mt-0.5 block text-xs text-textoSuave">
+              Duas dietas no mesmo ciclo: recria até o peso de virada, engorda daí ao abate.
+            </span>
+          </span>
+        </label>
+
+        {rascunho.duasEtapas ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Campo
+                rotulo="Vira a dieta em"
+                sufixo="kg"
+                valor={rascunho.pesoTrocaEtapa}
+                aoMudar={(v) => mudar("pesoTrocaEtapa", Math.max(0, paraNumero(v, 0)))}
+              />
+              <Campo
+                rotulo="Ganho na engorda"
+                sufixo="kg/dia"
+                valor={rascunho.engorda.ganhoMetaDiario}
+                aoMudar={(v) => mudarEngorda("ganhoMetaDiario", Math.max(0, paraNumero(v, 0)))}
+              />
+            </div>
+
+            <p className="text-xs text-textoSuave">
+              {viradaValida
+                ? `Crescimento de ${formatarKg(rascunho.pesoMedioInicial)} a ` +
+                  `${formatarKg(rascunho.pesoTrocaEtapa)} a ${numero(rascunho.ganhoMetaDiario, 3)} kg/dia, ` +
+                  `depois engorda até ${formatarKg(rascunho.pesoAlvoAbate)} a ` +
+                  `${numero(rascunho.engorda.ganhoMetaDiario, 3)} kg/dia.`
+                : "O peso de virada está fora do intervalo do ciclo, então o lote faz uma etapa só."}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Campo
+                rotulo="Volumoso mín. na engorda"
+                sufixo="%"
+                valor={numero(rascunho.engorda.restricoes.volumosoMinimo * 100, 0)}
+                aoMudar={(v) =>
+                  mudarRestricaoEngorda("volumosoMinimo", limitarFracao(paraNumero(v, 25)))
+                }
+              />
+              <Campo
+                rotulo="Volumoso máx. na engorda"
+                sufixo="%"
+                valor={numero(rascunho.engorda.restricoes.volumosoMaximo * 100, 0)}
+                aoMudar={(v) =>
+                  mudarRestricaoEngorda("volumosoMaximo", limitarFracao(paraNumero(v, 55)))
+                }
+              />
+            </div>
+
+            <Campo
+              rotulo="Mineral por animal na engorda"
+              sufixo="g/dia"
+              valor={rascunho.engorda.restricoes.mineralGramasDia}
+              aoMudar={(v) =>
+                mudarRestricaoEngorda("mineralGramasDia", Math.max(0, paraNumero(v, 0)))
+              }
+            />
+
+            <p className="rotulo-secao pt-1">Alimentos da engorda</p>
+            <p className="text-xs text-textoSuave">
+              O que ficar em &quot;o mesmo do crescimento&quot; é herdado. Troque só o que muda —
+              quem passa o pasto para silagem, por exemplo.
+            </p>
+            {(
+              [
+                ["volumosoID", "Volumoso", "volumoso"],
+                ["energeticoID", "Energético", "energetico"],
+                ["proteicoID", "Proteico", "proteico"],
+                ["mineralID", "Mineral", "mineral"],
+              ] as const
+            ).map(([campo, rotulo, categoria]) => (
+              <Selecao
+                key={campo}
+                rotulo={rotulo}
+                valor={rascunho.engorda[campo] ?? ""}
+                aoMudar={(v) => mudarEngorda(campo, v === "" ? undefined : v)}
+                opcoes={[{ valor: "", texto: "O mesmo do crescimento" }, ...porCategoria(categoria)]}
+              />
+            ))}
+          </>
+        ) : null}
       </div>
 
       <div className="cartao space-y-3">

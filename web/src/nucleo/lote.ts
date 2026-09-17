@@ -13,7 +13,12 @@ import {
   type ModoCompra,
   type SistemaCriacao,
 } from "./classificacoes.js";
-import { RESTRICOES_PADRAO, type RestricoesFormulacao } from "./formuladorRacao.js";
+import {
+  RESTRICOES_PADRAO,
+  type RestricoesFormulacao,
+  type SelecaoInsumos,
+} from "./formuladorRacao.js";
+import type { Insumo } from "./insumo.js";
 import { perfilAnimal, type PerfilAnimal } from "./motorExigencias.js";
 
 /** Pesagem registrada do lote (peso médio dos animais). */
@@ -32,6 +37,42 @@ export function criarPesagem(entrada: { pesoMedio: number; data?: Date; observac
     observacao: entrada.observacao ?? "",
   };
 }
+
+/**
+ * Etapa de dieta dentro de um mesmo ciclo.
+ *
+ * Não confundir com `FaseAnimal` (desmama, recria, terminação), que é a faixa
+ * de peso usada pelas equações do NRC e muda sozinha conforme o animal cresce.
+ * A etapa aqui é decisão de manejo: o mesmo lote come uma dieta de
+ * crescimento até um peso de virada e uma de engorda daí ao abate, com metas
+ * de ganho, alimentos e limites de volumoso diferentes.
+ */
+export type EtapaDieta = "crescimento" | "engorda";
+
+export const NOME_ETAPA: Record<EtapaDieta, string> = {
+  crescimento: "Crescimento",
+  engorda: "Engorda",
+};
+
+/** O que muda de uma etapa para a outra. */
+export interface DietaEtapa {
+  ganhoMetaDiario: number;
+  volumosoID?: string;
+  energeticoID?: string;
+  proteicoID?: string;
+  mineralID?: string;
+  restricoes: RestricoesFormulacao;
+}
+
+/**
+ * Limites de volumoso típicos da terminação: menos volumoso e mais
+ * concentrado que na recria, que é o que sustenta ganho alto e acabamento.
+ */
+export const RESTRICOES_ENGORDA: RestricoesFormulacao = {
+  volumosoMinimo: 0.25,
+  volumosoMaximo: 0.55,
+  mineralGramasDia: 120,
+};
 
 export interface Lote {
   id: string;
@@ -54,6 +95,17 @@ export interface Lote {
 
   /** Calibração do consumo previsto (0,85 a 1,15). */
   ajusteConsumo: number;
+
+  /**
+   * Liga a segunda etapa: crescimento até `pesoTrocaEtapa`, engorda depois.
+   * Desligado, o ciclo inteiro usa a dieta de crescimento, que são os campos
+   * de sempre do lote.
+   */
+  duasEtapas: boolean;
+  /** Peso vivo em que a dieta de crescimento dá lugar à de engorda. */
+  pesoTrocaEtapa: number;
+  /** A dieta da engorda. A de crescimento são os campos de sempre do lote. */
+  engorda: DietaEtapa;
 
   /** Compra e venda, para a previsão de resultado. */
   modoCompra: ModoCompra;
@@ -94,6 +146,12 @@ export function criarLote(entrada: Partial<Lote> = {}): Lote {
     pesoFinalMaturidade: 430,
     diasPorPeriodo: 30,
     ajusteConsumo: 1.0,
+    duasEtapas: false,
+    pesoTrocaEtapa: 330,
+    engorda: {
+      ganhoMetaDiario: 1.1,
+      restricoes: { ...RESTRICOES_ENGORDA },
+    },
     modoCompra: "porArroba",
     precoCompra: 0,
     precoArrobaVenda: 0,
@@ -154,6 +212,11 @@ export function perfilAtual(lote: Lote): PerfilAnimal {
   return perfilParaPeso(lote, pesoAtual(lote));
 }
 
+/** A meta de ganho que vale hoje, pela etapa em que o lote está. */
+export function ganhoMetaAtual(lote: Lote): number {
+  return dietaAtual(lote).ganhoMetaDiario;
+}
+
 /** Peso ainda a ganhar por animal até o abate. */
 export function ganhoRestante(lote: Lote): number {
   return Math.max(0, lote.pesoAlvoAbate - pesoAtual(lote));
@@ -167,6 +230,80 @@ export function arrobasAtuais(lote: Lote): number {
 /** Arrobas de carcaça previstas no abate. */
 export function arrobasNoAbate(lote: Lote): number {
   return (lote.pesoAlvoAbate * lote.rendimentoCarcaca) / 15;
+}
+
+// ------------------------------------------------------------ etapas da dieta
+
+/**
+ * Se a virada de etapa acontece mesmo dentro deste ciclo.
+ *
+ * Um peso de troca abaixo do peso de entrada quer dizer que o lote já entrou
+ * em engorda; acima do peso de abate, que a engorda não chega a começar. Nos
+ * dois casos o ciclo tem uma etapa só, e é assim que as contas tratam.
+ */
+export function trocaDentroDoCiclo(lote: Lote, pesoPartida = pesoAtual(lote)): boolean {
+  return (
+    lote.duasEtapas &&
+    lote.pesoTrocaEtapa > pesoPartida &&
+    lote.pesoTrocaEtapa < lote.pesoAlvoAbate
+  );
+}
+
+/** Qual dieta vale num dado peso vivo. */
+export function etapaNoPeso(lote: Lote, peso: number): EtapaDieta {
+  return lote.duasEtapas && peso >= lote.pesoTrocaEtapa ? "engorda" : "crescimento";
+}
+
+/**
+ * A dieta de uma etapa, com o que não foi escolhido herdado do crescimento.
+ *
+ * Herdar é o caso comum: quem entra na engorda costuma manter o mesmo
+ * volumoso e o mesmo proteico, e mexer só na proporção e na meta de ganho.
+ * Obrigar a recadastrar os quatro alimentos seria trabalho sem ganho.
+ */
+export function dietaDaEtapa(lote: Lote, etapa: EtapaDieta): DietaEtapa {
+  if (etapa === "crescimento") {
+    return {
+      ganhoMetaDiario: lote.ganhoMetaDiario,
+      volumosoID: lote.volumosoID,
+      energeticoID: lote.energeticoID,
+      proteicoID: lote.proteicoID,
+      mineralID: lote.mineralID,
+      restricoes: lote.restricoes,
+    };
+  }
+  const e = lote.engorda;
+  return {
+    ganhoMetaDiario: e.ganhoMetaDiario > 0 ? e.ganhoMetaDiario : lote.ganhoMetaDiario,
+    volumosoID: e.volumosoID ?? lote.volumosoID,
+    energeticoID: e.energeticoID ?? lote.energeticoID,
+    proteicoID: e.proteicoID ?? lote.proteicoID,
+    mineralID: e.mineralID ?? lote.mineralID,
+    restricoes: e.restricoes,
+  };
+}
+
+/** A dieta que vale num dado peso vivo. */
+export function dietaNoPeso(lote: Lote, peso: number): DietaEtapa {
+  return dietaDaEtapa(lote, etapaNoPeso(lote, peso));
+}
+
+/** A dieta de hoje, pelo peso da última pesagem. */
+export function dietaAtual(lote: Lote): DietaEtapa {
+  return dietaNoPeso(lote, pesoAtual(lote));
+}
+
+/** Os alimentos de uma dieta, se os três obrigatórios existirem. */
+export function selecaoDaDieta(
+  dieta: DietaEtapa,
+  insumos: readonly Insumo[],
+): SelecaoInsumos | null {
+  const achar = (id?: string) => insumos.find((i) => i.id === id);
+  const volumoso = achar(dieta.volumosoID);
+  const energetico = achar(dieta.energeticoID);
+  const proteico = achar(dieta.proteicoID);
+  if (!volumoso || !energetico || !proteico) return null;
+  return { volumoso, energetico, proteico, mineral: achar(dieta.mineralID) };
 }
 
 // ------------------------------------------------------------ compra do lote
