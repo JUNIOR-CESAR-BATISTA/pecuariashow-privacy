@@ -40,6 +40,7 @@ import {
   planoResolvido,
   pesoAtual,
   selecaoDaDieta,
+  type EtapaDieta,
   type Lote,
 } from "../nucleo/lote.js";
 import { calcular } from "../nucleo/motorExigencias.js";
@@ -50,12 +51,14 @@ import {
   conversaoAlimentar,
   custoPorArroba,
   custoTotal,
+  diasInteirosPorEtapa,
   ganhoTotalLote,
   investimentoTotal,
   lucroPorAnimal,
   lucroPorArrobaProduzida,
   lucroTotal,
   margemDaEngorda,
+  mediaDiariaDaEtapa,
   margemSobreReceita,
   precoArrobaEquilibrio,
   projetar,
@@ -566,7 +569,121 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
       {[...calculo.exigencia.alertas, ...racao.alertas].map((a) => (
         <Aviso key={a} texto={a} />
       ))}
+
+      {calculo.relatorio ? (
+        <DietaDasEtapas relatorio={calculo.relatorio} animais={animais} etapaHoje={calculo.etapa} />
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * O ciclo inteiro em duas dietas, uma embaixo da outra.
+ *
+ * O cartão de cima é o de hoje; este é o plano: tantos dias comendo assim,
+ * tantos dias comendo assado. Cada etapa traz a sua própria mistura, com o
+ * volumoso, o proteico e o energético em quilos por animal por dia - que é
+ * como se enche o cocho - e o NDT e a PB que aquela mistura entrega.
+ *
+ * A média sai dos períodos projetados, divididos pelos dias e pelos animais.
+ * Dentro de uma etapa a ração ainda muda um pouco conforme o animal engorda;
+ * a média é o que se mistura, e a lista de compras da aba Abate é a mesma
+ * conta somada.
+ */
+function DietaDasEtapas({
+  relatorio,
+  animais,
+  etapaHoje,
+}: {
+  relatorio: RelatorioPlanejamento;
+  animais: number;
+  etapaHoje: EtapaDieta;
+}) {
+  if (!temDuasEtapas(relatorio)) return null;
+
+  const resumos = resumosPorEtapa(relatorio);
+  // Arredondados juntos, para as etapas somarem o ciclo na tela.
+  const diasPorEtapa = diasInteirosPorEtapa(resumos);
+
+  return (
+    <section className="space-y-4">
+      <TituloSecao texto="O ciclo nas duas dietas" />
+      <p className="-mt-1 text-xs text-textoSuave">
+        Média por animal e por dia em cada etapa. Os dias somam o ciclo inteiro, e os produtos
+        somam a lista de compras do abate.
+      </p>
+
+      {resumos.map((resumo, i) => {
+        const media = mediaDiariaDaEtapa(resumo, animais);
+        const hoje = resumo.etapa === etapaHoje;
+        const dias = diasPorEtapa[i]!;
+        return (
+          <div
+            key={resumo.etapa}
+            className={`cartao space-y-3 ${hoje ? "border-ouro/30" : ""}`}
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-display text-lg leading-none">
+                {resumo.nome}
+                {hoje ? <span className="ml-2 text-[11px] text-ouro">hoje</span> : null}
+              </p>
+              <Etiqueta texto={`${numero(resumo.ganhoDiario, 3)} kg/d`} />
+            </div>
+            <p className="text-xs text-textoSuave">
+              {dias} dias · {duracao(dias)} · {formatarKg(resumo.pesoInicial)} a{" "}
+              {formatarKg(resumo.pesoFinal)}
+            </p>
+
+            <div className="flex gap-3 border-t border-realce pt-3">
+              <MiniIndicador titulo="Mat. seca" valor={formatarKg(media.materiaSeca)} cor="text-verdeClaro" />
+              <MiniIndicador titulo="PB" valor={percentual(media.proteinaPercentual)} cor="text-azul" />
+              <MiniIndicador titulo="NDT" valor={percentual(media.ndtPercentual)} />
+              <MiniIndicador
+                titulo="Volumoso"
+                valor={percentual(media.volumosoPercentual)}
+                cor="text-textoSuave"
+              />
+            </div>
+
+            <div className="space-y-2.5 border-t border-realce pt-3">
+              {media.itens.map((item) => (
+                <div key={item.insumo.id} className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span
+                      className={`min-w-0 flex-1 truncate text-sm ${CORES_CATEGORIA[item.insumo.categoria]}`}
+                    >
+                      {item.insumo.nome}
+                    </span>
+                    <span className="shrink-0 text-sm font-bold tabular-nums">
+                      {formatarKg(item.kgMateriaNatural)}
+                    </span>
+                  </div>
+                  <Barra fracao={item.participacao / 100} cor="bg-ouroEscuro" />
+                  <p className="text-xs text-textoTenue">
+                    {percentual(item.participacao)} da matéria seca ·{" "}
+                    {formatarKg(item.kgMateriaNatural * animais)} no lote por dia
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Sem preço nos insumos os dois custos saem zerados, e duas
+                linhas de "R$ 0,00" só ocupam espaço. */}
+            {resumo.custo > 0 ? (
+              <div className="border-t border-realce pt-2">
+                <LinhaDado rotulo="Custo por animal por dia" valor={moeda(media.custo)} />
+                <LinhaDado rotulo="Custo da etapa no lote" valor={moeda(resumo.custo)} />
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+
+      <p className="text-xs text-textoTenue">
+        {resumos.map((r, i) => `${diasPorEtapa[i]} dias de ${r.nome.toLowerCase()}`).join(" e ")}:{" "}
+        {diasPorEtapa.reduce((s, d) => s + d, 0)} dias até o abate.
+      </p>
+    </section>
   );
 }
 
@@ -582,10 +699,13 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
 function EtapasDoCiclo({ relatorio }: { relatorio: RelatorioPlanejamento }) {
   if (!temDuasEtapas(relatorio)) return null;
 
+  const resumos = resumosPorEtapa(relatorio);
+  const diasPorEtapa = diasInteirosPorEtapa(resumos);
+
   return (
     <section className="space-y-4">
       <TituloSecao texto="Etapas do ciclo" />
-      {resumosPorEtapa(relatorio).map((etapa) => (
+      {resumos.map((etapa, i) => (
         <div key={etapa.etapa} className="cartao space-y-3">
           <div className="flex items-baseline justify-between gap-3">
             <p className="font-display text-lg leading-none">{etapa.nome}</p>
@@ -593,7 +713,7 @@ function EtapasDoCiclo({ relatorio }: { relatorio: RelatorioPlanejamento }) {
           </div>
           <p className="text-xs text-textoSuave">
             {formatarKg(etapa.pesoInicial)} a {formatarKg(etapa.pesoFinal)} ·{" "}
-            {numero(etapa.dias, 0)} dias · {duracao(etapa.dias)}
+            {diasPorEtapa[i]} dias · {duracao(diasPorEtapa[i]!)}
           </p>
 
           <div className="border-t border-realce pt-3">

@@ -193,6 +193,96 @@ export function resumosPorEtapa(r: RelatorioPlanejamento): ResumoEtapa[] {
 /** Se o ciclo projetado chegou a ter as duas etapas. */
 export const temDuasEtapas = (r: RelatorioPlanejamento) => resumosPorEtapa(r).length > 1;
 
+/**
+ * Os dias de cada etapa em número inteiro, somando o ciclo exato.
+ *
+ * Arredondar cada etapa por conta própria não fecha: 128,6 e 81,8 viram 129 e
+ * 82, que somam 211 num ciclo de 210 dias - e quem lê acha que o aplicativo
+ * não sabe somar. Arredondando as fronteiras acumuladas, cada etapa erra no
+ * máximo meio dia e o total bate sempre.
+ */
+export function diasInteirosPorEtapa(resumos: readonly ResumoEtapa[]): number[] {
+  let acumulado = 0;
+  let anterior = 0;
+  return resumos.map((r) => {
+    acumulado += r.dias;
+    const ate = Math.round(acumulado);
+    const dias = ate - anterior;
+    anterior = ate;
+    return dias;
+  });
+}
+
+/** Um alimento na média diária de uma etapa, por animal. */
+export interface ItemDiario {
+  insumo: Insumo;
+  kgMateriaNatural: number;
+  kgMateriaSeca: number;
+  /** Participação na matéria seca da dieta (%). */
+  participacao: number;
+  custo: number;
+}
+
+/** O que se põe no cocho, por animal e por dia, durante uma etapa. */
+export interface MediaDiaria {
+  itens: ItemDiario[];
+  materiaSeca: number;
+  custo: number;
+  /** Proteína bruta da dieta (% da matéria seca). */
+  proteinaPercentual: number;
+  /** NDT da dieta (% da matéria seca). */
+  ndtPercentual: number;
+  /** Volumoso na matéria seca (%). */
+  volumosoPercentual: number;
+}
+
+/**
+ * A média diária de uma etapa, por animal.
+ *
+ * A ração é refeita a cada período, então dentro da mesma etapa ela muda um
+ * pouco conforme o animal engorda. O que o pecuarista precisa para misturar
+ * no cocho é a média do trecho - e ela vem dividindo o total da etapa pelos
+ * dias e pelos animais, de modo que bate com a lista de compras em vez de
+ * ser uma segunda conta que pode discordar dela.
+ */
+export function mediaDiariaDaEtapa(resumo: ResumoEtapa, animais: number): MediaDiaria {
+  const vazia: MediaDiaria = {
+    itens: [],
+    materiaSeca: 0,
+    custo: 0,
+    proteinaPercentual: 0,
+    ndtPercentual: 0,
+    volumosoPercentual: 0,
+  };
+  if (!(resumo.dias > 0) || !(animais > 0)) return vazia;
+
+  const porDia = resumo.dias * animais;
+  const materiaSeca = resumo.materiaSeca / porDia;
+  if (!(materiaSeca > 0)) return vazia;
+
+  const itens: ItemDiario[] = resumo.totais.map((total) => ({
+    insumo: total.insumo,
+    kgMateriaNatural: total.kgMateriaNatural / porDia,
+    kgMateriaSeca: total.kgMateriaSeca / porDia,
+    participacao: (total.kgMateriaSeca / porDia / materiaSeca) * 100,
+    custo: total.custo / porDia,
+  }));
+
+  const pesado = (valor: (i: Insumo) => number) =>
+    itens.reduce((soma, i) => soma + (i.kgMateriaSeca * valor(i.insumo)) / 100, 0);
+
+  return {
+    itens,
+    materiaSeca,
+    custo: resumo.custo / porDia,
+    proteinaPercentual: (pesado((i) => i.proteinaBruta) / materiaSeca) * 100,
+    ndtPercentual: (pesado((i) => i.ndt) / materiaSeca) * 100,
+    volumosoPercentual: itens
+      .filter((i) => i.insumo.categoria === "volumoso")
+      .reduce((soma, i) => soma + i.participacao, 0),
+  };
+}
+
 // ------------------------------------------------- previsão de resultado
 //
 // A conta é a do pecuarista: o que saiu do bolso na compra, mais o que a

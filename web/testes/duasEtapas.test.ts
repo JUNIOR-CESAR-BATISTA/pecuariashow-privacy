@@ -18,7 +18,9 @@ import {
 } from "../src/nucleo/lote.js";
 import {
   custoTotal,
+  diasInteirosPorEtapa,
   materiaSecaTotal,
+  mediaDiariaDaEtapa,
   projetar,
   resumosPorEtapa,
   temDuasEtapas,
@@ -375,6 +377,94 @@ describe("plano automático pela fase do lote", () => {
     expect(planoResolvido(criarLote({ fase: "desmama", planoEtapas: "soCrescimento" }))).toBe(
       "soCrescimento",
     );
+  });
+});
+
+describe("média diária de cada etapa", () => {
+  it("o que se põe no cocho vezes os dias e os animais dá o total da etapa", () => {
+    const lote = loteDuasEtapas();
+    const resumos = resumosPorEtapa(projetar(lote, selecao, silagem));
+    expect(resumos).toHaveLength(2);
+
+    for (const resumo of resumos) {
+      const media = mediaDiariaDaEtapa(resumo, lote.quantidadeAnimais);
+      const porDia = resumo.dias * lote.quantidadeAnimais;
+      perto(media.materiaSeca * porDia, resumo.materiaSeca, 0.01);
+      perto(media.custo * porDia, resumo.custo, 0.01);
+      for (const item of media.itens) {
+        const total = resumo.totais.find((t) => t.insumo.id === item.insumo.id)!;
+        perto(item.kgMateriaNatural * porDia, total.kgMateriaNatural, 0.01);
+      }
+      // As participações fecham 100%.
+      perto(
+        media.itens.reduce((s, i) => s + i.participacao, 0),
+        100,
+        0.01,
+      );
+    }
+  });
+
+  it("cada etapa tem a sua composição, e a da engorda é mais forte", () => {
+    const lote = loteDuasEtapas();
+    const [recria, engorda] = resumosPorEtapa(projetar(lote, selecao, silagem)).map((r) =>
+      mediaDiariaDaEtapa(r, lote.quantidadeAnimais),
+    );
+    expect(recria).toBeDefined();
+    expect(engorda).toBeDefined();
+
+    // Mais energia e menos volumoso na engorda: é o que separa as duas dietas.
+    expect(engorda!.ndtPercentual).toBeGreaterThan(recria!.ndtPercentual);
+    expect(engorda!.volumosoPercentual).toBeLessThan(recria!.volumosoPercentual);
+    // E come mais, porque é animal maior.
+    expect(engorda!.materiaSeca).toBeGreaterThan(recria!.materiaSeca);
+  });
+
+  it("o NDT e a PB da média saem dos alimentos, não de um campo à parte", () => {
+    const lote = loteDuasEtapas();
+    const resumo = resumosPorEtapa(projetar(lote, selecao, silagem))[0]!;
+    const media = mediaDiariaDaEtapa(resumo, lote.quantidadeAnimais);
+
+    const ndtMao =
+      media.itens.reduce((s, i) => s + (i.kgMateriaSeca * i.insumo.ndt) / 100, 0) /
+      media.materiaSeca;
+    const pbMao =
+      media.itens.reduce((s, i) => s + (i.kgMateriaSeca * i.insumo.proteinaBruta) / 100, 0) /
+      media.materiaSeca;
+    perto(media.ndtPercentual, ndtMao * 100, 0.001);
+    perto(media.proteinaPercentual, pbMao * 100, 0.001);
+  });
+
+  it("lote sem animais não divide por zero", () => {
+    const lote = loteDuasEtapas();
+    const resumo = resumosPorEtapa(projetar(lote, selecao, silagem))[0]!;
+    const media = mediaDiariaDaEtapa(resumo, 0);
+    expect(media.itens).toHaveLength(0);
+    expect(media.materiaSeca).toBe(0);
+    expect(media.ndtPercentual).toBe(0);
+  });
+});
+
+describe("dias inteiros das etapas", () => {
+  it("as etapas somam exatamente o ciclo, sem sobrar nem faltar um dia", () => {
+    const lote = loteDuasEtapas();
+    const relatorio = projetar(lote, selecao, silagem);
+    const resumos = resumosPorEtapa(relatorio);
+    const dias = diasInteirosPorEtapa(resumos);
+
+    expect(dias).toHaveLength(2);
+    expect(dias.reduce((s, d) => s + d, 0)).toBe(Math.round(relatorio.diasTotais));
+    // E nenhuma etapa se afasta do valor real por mais de meio dia.
+    resumos.forEach((r, i) => expect(Math.abs(dias[i]! - r.dias)).toBeLessThanOrEqual(1));
+  });
+
+  it("etapa única devolve o ciclo inteiro", () => {
+    const relatorio = projetar(loteBase(), selecao);
+    const dias = diasInteirosPorEtapa(resumosPorEtapa(relatorio));
+    expect(dias).toEqual([Math.round(relatorio.diasTotais)]);
+  });
+
+  it("sem etapas, devolve lista vazia", () => {
+    expect(diasInteirosPorEtapa([])).toEqual([]);
   });
 });
 
