@@ -12,7 +12,7 @@ import { depositoPadrao } from "../armazenamento/deposito.js";
 import { Repositorio } from "../armazenamento/repositorio.js";
 import { CATALOGO_PADRAO } from "../nucleo/catalogoInsumos.js";
 import type { CicloEncerrado } from "../nucleo/cicloEncerrado.js";
-import { dadosIniciais, type DadosApp } from "../nucleo/dadosApp.js";
+import { dadosIniciais, type DadosApp, type PrecoArrobaDoDia } from "../nucleo/dadosApp.js";
 import { RESTRICOES_PADRAO, type SelecaoInsumos } from "../nucleo/formuladorRacao.js";
 import type { Insumo } from "../nucleo/insumo.js";
 import { criarLote, dietaAtual, selecaoDaDieta, type Lote } from "../nucleo/lote.js";
@@ -35,6 +35,8 @@ interface Contexto {
   encerrarCiclo: (ciclo: CicloEncerrado) => void;
   removerCiclo: (id: string) => void;
   alternarCalibracao: (usar: boolean) => void;
+  /** Grava o preço da arroba de hoje, com a data de agora. */
+  definirPrecoArrobaHoje: (preco: number) => void;
   exportar: () => string;
   restaurar: (texto: string) => Promise<void>;
   apagarTudo: () => Promise<void>;
@@ -124,6 +126,12 @@ export function ProvedorApp({ children }: { children: ReactNode }) {
 
       alternarCalibracao: (usar) => alterar((d) => ({ ...d, usarCalibracao: usar })),
 
+      definirPrecoArrobaHoje: (preco) =>
+        alterar((d) => ({
+          ...d,
+          precoArrobaHoje: { preco, data: new Date() } satisfies PrecoArrobaDoDia,
+        })),
+
       exportar: () => repositorio.exportar(),
       restaurar: async (texto) => {
         await repositorio.restaurar(texto);
@@ -158,6 +166,9 @@ export function loteNovo(dados: DadosApp): Lote {
     proteicoID: primeiro("proteico"),
     mineralID: primeiro("mineral"),
     restricoes: { ...RESTRICOES_PADRAO },
+    // Começa com o preço da arroba do dia, se já foi informado; o lote pode
+    // mudar o valor dele à vontade depois, sem afetar o preço geral.
+    precoArrobaVenda: dados.precoArrobaHoje?.preco ?? 0,
   });
 }
 

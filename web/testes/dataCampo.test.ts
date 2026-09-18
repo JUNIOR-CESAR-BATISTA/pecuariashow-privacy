@@ -1,6 +1,6 @@
 /** Ida e volta entre `Date` e o texto que `<input type="date">` usa. */
 import { describe, expect, it } from "vitest";
-import { deCampoData, paraDataCampo } from "../src/nucleo/formatadores.js";
+import { deCampoData, diasDesde, paraDataCampo } from "../src/nucleo/formatadores.js";
 
 describe("paraDataCampo", () => {
   it("formata em AAAA-MM-DD, com zeros à esquerda", () => {
@@ -41,5 +41,23 @@ describe("deCampoData", () => {
     expect(deCampoData("2026-03")).toBeNull();
     expect(deCampoData("2026-13-40")).toBeNull();
     expect(deCampoData("não é uma data")).toBeNull();
+  });
+});
+
+describe("diasDesde", () => {
+  it("hoje é zero", () => {
+    const agora = new Date(2026, 8, 18, 15, 0);
+    expect(diasDesde(new Date(2026, 8, 18, 8, 0), agora)).toBe(0);
+  });
+
+  it("conta dias inteiros, sem arredondar horas soltas para cima", () => {
+    const agora = new Date(2026, 8, 18, 9, 0);
+    // 1 dia e 13 horas: ainda é só 1 dia inteiro, não 2.
+    expect(diasDesde(new Date(2026, 8, 16, 20, 0), agora)).toBe(1);
+  });
+
+  it("nunca fica negativo, nem com o relógio do aparelho adiantado", () => {
+    const agora = new Date(2026, 8, 18);
+    expect(diasDesde(new Date(2026, 8, 20), agora)).toBe(0);
   });
 });

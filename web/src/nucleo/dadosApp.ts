@@ -26,6 +26,21 @@ import { RESTRICOES_ENGORDA, type DietaEtapa, type PlanoEtapas } from "./lote.js
 import type { Insumo } from "./insumo.js";
 import type { Lote } from "./lote.js";
 
+/**
+ * O preço da arroba do dia, digitado à mão - a fazenda inteira usa o mesmo
+ * valor, em vez de cada lote pedir de novo.
+ *
+ * O aplicativo não busca isso sozinho na internet: ele é local, sem servidor
+ * e sem conexão nenhuma, e continua funcionando no meio do pasto sem sinal.
+ * O `data` é o que permite avisar quando o valor está velho - digitado ontem
+ * ou há uma semana - em vez de deixar o preço de sexta passar por atual numa
+ * quarta-feira.
+ */
+export interface PrecoArrobaDoDia {
+  preco: number;
+  data: Date;
+}
+
 export interface DadosApp {
   versao: number;
   lotes: Lote[];
@@ -34,6 +49,8 @@ export interface DadosApp {
   ciclos: CicloEncerrado[];
   /** Se os novos lotes nascem calibrados pelo histórico. */
   usarCalibracao: boolean;
+  /** O preço de venda da arroba, do jeito que o próprio usuário informou hoje. */
+  precoArrobaHoje: PrecoArrobaDoDia | null;
 }
 
 export const VERSAO_ATUAL = 2;
@@ -45,6 +62,7 @@ export function dadosIniciais(): DadosApp {
     insumos: CATALOGO_PADRAO.map((i) => ({ ...i })),
     ciclos: [],
     usarCalibracao: true,
+    precoArrobaHoje: null,
   };
 }
 
@@ -111,6 +129,9 @@ export function serializar(dados: DadosApp): string {
       insumos: dados.insumos,
       ciclos: dados.ciclos.map(cicloParaBruto),
       usarCalibracao: dados.usarCalibracao,
+      precoArrobaHoje: dados.precoArrobaHoje
+        ? { preco: dados.precoArrobaHoje.preco, data: paraISO(dados.precoArrobaHoje.data) }
+        : null,
     },
     null,
     2,
@@ -126,6 +147,23 @@ function comoLista(valor: unknown): Bruto[] {
 /** Número gravado, ou o padrão quando o campo não existe no arquivo. */
 function lerNumero(valor: unknown, padrao: number): number {
   return typeof valor === "number" && Number.isFinite(valor) ? valor : padrao;
+}
+
+/**
+ * Lê o preço da arroba do dia com tolerância total: qualquer coisa fora do
+ * formato esperado devolve `null`, como se o campo nunca tivesse existido.
+ * Ele é novo, então todo backup de antes dele passa exatamente por aqui.
+ */
+function lerPrecoArrobaHoje(valor: unknown): PrecoArrobaDoDia | null {
+  if (typeof valor !== "object" || valor === null) return null;
+  const objeto = valor as Bruto;
+  const preco = objeto["preco"];
+  const data = objeto["data"];
+  if (typeof preco !== "number" || !Number.isFinite(preco) || typeof data !== "string") {
+    return null;
+  }
+  const lida = new Date(data);
+  return Number.isNaN(lida.getTime()) ? null : { preco, data: lida };
 }
 
 function lerPlano(bruto: Bruto): PlanoEtapas {
@@ -220,5 +258,6 @@ export function desserializar(texto: string): DadosApp {
     ciclos: comoLista(objeto["ciclos"]).map(lerCiclo),
     usarCalibracao:
       typeof objeto["usarCalibracao"] === "boolean" ? objeto["usarCalibracao"] : true,
+    precoArrobaHoje: lerPrecoArrobaHoje(objeto["precoArrobaHoje"]),
   };
 }

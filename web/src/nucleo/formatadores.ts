@@ -93,6 +93,15 @@ export function deCampoData(texto: string): Date | null {
   return valida ? data : null;
 }
 
+/**
+ * Quantos dias já se passaram desde uma data, sempre inteiro e nunca
+ * negativo - um relógio adiantado por engano não pode fazer o preço de hoje
+ * parecer vir "do futuro".
+ */
+export function diasDesde(data: Date, agora = new Date()): number {
+  return Math.max(0, Math.floor((agora.getTime() - data.getTime()) / 86_400_000));
+}
+
 export function arroba(valor: number): string {
   return `${numero(valor, 2)} @`;
 }
