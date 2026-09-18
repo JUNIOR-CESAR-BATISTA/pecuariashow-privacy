@@ -266,7 +266,19 @@ function EditorLote({
             valor={rascunho.pesoAlvoAbate}
             aoMudar={(v) => mudar("pesoAlvoAbate", paraNumero(v, 0))}
           />
+          <Campo
+            rotulo="Rendimento de carcaça"
+            sufixo="%"
+            valor={numero(rascunho.rendimentoCarcaca * 100, 0)}
+            aoMudar={(v) => mudar("rendimentoCarcaca", limitarFracao(paraNumero(v, 53)))}
+          />
         </div>
+        <p className="-mt-1 text-xs text-textoSuave">
+          Quanto do peso vivo vira carcaça no abate - é o que a arroba de venda usa para calcular o
+          resultado do ciclo. Vem da nota do frigorífico (peso de carcaça ÷ peso vivo de embarque);
+          sem isso, uma referência: ~53% zebuíno, ~54% cruzado, ~55% taurino, mais alto quanto
+          melhor o acabamento.
+        </p>
         <Selecao
           rotulo="Fase"
           valor={rascunho.fase}
