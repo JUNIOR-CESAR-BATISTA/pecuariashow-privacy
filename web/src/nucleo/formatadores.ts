@@ -58,6 +58,41 @@ export function data(valor: Date): string {
   return `${dia}/${mes}/${valor.getFullYear()}`;
 }
 
+/** A data em "AAAA-MM-DD", que é o formato que `<input type="date">` espera e devolve. */
+export function paraDataCampo(valor: Date): string {
+  const ano = String(valor.getFullYear()).padStart(4, "0");
+  const mes = String(valor.getMonth() + 1).padStart(2, "0");
+  const dia = String(valor.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+/**
+ * O texto de um campo de data de volta para `Date`, à meia-noite local.
+ *
+ * `new Date("AAAA-MM-DD")` lê o texto como UTC, e em fusos a oeste de
+ * Greenwich isso volta um dia (meia-noite em Brasília já é o dia anterior em
+ * UTC). Montando a data a partir dos números, ela fica no fuso do aparelho -
+ * o mesmo que a tela mostra.
+ *
+ * Devolve `null` para texto vazio ou incompleto, que é o que o navegador
+ * manda enquanto o campo está sendo digitado ou limpo.
+ */
+export function deCampoData(texto: string): Date | null {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto);
+  if (!partes) return null;
+  const [, anoTexto, mesTexto, diaTexto] = partes;
+  const ano = Number(anoTexto);
+  const mes = Number(mesTexto);
+  const dia = Number(diaTexto);
+  const data = new Date(ano, mes - 1, dia);
+  // "2026-02-30" não existe, mas `Date` rola para 2 de março em vez de
+  // reclamar. Conferindo os componentes de volta, um dia inválido vira null
+  // como qualquer outro texto ilegível, em vez de virar uma data errada.
+  const valida =
+    data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
+  return valida ? data : null;
+}
+
 export function arroba(valor: number): string {
   return `${numero(valor, 2)} @`;
 }

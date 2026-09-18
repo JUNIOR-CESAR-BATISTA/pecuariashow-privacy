@@ -28,9 +28,11 @@ import {
 import {
   arroba,
   data as formatarData,
+  deCampoData,
   kg as formatarKg,
   moeda,
   numero,
+  paraDataCampo,
   paraNumero,
   percentual,
 } from "../nucleo/formatadores.js";
@@ -54,6 +56,16 @@ import {
 } from "../nucleo/lote.js";
 import type { RestricoesFormulacao } from "../nucleo/formuladorRacao.js";
 import {
+  arrobasProduzidasLote,
+  custoTotal,
+  lucroTotal,
+  resumirLotes,
+  retornoGeral,
+  temPrecos,
+  viavel,
+  type RelatorioPlanejamento,
+} from "../nucleo/planejadorAbate.js";
+import {
   Aviso,
   Campo,
   CORES_CATEGORIA,
@@ -64,6 +76,8 @@ import {
   TituloSecao,
 } from "./componentes.js";
 import { loteNovo, useApp } from "./estado.js";
+import { IconeSeta } from "./icones.js";
+import { useCalculoTodos } from "./telasPrincipais.js";
 
 // ------------------------------------------------------------------ Rebanho
 
@@ -214,6 +228,19 @@ function EditorLote({
 
       <div className="cartao space-y-3">
         <Campo rotulo="Nome" tipo="text" valor={rascunho.nome} aoMudar={(v) => mudar("nome", v)} />
+        <Campo
+          rotulo="Data de entrada"
+          tipo="date"
+          valor={paraDataCampo(rascunho.dataEntrada)}
+          aoMudar={(v) => {
+            const data = deCampoData(v);
+            if (data) mudar("dataEntrada", data);
+          }}
+        />
+        <p className="-mt-1 text-xs text-textoSuave">
+          Data em que o lote entrou no peso médio informado. É dela que o abate previsto conta os
+          dias, enquanto não houver pesagem registrada.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <Campo
             rotulo="Animais"
@@ -689,6 +716,186 @@ function EditorInsumo({
           Excluir alimento
         </button>
       ) : null}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------- Resumo geral
+
+/**
+ * O cartão de um lote dentro do resumo geral: os mesmos números da aba
+ * Abate, resumidos numa linha, com toque para abrir o lote inteiro.
+ */
+function CartaoResumoLote({
+  lote,
+  relatorio,
+  aoTocar,
+}: {
+  lote: Lote;
+  relatorio: RelatorioPlanejamento | null;
+  aoTocar: () => void;
+}) {
+  const lucro = relatorio ? lucroTotal(relatorio) : 0;
+  const positivo = lucro >= 0;
+
+  return (
+    <button
+      onClick={aoTocar}
+      className="cartao w-full space-y-2.5 text-left transition active:scale-[0.99]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-bold">{lote.nome}</p>
+          <p className="text-xs text-textoSuave">
+            {lote.quantidadeAnimais} animais · {FASES[lote.fase].nome}
+          </p>
+        </div>
+        <IconeSeta className="mt-1 h-3.5 w-3.5 shrink-0 text-textoTenue" />
+      </div>
+
+      {!relatorio ? (
+        <Aviso texto="Faltam alimentos no cadastro deste lote." />
+      ) : !viavel(relatorio) ? (
+        <Aviso
+          tom="laranja"
+          texto={relatorio.alertas[0] ?? "Não foi possível projetar este lote."}
+        />
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-textoSuave">
+            <span>Abate em {formatarData(relatorio.dataAbate)}</span>
+            <span>{numero(relatorio.diasTotais, 0)} dias</span>
+            <span>{arroba(arrobasProduzidasLote(relatorio))} produzidas</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 border-t border-realce pt-2">
+            <span className="text-xs text-textoSuave">Custo da dieta</span>
+            <span className="text-sm font-semibold tabular-nums">
+              {moeda(custoTotal(relatorio))}
+            </span>
+          </div>
+          {temPrecos(relatorio) ? (
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-xs text-textoSuave">
+                {positivo ? "Lucro previsto" : "Prejuízo previsto"}
+              </span>
+              <span
+                className={`text-sm font-bold tabular-nums ${positivo ? "text-verdeClaro" : "text-vermelho"}`}
+              >
+                {moeda(lucro)}
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-textoTenue">Sem preço de venda informado.</p>
+          )}
+        </>
+      )}
+    </button>
+  );
+}
+
+/**
+ * A fazenda inteira, não um lote só: o resumo de cada lote cadastrado, um
+ * embaixo do outro, e o total de todos juntos no topo.
+ *
+ * O total soma só o que já dá para projetar (`viavel`), e o dinheiro só
+ * entre os lotes com preço de venda informado - do mesmo jeito que cada
+ * lote sozinho já mostra "informe o preço" em vez de inventar um lucro. Um
+ * lote sem preço ainda entra nas arrobas e no custo da dieta, porque ele
+ * come e ganha peso independente de já ter comprador.
+ */
+export function TelaResumoGeral({ irPara }: { irPara: (aba: string) => void }) {
+  const { dados, selecionarLote } = useApp();
+  const calculos = useCalculoTodos();
+
+  if (dados.lotes.length === 0) {
+    return (
+      <EstadoVazio
+        titulo="Nenhum lote cadastrado"
+        mensagem="Cadastre os lotes do ciclo para o aplicativo somar o resultado de todos de uma vez."
+      />
+    );
+  }
+
+  const resumo = resumirLotes(
+    calculos
+      .map((c) => c.relatorio)
+      .filter((r): r is RelatorioPlanejamento => r !== null),
+  );
+  const lucro = resumo.lucro;
+  const positivo = lucro >= 0;
+  const cor = positivo ? "text-verdeClaro" : "text-vermelho";
+  const semPreco = resumo.lotesViaveis - resumo.lotesComPreco;
+
+  return (
+    <div className="space-y-6">
+      <header>
+        <p className="rotulo-secao text-ouroEscuro">Resumo geral</p>
+        <h1 className="mt-2 font-display text-[26px] leading-tight text-texto">
+          {resumo.lotes} {resumo.lotes === 1 ? "lote" : "lotes"}
+        </h1>
+        <p className="text-sm text-textoSuave">{resumo.animais} animais somados, no que já dá para projetar.</p>
+      </header>
+
+      <div className="cartao space-y-4">
+        <TituloSecao texto="Todos os lotes juntos" />
+        <div className="grid grid-cols-2 gap-3">
+          <CartaoIndicador
+            compacto
+            titulo="Arrobas produzidas"
+            valor={arroba(resumo.arrobasProduzidas)}
+            cor="text-verdeClaro"
+          />
+          <CartaoIndicador compacto titulo="Custo da dieta" valor={moeda(resumo.custoDieta)} />
+        </div>
+
+        {resumo.lotesComPreco > 0 ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <CartaoIndicador
+                compacto
+                titulo={positivo ? "Lucro total" : "Prejuízo total"}
+                valor={moeda(lucro)}
+                cor={cor}
+              />
+              <CartaoIndicador
+                compacto
+                titulo="Retorno"
+                valor={percentual(retornoGeral(resumo))}
+                cor={cor}
+              />
+            </div>
+            <div>
+              <LinhaDado rotulo="Investido (compra + dieta)" valor={moeda(resumo.investimento)} />
+              <LinhaDado rotulo="Venda prevista" valor={moeda(resumo.receita)} />
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-textoSuave">
+            Nenhum lote com preço de venda informado ainda; o total acima é só a dieta.
+          </p>
+        )}
+
+        {semPreco > 0 && resumo.lotesComPreco > 0 ? (
+          <Aviso
+            texto={`${semPreco} de ${resumo.lotesViaveis} lotes sem preço de venda: o dinheiro acima conta só os outros ${resumo.lotesComPreco}.`}
+          />
+        ) : null}
+      </div>
+
+      <div className="space-y-3">
+        <TituloSecao texto="Lote a lote" />
+        {calculos.map(({ lote, relatorio }) => (
+          <CartaoResumoLote
+            key={lote.id}
+            lote={lote}
+            relatorio={relatorio}
+            aoTocar={() => {
+              selecionarLote(lote.id);
+              irPara("abate");
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
