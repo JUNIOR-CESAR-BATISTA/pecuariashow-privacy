@@ -28,9 +28,11 @@ import {
 import {
   arroba,
   data as formatarData,
+  deCampoData,
   kg as formatarKg,
   moeda,
   numero,
+  paraDataCampo,
   paraNumero,
   percentual,
 } from "../nucleo/formatadores.js";
@@ -214,6 +216,19 @@ function EditorLote({
 
       <div className="cartao space-y-3">
         <Campo rotulo="Nome" tipo="text" valor={rascunho.nome} aoMudar={(v) => mudar("nome", v)} />
+        <Campo
+          rotulo="Data de entrada"
+          tipo="date"
+          valor={paraDataCampo(rascunho.dataEntrada)}
+          aoMudar={(v) => {
+            const data = deCampoData(v);
+            if (data) mudar("dataEntrada", data);
+          }}
+        />
+        <p className="-mt-1 text-xs text-textoSuave">
+          Data em que o lote entrou no peso médio informado. É dela que o abate previsto conta os
+          dias, enquanto não houver pesagem registrada.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <Campo
             rotulo="Animais"
