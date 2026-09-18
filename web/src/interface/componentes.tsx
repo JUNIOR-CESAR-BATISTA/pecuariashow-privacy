@@ -53,6 +53,24 @@ export function TituloSecao({
   );
 }
 
+/**
+ * O tamanho cede antes de estourar a borda.
+ *
+ * "5,82 kg" e "68,6%" nascem pensados para o tamanho cheio, mas um total em
+ * reais - a compra de um lote, e mais ainda a soma de vários - pode chegar a
+ * "-R$ 398.560,00". Nesse comprimento o texto não cabe lado a lado com outro
+ * cartão, e o espaço não-quebrável do `Intl.NumberFormat` entre "R$" e o
+ * número não deixa a linha quebrar sozinha para salvar a situação.
+ */
+function tamanhoIndicador(compacto: boolean, valor: string): string {
+  const [cheio, meio, minimo] = compacto
+    ? ["text-[22px]", "text-[18px]", "text-[15px]"]
+    : ["text-[26px]", "text-[21px]", "text-[17px]"];
+  if (valor.length > 13) return minimo;
+  if (valor.length > 9) return meio;
+  return cheio;
+}
+
 export function CartaoIndicador({
   titulo,
   valor,
@@ -71,9 +89,9 @@ export function CartaoIndicador({
     <div className={compacto ? "cartao p-4" : "cartao"}>
       <p className="rotulo-secao text-[10px]">{titulo}</p>
       <p
-        className={`mt-2 font-display leading-none tabular-nums ${cor} ${
-          compacto ? "whitespace-nowrap text-[22px]" : "text-[26px]"
-        }`}
+        className={`mt-2 truncate font-display leading-none tabular-nums ${cor} ${
+          compacto ? "whitespace-nowrap" : ""
+        } ${tamanhoIndicador(compacto, valor)}`}
       >
         {valor}
       </p>

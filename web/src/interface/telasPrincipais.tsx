@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { FASES, MODOS_COMPRA } from "../nucleo/classificacoes.js";
 import { descricao as descricaoSacas, descricaoCompra } from "../nucleo/conversorSacas.js";
+import type { Insumo } from "../nucleo/insumo.js";
 import {
   arroba,
   data as formatarData,
@@ -94,6 +95,7 @@ import {
   IconeLista,
   IconeMais,
   IconePizza,
+  IconeSubida,
   IconeTendencia,
   IconeTroca,
 } from "./icones.js";
@@ -113,22 +115,40 @@ function SemLote({ ir }: { ir: () => void }) {
   );
 }
 
+/**
+ * Exigência, ração e projeção de abate de um lote, a partir dos insumos
+ * disponíveis. Função pura, sem hook - para poder rodar várias vezes num
+ * `useMemo` só, uma por lote, sem violar a regra de não chamar hook dentro
+ * de laço.
+ */
+function calcularLote(lote: Lote, insumos: Insumo[]) {
+  // Tudo sai da etapa em que o lote está hoje: meta de ganho, alimentos e
+  // limites de volumoso mudam da recria para a engorda.
+  const dieta = dietaAtual(lote);
+  const exigencia = calcular(perfilAtual(lote), dieta.ganhoMetaDiario);
+  const selecao = selecaoDaDieta(dieta, insumos);
+  const racao = selecao ? formular(exigencia, selecao, dieta.restricoes) : null;
+  const daEngorda = selecaoDaDieta(dietaDaEtapa(lote, "engorda"), insumos);
+  const relatorio = selecao !== null ? projetar(lote, selecao, daEngorda ?? selecao) : null;
+  return { exigencia, selecao, racao, relatorio, etapa: etapaNoPeso(lote, pesoAtual(lote)) };
+}
+
 /** Exigência diária e ração do lote selecionado, calculadas uma vez só. */
 function useCalculo(lote: Lote | undefined) {
   const { dados } = useApp();
-  return useMemo(() => {
-    if (!lote) return null;
-    // Tudo sai da etapa em que o lote está hoje: meta de ganho, alimentos e
-    // limites de volumoso mudam da recria para a engorda.
-    const dieta = dietaAtual(lote);
-    const exigencia = calcular(perfilAtual(lote), dieta.ganhoMetaDiario);
-    const selecao = selecaoDaDieta(dieta, dados.insumos);
-    const racao = selecao ? formular(exigencia, selecao, dieta.restricoes) : null;
-    const daEngorda = selecaoDaDieta(dietaDaEtapa(lote, "engorda"), dados.insumos);
-    const relatorio =
-      selecao !== null ? projetar(lote, selecao, daEngorda ?? selecao) : null;
-    return { exigencia, selecao, racao, relatorio, etapa: etapaNoPeso(lote, pesoAtual(lote)) };
-  }, [lote, dados.insumos]);
+  return useMemo(() => (lote ? calcularLote(lote, dados.insumos) : null), [lote, dados.insumos]);
+}
+
+/**
+ * O mesmo cálculo para todos os lotes cadastrados de uma vez, cada um com o
+ * seu resultado - o que o resumo geral precisa para somar a fazenda inteira.
+ */
+export function useCalculoTodos() {
+  const { dados } = useApp();
+  return useMemo(
+    () => dados.lotes.map((lote) => ({ lote, ...calcularLote(lote, dados.insumos) })),
+    [dados.lotes, dados.insumos],
+  );
 }
 
 // ------------------------------------------------------------------- Início
@@ -445,6 +465,12 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
             titulo="Planejar o abate"
             detalhe="Insumos do ciclo e resultado previsto"
             aoTocar={() => irPara("abate")}
+          />
+          <LinhaAtalho
+            icone={<IconeSubida className="h-[18px] w-[18px]" />}
+            titulo="Resumo geral"
+            detalhe="Cada lote e o total de todos juntos"
+            aoTocar={() => irPara("geral")}
           />
           <LinhaAtalho
             icone={<IconeTroca className="h-[18px] w-[18px]" />}

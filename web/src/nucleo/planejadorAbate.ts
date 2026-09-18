@@ -400,6 +400,54 @@ export const concentradoTotalMN = (r: RelatorioPlanejamento) =>
     .filter((c) => c.insumo.categoria === "energetico" || c.insumo.categoria === "proteico")
     .reduce((t, c) => t + c.kgMateriaNatural, 0);
 
+// -------------------------------------------------------- resumo de vários lotes
+
+/**
+ * Os totais de vários ciclos somados - a fazenda inteira, não um lote só.
+ *
+ * `lotes` conta todos os relatórios recebidos; os outros campos somam só os
+ * viáveis, e os financeiros só os viáveis com preço de venda informado -
+ * exatamente os mesmos filtros que já valem tela a tela (`viavel`,
+ * `temPrecos`). Um lote sem preço não fica de fora do resumo geral: ele só
+ * não entra na conta de dinheiro, do mesmo jeito que sozinho ele mostraria
+ * "informe o preço" em vez de um lucro inventado.
+ */
+export interface ResumoGeral {
+  lotes: number;
+  lotesViaveis: number;
+  lotesComPreco: number;
+  animais: number;
+  arrobasProduzidas: number;
+  custoDieta: number;
+  investimento: number;
+  receita: number;
+  lucro: number;
+}
+
+export function resumirLotes(relatorios: readonly RelatorioPlanejamento[]): ResumoGeral {
+  const viaveis = relatorios.filter(viavel);
+  const comPreco = viaveis.filter(temPrecos);
+  const somar = (lista: readonly RelatorioPlanejamento[], ler: (r: RelatorioPlanejamento) => number) =>
+    lista.reduce((total, r) => total + ler(r), 0);
+
+  return {
+    lotes: relatorios.length,
+    lotesViaveis: viaveis.length,
+    lotesComPreco: comPreco.length,
+    animais: somar(viaveis, (r) => r.animais),
+    arrobasProduzidas: somar(viaveis, arrobasProduzidasLote),
+    custoDieta: somar(viaveis, custoTotal),
+    investimento: somar(comPreco, investimentoTotal),
+    receita: somar(comPreco, receitaTotal),
+    lucro: somar(comPreco, lucroTotal),
+  };
+}
+
+/** Retorno médio da fazenda: o lucro de todos os lotes sobre o investido em todos. */
+export function retornoGeral(resumo: ResumoGeral): number {
+  return resumo.investimento > 0 ? (resumo.lucro / resumo.investimento) * 100 : 0;
+}
+
 export function relatorioVazio(lote: Lote, alertas: string[]): RelatorioPlanejamento {
   return {
     lote,

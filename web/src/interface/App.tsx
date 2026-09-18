@@ -11,7 +11,7 @@ import {
   IconePizza,
 } from "./icones.js";
 import { TelaAbate, TelaInicio, TelaRacao } from "./telasPrincipais.js";
-import { TelaAnalise, TelaDados, TelaInsumos, TelaRebanho } from "./telasGestao.js";
+import { TelaAnalise, TelaDados, TelaInsumos, TelaRebanho, TelaResumoGeral } from "./telasGestao.js";
 import { TelaConversor, TelaMetodologia } from "./telasExtras.js";
 
 const ABAS = [
@@ -28,10 +28,12 @@ const ABAS = [
  * do cabeçalho ou dos atalhos. Aqui cobrem a área de conteúdo e voltam pelo
  * botão da esquerda.
  */
-const SOBREPOSICOES: Record<string, () => ReactNode> = {
+const SOBREPOSICOES: Record<string, (irPara: (destino: string) => void) => ReactNode> = {
   dados: () => <TelaDados />,
   metodologia: () => <TelaMetodologia />,
   conversor: () => <TelaConversor />,
+  // Um cartão de lote aqui manda para a aba Abate já com aquele lote em uso.
+  geral: (irPara) => <TelaResumoGeral irPara={irPara} />,
 };
 
 /** Abas onde o lote em uso muda o que aparece, e vale poder trocar de lote. */
@@ -126,7 +128,7 @@ export function App() {
       )}
 
       <main className="flex-1 overflow-y-auto px-5 pb-8 pt-6">
-        {aberta ? aberta() : tela()}
+        {aberta ? aberta(irPara) : tela()}
       </main>
 
       <nav
