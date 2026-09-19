@@ -16,8 +16,8 @@ import type { ExigenciaDiaria } from "./motorExigencias.js";
 export interface SelecaoInsumos {
   volumoso: Insumo;
   /**
-   * Ausentes no sistema de pasto: sem concentrado no cocho, a dieta é só
-   * volumoso e mineral, e o NDT e a PB que ela entrega saem só do pasto.
+   * Ausentes quando o lote não usa concentrado: a dieta é só volumoso e
+   * mineral, e o NDT e a PB que ela entrega saem só do volumoso.
    */
   energetico?: Insumo;
   proteico?: Insumo;
@@ -280,9 +280,9 @@ export function formular(
   const { volumoso, energetico, proteico } = selecao;
 
   if (!energetico || !proteico) {
-    // Sistema de pasto: sem concentrado no cocho. Toda a matéria seca que
-    // sobra do mineral é pasto - o NDT e a PB da dieta saem só dele, e não
-    // de um alvo perseguido com concentrado que esta dieta não tem.
+    // Sem concentrado no cocho: toda a matéria seca que sobra do mineral é
+    // volumoso - o NDT e a PB da dieta saem só dele, e não de um alvo
+    // perseguido com concentrado que esta dieta não tem.
     const candidatos: [Insumo, number][] = [[volumoso, disponivel]];
     if (selecao.mineral && mineralMS > 0) candidatos.push([selecao.mineral, mineralMS]);
     const composicao: ComposicaoRacao = {

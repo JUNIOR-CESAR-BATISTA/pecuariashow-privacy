@@ -129,9 +129,9 @@ function calcularLote(lote: Lote, insumos: Insumo[]) {
   // limites de volumoso mudam da recria para a engorda.
   const dieta = dietaAtual(lote);
   const exigencia = calcular(perfilAtual(lote), dieta.ganhoMetaDiario);
-  const selecao = selecaoDaDieta(dieta, insumos, lote.sistema);
+  const selecao = selecaoDaDieta(dieta, insumos, lote.comConcentrado);
   const racao = selecao ? formular(exigencia, selecao, dieta.restricoes) : null;
-  const daEngorda = selecaoDaDieta(dietaDaEtapa(lote, "engorda"), insumos, lote.sistema);
+  const daEngorda = selecaoDaDieta(dietaDaEtapa(lote, "engorda"), insumos, lote.comConcentrado);
   const relatorio = selecao !== null ? projetar(lote, selecao, daEngorda ?? selecao) : null;
   return { exigencia, selecao, racao, relatorio, etapa: etapaNoPeso(lote, pesoAtual(lote)) };
 }
@@ -574,9 +574,9 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
       <EstadoVazio
         titulo="Faltam alimentos no lote"
         mensagem={
-          loteSelecionado.sistema === "pasto"
-            ? "Escolha o volumoso (o pasto) no cadastro do lote para o aplicativo montar a ração."
-            : "Escolha um volumoso, um energético e um proteico no cadastro do lote para o aplicativo montar a ração."
+          loteSelecionado.comConcentrado
+            ? "Escolha um volumoso, um energético e um proteico no cadastro do lote para o aplicativo montar a ração."
+            : "Escolha o volumoso no cadastro do lote para o aplicativo montar a ração."
         }
         acao={
           <button className="botao-ouro" onClick={() => irPara("rebanho")}>

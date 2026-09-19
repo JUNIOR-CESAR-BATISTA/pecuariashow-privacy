@@ -142,6 +142,17 @@ export interface Lote {
   /** Preço esperado da arroba na venda (R$/@). */
   precoArrobaVenda: number;
 
+  /**
+   * Se a dieta leva concentrado (energético e proteico) no cocho, ou é só o
+   * volumoso e o mineral - o pasto puro, sem ração formulada.
+   *
+   * Independe do sistema de criação: pasto com concentrado no cocho é
+   * suplementação a pasto, comum na prática, e confinamento só com mineral
+   * também é uma escolha válida do usuário. As duas dietas convivem no
+   * aplicativo, e quem decide é este campo, não o sistema.
+   */
+  comConcentrado: boolean;
+
   /** Insumos que compõem a ração. */
   volumosoID?: string;
   energeticoID?: string;
@@ -179,6 +190,7 @@ export function criarLote(entrada: Partial<Lote> = {}): Lote {
     modoCompra: "porArroba",
     precoCompra: 0,
     precoArrobaVenda: 0,
+    comConcentrado: true,
     restricoes: RESTRICOES_PADRAO,
     pesagens: [],
     observacoes: "",
@@ -347,23 +359,24 @@ export function dietaAtual(lote: Lote): DietaEtapa {
 }
 
 /**
- * Os alimentos de uma dieta, pelo que o sistema de criação exige.
+ * Os alimentos de uma dieta, pelo que `comConcentrado` exige.
  *
- * No pasto não existe concentrado no cocho: só volumoso (o próprio pasto) e
- * mineral são obrigatórios. Nos outros sistemas, energético e proteico
- * continuam obrigatórios, porque ali a dieta é para valer formulada.
+ * Sem concentrado, só volumoso (o próprio pasto) e mineral são obrigatórios.
+ * Com concentrado, energético e proteico continuam obrigatórios, porque ali
+ * a dieta é para valer formulada - é independente do sistema de criação:
+ * pasto com concentrado e confinamento só com mineral são escolhas válidas.
  */
 export function selecaoDaDieta(
   dieta: DietaEtapa,
   insumos: readonly Insumo[],
-  sistema: SistemaCriacao,
+  comConcentrado: boolean,
 ): SelecaoInsumos | null {
   const achar = (id?: string) => insumos.find((i) => i.id === id);
   const volumoso = achar(dieta.volumosoID);
   if (!volumoso) return null;
   const mineral = achar(dieta.mineralID);
 
-  if (sistema === "pasto") return { volumoso, mineral };
+  if (!comConcentrado) return { volumoso, mineral };
 
   const energetico = achar(dieta.energeticoID);
   const proteico = achar(dieta.proteicoID);

@@ -207,6 +207,10 @@ function lerLote(bruto: Bruto): Lote {
     engorda: lerEngorda(bruto["engorda"]),
     precoCompra: lerNumero(bruto["precoCompra"], 0),
     precoArrobaVenda: lerNumero(bruto["precoArrobaVenda"], 0),
+    // Arquivo antigo não tinha essa escolha: a dieta dele sempre foi
+    // formulada com concentrado, e é isso que o padrão reproduz.
+    comConcentrado:
+      typeof bruto["comConcentrado"] === "boolean" ? bruto["comConcentrado"] : true,
     restricoes: { ...RESTRICOES_PADRAO, ...(bruto["restricoes"] as object | undefined) },
     pesagens: comoLista(bruto["pesagens"]).map((p) => ({
       ...(p as unknown as Lote["pesagens"][number]),
