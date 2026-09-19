@@ -121,6 +121,10 @@ export function TelaMetodologia() {
           corpo="Com volumoso, energético e proteico o aplicativo resolve um sistema de três equações: matéria seca total, proteína bruta e NDT. Quando a solução fica fora dos limites de volumoso, o volumoso é fixado no limite e o concentrado atende a proteína, mostrando o saldo de energia."
         />
         <Metodo
+          titulo="Sistema de pasto"
+          corpo="Sem concentrado no cocho, não há o que balancear: toda a matéria seca que sobra do mineral é o próprio pasto, e o NDT e a PB que a dieta entrega são só os dele. Quando o pasto não sustenta a exigência, o aviso de falta aparece do mesmo jeito - a diferença é que aqui não existe um concentrado para completar a conta."
+        />
+        <Metodo
           titulo="Matéria natural"
           corpo="A quantidade a fornecer no cocho é a matéria seca dividida pelo teor de matéria seca do alimento."
         />

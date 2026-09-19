@@ -179,6 +179,14 @@ export function TelaRebanho({
   );
 }
 
+/** Os quatro campos de alimento da engorda, na ordem em que a tela mostra. */
+const CAMPOS_ALIMENTO = [
+  ["volumosoID", "Volumoso", "volumoso"],
+  ["energeticoID", "Energético", "energetico"],
+  ["proteicoID", "Proteico", "proteico"],
+  ["mineralID", "Mineral", "mineral"],
+] as const;
+
 function EditorLote({
   lote,
   aoSalvar,
@@ -401,16 +409,13 @@ function EditorLote({
 
             <p className="rotulo-secao pt-1">Alimentos da engorda</p>
             <p className="text-xs text-textoSuave">
-              O que ficar em &quot;{textoHeranca}&quot; é herdado. Troque só o que muda — quem passa
-              o pasto para silagem, por exemplo.
+              {rascunho.sistema === "pasto"
+                ? "Sistema Pasto vale para o ciclo inteiro: a engorda também é só volumoso e mineral, sem concentrado no cocho."
+                : `O que ficar em "${textoHeranca}" é herdado. Troque só o que muda — quem passa o pasto para silagem, por exemplo.`}
             </p>
-            {(
-              [
-                ["volumosoID", "Volumoso", "volumoso"],
-                ["energeticoID", "Energético", "energetico"],
-                ["proteicoID", "Proteico", "proteico"],
-                ["mineralID", "Mineral", "mineral"],
-              ] as const
+            {CAMPOS_ALIMENTO.filter(
+              ([campo]) =>
+                rascunho.sistema !== "pasto" || (campo !== "energeticoID" && campo !== "proteicoID"),
             ).map(([campo, rotulo, categoria]) => (
               <Selecao
                 key={campo}
@@ -468,18 +473,28 @@ function EditorLote({
           aoMudar={(v) => mudar("volumosoID", v)}
           opcoes={porCategoria("volumoso")}
         />
-        <Selecao
-          rotulo="Energético"
-          valor={rascunho.energeticoID ?? ""}
-          aoMudar={(v) => mudar("energeticoID", v)}
-          opcoes={porCategoria("energetico")}
-        />
-        <Selecao
-          rotulo="Proteico"
-          valor={rascunho.proteicoID ?? ""}
-          aoMudar={(v) => mudar("proteicoID", v)}
-          opcoes={porCategoria("proteico")}
-        />
+        {rascunho.sistema === "pasto" ? (
+          <p className="text-xs text-textoSuave">
+            Sistema Pasto: sem concentrado no cocho, a dieta é só o volumoso acima e o mineral
+            abaixo. O NDT e a PB que ela entrega saem só do pasto - não é um alvo perseguido com
+            energético e proteico, porque esta dieta não os tem.
+          </p>
+        ) : (
+          <>
+            <Selecao
+              rotulo="Energético"
+              valor={rascunho.energeticoID ?? ""}
+              aoMudar={(v) => mudar("energeticoID", v)}
+              opcoes={porCategoria("energetico")}
+            />
+            <Selecao
+              rotulo="Proteico"
+              valor={rascunho.proteicoID ?? ""}
+              aoMudar={(v) => mudar("proteicoID", v)}
+              opcoes={porCategoria("proteico")}
+            />
+          </>
+        )}
         <Selecao
           rotulo="Mineral"
           valor={rascunho.mineralID ?? ""}

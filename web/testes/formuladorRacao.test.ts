@@ -250,3 +250,63 @@ describe("Gauss-Jordan", () => {
     ).toBeNull();
   });
 });
+
+describe("sistema de pasto: sem concentrado no cocho", () => {
+  it("sem energético nem proteico, toda a matéria seca que sobra do mineral vira pasto", () => {
+    const soPasto: SelecaoInsumos = { volumoso: pasto, mineral };
+    const racao = formular(exigencia, soPasto, RESTRICOES_PADRAO);
+
+    expect(racao.itens).toHaveLength(2); // só pasto e mineral
+    expect(racao.itens.some((i) => i.insumo === milho)).toBe(false);
+    expect(racao.itens.some((i) => i.insumo === soja)).toBe(false);
+
+    const msMineral = racao.itens.find((i) => i.insumo === mineral)!.kgMateriaSeca;
+    const msPasto = racao.itens.find((i) => i.insumo === pasto)!.kgMateriaSeca;
+    perto(msPasto + msMineral, consumoMateriaSeca(racao), 1e-9);
+    perto(msPasto, exigencia.consumoMateriaSeca - msMineral, 1e-9);
+  });
+
+  it("o NDT e a PB entregues são só os do pasto, não um alvo perseguido", () => {
+    const soPasto: SelecaoInsumos = { volumoso: pasto, mineral };
+    const racao = formular(exigencia, soPasto, RESTRICOES_PADRAO);
+    const msPasto = racao.itens.find((i) => i.insumo === pasto)!.kgMateriaSeca;
+
+    // O NDT entregue é só o do pasto (58%) sobre a matéria seca dele - o
+    // mineral entra na conta da matéria seca total, mas não traz NDT nenhum.
+    perto(ndtFornecidoKg(racao), (msPasto * 58) / 100, 1e-9);
+
+    // Nesse peso e ganho, o pasto sozinho não sustenta a exigência de
+    // energia - e é isso que o aviso tem que dizer, honestamente, em vez de
+    // fingir que um concentrado inexistente completou a conta.
+    expect(racao.alertas.some((a) => a.includes("Faltam") && a.includes("NDT"))).toBe(true);
+  });
+
+  it("falta só o energético, ou só o proteico: ainda cai no modo pasto", () => {
+    const semEnergetico: SelecaoInsumos = { volumoso: pasto, proteico: soja, mineral };
+    const semProteico: SelecaoInsumos = { volumoso: pasto, energetico: milho, mineral };
+    for (const sel of [semEnergetico, semProteico]) {
+      const racao = formular(exigencia, sel, RESTRICOES_PADRAO);
+      expect(racao.itens.some((i) => i.insumo === milho || i.insumo === soja)).toBe(false);
+    }
+  });
+
+  it("sem mineral selecionado, é só pasto - nada quebra", () => {
+    const racao = formular(exigencia, { volumoso: pasto }, RESTRICOES_PADRAO);
+    expect(racao.itens).toHaveLength(1);
+    expect(racao.itens[0]!.insumo).toBe(pasto);
+    perto(racao.itens[0]!.kgMateriaSeca, exigencia.consumoMateriaSeca, 1e-9);
+  });
+
+  it("um pasto forte o bastante fecha a conta sem aviso de falta", () => {
+    const capimBom = criarInsumo({
+      nome: "Capim de alto valor",
+      categoria: "volumoso",
+      materiaSeca: 28,
+      proteinaBruta: 16,
+      ndt: 68.6,
+      embalagem: PASTEJO,
+    });
+    const racao = formular(exigencia, { volumoso: capimBom, mineral }, RESTRICOES_PADRAO);
+    expect(racao.alertas.filter((a) => a.includes("Faltam"))).toHaveLength(0);
+  });
+});

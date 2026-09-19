@@ -346,17 +346,29 @@ export function dietaAtual(lote: Lote): DietaEtapa {
   return dietaNoPeso(lote, pesoAtual(lote));
 }
 
-/** Os alimentos de uma dieta, se os três obrigatórios existirem. */
+/**
+ * Os alimentos de uma dieta, pelo que o sistema de criação exige.
+ *
+ * No pasto não existe concentrado no cocho: só volumoso (o próprio pasto) e
+ * mineral são obrigatórios. Nos outros sistemas, energético e proteico
+ * continuam obrigatórios, porque ali a dieta é para valer formulada.
+ */
 export function selecaoDaDieta(
   dieta: DietaEtapa,
   insumos: readonly Insumo[],
+  sistema: SistemaCriacao,
 ): SelecaoInsumos | null {
   const achar = (id?: string) => insumos.find((i) => i.id === id);
   const volumoso = achar(dieta.volumosoID);
+  if (!volumoso) return null;
+  const mineral = achar(dieta.mineralID);
+
+  if (sistema === "pasto") return { volumoso, mineral };
+
   const energetico = achar(dieta.energeticoID);
   const proteico = achar(dieta.proteicoID);
-  if (!volumoso || !energetico || !proteico) return null;
-  return { volumoso, energetico, proteico, mineral: achar(dieta.mineralID) };
+  if (!energetico || !proteico) return null;
+  return { volumoso, energetico, proteico, mineral };
 }
 
 // ------------------------------------------------------------ compra do lote
