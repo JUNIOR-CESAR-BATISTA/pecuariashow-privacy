@@ -7,11 +7,13 @@ import type { Insumo } from "../nucleo/insumo.js";
 import {
   arroba,
   data as formatarData,
+  diasDesde,
   duracao,
   gramas,
   kg as formatarKg,
   moeda,
   numero,
+  paraNumero,
   percentual,
 } from "../nucleo/formatadores.js";
 import {
@@ -76,6 +78,7 @@ import {
   Aviso,
   Barra,
   BotaoCircular,
+  Campo,
   CartaoCategoria,
   CartaoIndicador,
   Chip,
@@ -126,9 +129,9 @@ function calcularLote(lote: Lote, insumos: Insumo[]) {
   // limites de volumoso mudam da recria para a engorda.
   const dieta = dietaAtual(lote);
   const exigencia = calcular(perfilAtual(lote), dieta.ganhoMetaDiario);
-  const selecao = selecaoDaDieta(dieta, insumos);
+  const selecao = selecaoDaDieta(dieta, insumos, lote.sistema);
   const racao = selecao ? formular(exigencia, selecao, dieta.restricoes) : null;
-  const daEngorda = selecaoDaDieta(dietaDaEtapa(lote, "engorda"), insumos);
+  const daEngorda = selecaoDaDieta(dietaDaEtapa(lote, "engorda"), insumos, lote.sistema);
   const relatorio = selecao !== null ? projetar(lote, selecao, daEngorda ?? selecao) : null;
   return { exigencia, selecao, racao, relatorio, etapa: etapaNoPeso(lote, pesoAtual(lote)) };
 }
@@ -401,6 +404,64 @@ function CochoHoje({
   );
 }
 
+/**
+ * O preço da arroba do dia, digitado à mão.
+ *
+ * É da fazenda inteira, não de um lote: um número só que todo lote novo já
+ * nasce usando (e cada um continua livre para mudar o seu depois). O
+ * aplicativo não busca esse preço sozinho na internet - ele é local, sem
+ * servidor, e continua de pé no meio do pasto sem sinal nenhum. Em vez de
+ * atualizar sozinho, ele avisa quando o valor ficou velho, para nunca passar
+ * o preço de sexta por atual numa quarta.
+ */
+function PrecoArrobaHoje() {
+  const { dados, definirPrecoArrobaHoje } = useApp();
+  const registro = dados.precoArrobaHoje;
+
+  const dias = registro ? diasDesde(registro.data) : null;
+  const atualizadoHoje = dias === 0;
+
+  return (
+    <div className="cartao space-y-3">
+      <div className="flex items-center gap-3">
+        <TituloSecao texto="Arroba do dia" />
+        {registro ? (
+          <span
+            className={`shrink-0 text-[11px] font-semibold ${
+              atualizadoHoje ? "text-verdeClaro" : "text-laranja"
+            }`}
+          >
+            {atualizadoHoje
+              ? "Atualizado hoje"
+              : dias === 1
+                ? "Faz 1 dia"
+                : `Faz ${dias} dias`}
+          </span>
+        ) : null}
+      </div>
+
+      <Campo
+        rotulo="Preço de venda hoje"
+        sufixo="R$/@"
+        valor={registro?.preco ?? 0}
+        aoMudar={(v) => definirPrecoArrobaHoje(Math.max(0, paraNumero(v, 0)))}
+      />
+
+      <p className="text-xs text-textoSuave">
+        {registro
+          ? "Usado como ponto de partida em lote novo. Sem busca automática: o aplicativo funciona sem internet, então é você quem atualiza."
+          : "Informe o preço de venda de hoje. Todo lote novo já nasce com ele, e cada um continua livre para ajustar o seu."}
+      </p>
+
+      {registro && !atualizadoHoje ? (
+        <Aviso
+          texto={`Este valor é de ${formatarData(registro.data)}. Confira se ainda vale antes de decidir alguma coisa em cima dele.`}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
   const { loteSelecionado } = useApp();
   const calculo = useCalculo(loteSelecionado);
@@ -428,6 +489,10 @@ export function TelaInicio({ irPara }: { irPara: (aba: string) => void }) {
           />
         </div>
       )}
+
+      <div className="entra mt-9" style={{ animationDelay: "60ms" }}>
+        <PrecoArrobaHoje />
+      </div>
 
       {lote && calculo?.racao ? (
         <div className="entra mt-9" style={{ animationDelay: "90ms" }}>
@@ -508,7 +573,11 @@ export function TelaRacao({ irPara }: { irPara: (aba: string) => void }) {
     return (
       <EstadoVazio
         titulo="Faltam alimentos no lote"
-        mensagem="Escolha um volumoso, um energético e um proteico no cadastro do lote para o aplicativo montar a ração."
+        mensagem={
+          loteSelecionado.sistema === "pasto"
+            ? "Escolha o volumoso (o pasto) no cadastro do lote para o aplicativo montar a ração."
+            : "Escolha um volumoso, um energético e um proteico no cadastro do lote para o aplicativo montar a ração."
+        }
         acao={
           <button className="botao-ouro" onClick={() => irPara("rebanho")}>
             Abrir o lote

@@ -278,7 +278,14 @@ describe("compatibilidade do arquivo", () => {
   it("os campos novos sobrevivem a exportar e restaurar", () => {
     const lote = loteBase({ modoCompra: "porCabeca", precoCompra: 2600, precoArrobaVenda: 345.5 });
     const voltou = desserializar(
-      serializar({ versao: VERSAO_ATUAL, lotes: [lote], insumos: [], ciclos: [], usarCalibracao: true }),
+      serializar({
+        versao: VERSAO_ATUAL,
+        lotes: [lote],
+        insumos: [],
+        ciclos: [],
+        usarCalibracao: true,
+        precoArrobaHoje: null,
+      }),
     ).lotes[0]!;
 
     expect(voltou.modoCompra).toBe("porCabeca");

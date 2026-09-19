@@ -255,3 +255,39 @@ describe("recusando o que não é backup", () => {
     expect(() => desserializar(ruim)).toThrow(/dataEntrada/);
   });
 });
+
+describe("preço da arroba do dia", () => {
+  it("começa em null, para um aplicativo recém-instalado", () => {
+    expect(dadosIniciais().precoArrobaHoje).toBeNull();
+  });
+
+  it("sobrevive a exportar e restaurar, com o preço e a data intactos", () => {
+    const registrado = new Date("2026-03-10T12:00:00Z");
+    const dados: DadosApp = {
+      ...dadosIniciais(),
+      precoArrobaHoje: { preco: 312.5, data: registrado },
+    };
+    const voltou = desserializar(serializar(dados)).precoArrobaHoje;
+
+    expect(voltou?.preco).toBe(312.5);
+    expect(voltou?.data.getTime()).toBe(registrado.getTime());
+  });
+
+  it("backup sem o campo abre com null, não com erro", () => {
+    // É o caso do backup do iPhone: o conceito não existia lá.
+    const dados = desserializar(BACKUP_DO_IPHONE);
+    expect(dados.precoArrobaHoje).toBeNull();
+  });
+
+  it("campo corrompido também vira null, em vez de derrubar o backup inteiro", () => {
+    const casos = [
+      `{"versao":2,"lotes":[],"insumos":[],"precoArrobaHoje":"312,50"}`,
+      `{"versao":2,"lotes":[],"insumos":[],"precoArrobaHoje":{"preco":"não é número","data":"2026-03-10T00:00:00Z"}}`,
+      `{"versao":2,"lotes":[],"insumos":[],"precoArrobaHoje":{"preco":312.5,"data":"não é data"}}`,
+      `{"versao":2,"lotes":[],"insumos":[],"precoArrobaHoje":{"preco":312.5}}`,
+    ];
+    for (const bruto of casos) {
+      expect(desserializar(bruto).precoArrobaHoje).toBeNull();
+    }
+  });
+});
