@@ -409,13 +409,13 @@ function EditorLote({
 
             <p className="rotulo-secao pt-1">Alimentos da engorda</p>
             <p className="text-xs text-textoSuave">
-              {rascunho.sistema === "pasto"
-                ? "Sistema Pasto vale para o ciclo inteiro: a engorda também é só volumoso e mineral, sem concentrado no cocho."
+              {!rascunho.comConcentrado
+                ? "Sem concentrado vale para o ciclo inteiro: a engorda também é só volumoso e mineral."
                 : `O que ficar em "${textoHeranca}" é herdado. Troque só o que muda — quem passa o pasto para silagem, por exemplo.`}
             </p>
             {CAMPOS_ALIMENTO.filter(
               ([campo]) =>
-                rascunho.sistema !== "pasto" || (campo !== "energeticoID" && campo !== "proteicoID"),
+                rascunho.comConcentrado || (campo !== "energeticoID" && campo !== "proteicoID"),
             ).map(([campo, rotulo, categoria]) => (
               <Selecao
                 key={campo}
@@ -468,18 +468,26 @@ function EditorLote({
       <div className="cartao space-y-3">
         <TituloSecao texto="Alimentos da ração" />
         <Selecao
+          rotulo="Tipo de dieta"
+          valor={rascunho.comConcentrado ? "sim" : "nao"}
+          aoMudar={(v) => mudar("comConcentrado", v === "sim")}
+          opcoes={[
+            { valor: "sim", texto: "Com concentrado (milho, soja, ureia...)" },
+            { valor: "nao", texto: "Só mineral (pasto puro)" },
+          ]}
+        />
+        <p className="-mt-1 text-xs text-textoSuave">
+          {rascunho.comConcentrado
+            ? "A dieta é formulada com volumoso, energético e proteico. Vale para qualquer sistema de criação, inclusive o Pasto."
+            : "Sem energético nem proteico no cocho: a dieta é só o volumoso abaixo e o mineral, e o NDT e a PB que ela entrega saem só do volumoso - não é um alvo perseguido com concentrado que esta dieta não tem."}
+        </p>
+        <Selecao
           rotulo="Volumoso"
           valor={rascunho.volumosoID ?? ""}
           aoMudar={(v) => mudar("volumosoID", v)}
           opcoes={porCategoria("volumoso")}
         />
-        {rascunho.sistema === "pasto" ? (
-          <p className="text-xs text-textoSuave">
-            Sistema Pasto: sem concentrado no cocho, a dieta é só o volumoso acima e o mineral
-            abaixo. O NDT e a PB que ela entrega saem só do pasto - não é um alvo perseguido com
-            energético e proteico, porque esta dieta não os tem.
-          </p>
-        ) : (
+        {rascunho.comConcentrado ? (
           <>
             <Selecao
               rotulo="Energético"
@@ -494,7 +502,7 @@ function EditorLote({
               opcoes={porCategoria("proteico")}
             />
           </>
-        )}
+        ) : null}
         <Selecao
           rotulo="Mineral"
           valor={rascunho.mineralID ?? ""}

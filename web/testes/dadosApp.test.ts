@@ -291,3 +291,21 @@ describe("preço da arroba do dia", () => {
     }
   });
 });
+
+describe("comConcentrado", () => {
+  it("backup do iPhone, que não tinha essa escolha, abre com concentrado ligado", () => {
+    // É o comportamento de sempre: antes deste campo existir, toda dieta
+    // era formulada com energético e proteico.
+    const dados = desserializar(BACKUP_DO_IPHONE);
+    expect(dados.lotes[0]?.comConcentrado).toBe(true);
+  });
+
+  it("sobrevive a exportar e restaurar, nos dois valores", () => {
+    for (const valor of [true, false]) {
+      const lote = criarLote({ comConcentrado: valor });
+      const dados: DadosApp = { ...dadosIniciais(), lotes: [lote] };
+      const voltou = desserializar(serializar(dados)).lotes[0];
+      expect(voltou?.comConcentrado).toBe(valor);
+    }
+  });
+});

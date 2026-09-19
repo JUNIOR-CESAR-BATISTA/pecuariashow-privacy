@@ -180,5 +180,5 @@ export function loteNovo(dados: DadosApp): Lote {
  * pelos campos de crescimento do lote.
  */
 export function selecaoDoLote(lote: Lote, insumos: readonly Insumo[]): SelecaoInsumos | null {
-  return selecaoDaDieta(dietaAtual(lote), insumos, lote.sistema);
+  return selecaoDaDieta(dietaAtual(lote), insumos, lote.comConcentrado);
 }
